@@ -534,39 +534,39 @@
       ====================================================== -->
       <div id="tgcPhase1" class="tgc-section-block">
 
-        <!-- Designer -->
-        <div class="tgc-section-label">Designer</div>
+  <div class="tgc-section-label">Designer</div>
 
-        <div class="field-row">
-          <select id="tgcDesignerSelect"
-                  class="tgc-input"
-                  style="max-width: 10em;"></select>
+  <div class="field-row">
+    <select id="tgcDesignerSelect"
+            class="tgc-input"
+            style="max-width: 10em;"></select>
 
-          <input id="tgcGameSearch"
-                 type="text"
-                 placeholder="Type to find game…"
-                 class="tgc-input"
-                 style="flex:1; margin-left:8px;">
+    <!-- SEARCH + GAME LIST STACK -->
+    <div class="tgc-game-stack">
+      <input id="tgcGameSearch"
+             type="text"
+             placeholder="Type to find game…"
+             class="tgc-input">
 
-          <button id="tgcCreateGameButton"
-                  class="secondary small tgc-plus-btn"
-                  title="Create new game">+</button>
-        </div>
+      <select id="tgcGameSelect" size="6"></select>
+    </div>
 
-        <!-- Game List -->
-        <div class="field" style="margin-top:8px;">
-          <select id="tgcGameSelect" size="6"></select>
-        </div>
+    <button id="tgcCreateGameButton"
+            class="secondary small tgc-plus-btn"
+            title="Create new game">+</button>
+  </div>
 
-        <!-- Create new game panel -->
-        <div id="tgcNewGameRow" class="tgc-subpanel hidden">
-          <input id="tgcNewGameName"
-                 type="text"
-                 placeholder="New game name…">
-          <button id="tgcConfirmCreateGame"
-                  class="primary small">Create</button>
-        </div>
-      </div>
+  <!-- Create new game panel -->
+  <div id="tgcNewGameRow" class="tgc-subpanel hidden">
+    <input id="tgcNewGameName"
+           type="text"
+           placeholder="New game name…">
+    <button id="tgcConfirmCreateGame"
+            class="primary small">Create</button>
+  </div>
+
+</div>
+
 
 
 

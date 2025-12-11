@@ -18,7 +18,7 @@ export default {
     this.ui = ui;
     this.dom.previewPanel.classList.add("tgc-preview-grid");
 
-    this.dom.refreshBtn = document.createElement("button");
+    /* this.dom.refreshBtn = document.createElement("button");
     this.dom.refreshBtn.textContent = "↻ Refresh Previews";
     this.dom.refreshBtn.className = "small secondary";
     this.dom.previewPanel.before(this.dom.refreshBtn);
@@ -26,7 +26,7 @@ export default {
     this.dom.refreshBtn.addEventListener("click", () => {
       this.reset();
       this.load();
-    });
+    }); */
 
     this.dom.previewPanel.addEventListener("scroll", () => {
       if (this.shouldLoadMore()) this.loadNextBatch();

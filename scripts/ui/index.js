@@ -23,6 +23,7 @@ import { initDownloadControls } from "./controls/downloadControls.js";
 import { initNavControls } from "./controls/navControls.js";
 
 import { initProgressControls } from "./controls/progressControls.js";
+import { initProgressOverlay } from "./controls/progressOverlay.js";
 
 
 
@@ -65,6 +66,8 @@ export async function initUI() {
   initDeck();
   initBulkLoader();
   updateActiveRanksFromSettings();
+  initProgressOverlay();
+
 
 
   //

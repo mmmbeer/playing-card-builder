@@ -1,6 +1,7 @@
 @import "./tgc.css";
 @import "./bulk.css";
 @import "./modal.css";
+@import "./progress.css";
 
 :root {
   --bg: #111827;

@@ -1,24 +1,46 @@
-// scripts/tgc/ui.js
 import api from "./api.js";
 import designers from "./designers.js";
 import games from "./games.js";
 import decks from "./decks.js";
 import auth from "./auth.js";
 
+function updateExportAvailability(dom) {
+  const hasDeck =
+    dom.deckSelect &&
+    dom.deckSelect.options &&
+    dom.deckSelect.options.length > 0 &&
+    dom.deckSelect.value;
+
+  dom.exportBtn.disabled = !hasDeck;
+}
+
 export default {
   init(dom, state, preview, exporter) {
 
     /* -----------------------------------------
-       RESOLVE ALL DOM ELEMENTS FIRST
+       RESOLVE DOM REFERENCES
     ----------------------------------------- */
-    dom.exportProgressContainer = document.getElementById("tgcExportProgressContainer");
-    dom.exportProgressBar       = document.getElementById("tgcExportProgressBar");
-    dom.exportDoneLink          = document.getElementById("tgcExportDoneLink");
-    dom.cancelExportButton      = document.getElementById("tgcCancelExportButton");
-    dom.refreshPreviewsBtn      = document.getElementById("tgcRefreshPreviews");
+    dom.exportDoneLink     = document.getElementById("tgcExportDoneLink");
+    dom.refreshPreviewsBtn = document.getElementById("tgcRefreshPreviews");
+
+    /* Conflict modal elements */
+    dom.conflictModal      = document.getElementById("tgcConflictModal");
+    dom.conflictTitle      = document.getElementById("tgcConflictTitle");
+    dom.conflictReplaceBtn = document.getElementById("tgcConflictReplace");
+    dom.conflictSkipBtn    = document.getElementById("tgcConflictSkip");
+    dom.conflictCopyBtn    = document.getElementById("tgcConflictCopy");
+
+    /* Hide legacy completion link permanently */
+    if (dom.exportDoneLink) {
+      dom.exportDoneLink.classList.add("hidden");
+    }
+
+    /* ★ COLLISION MODE BADGE */
+    dom.collisionBadge = document.getElementById("tgcCollisionSetting");
+    state.collisionMode = "replace";
 
     /* -----------------------------------------
-       AUTHENTICATION
+       AUTHENTICATION WORKFLOW
     ----------------------------------------- */
     auth.initAuth(() => {
       dom.loginPanel.classList.add("hidden");
@@ -31,7 +53,6 @@ export default {
 
     dom.loginBtn.addEventListener("click", () => auth.startLogin());
 
-
     /* -----------------------------------------
        DESIGNER CHANGED
     ----------------------------------------- */
@@ -41,9 +62,8 @@ export default {
       await games.loadGamesUI(dom, state, dom.designerSelect.value);
     });
 
-
     /* -----------------------------------------
-       GAME SEARCH
+       GAME SEARCH FILTER
     ----------------------------------------- */
     dom.gameSearch.addEventListener("input", () => {
       const q = dom.gameSearch.value.trim().toLowerCase();
@@ -60,13 +80,11 @@ export default {
         dom.gameSelect.appendChild(opt);
       });
 
-      if (list.length) api.setGID(list[0].id);
-      else api.setGID(null);
+      api.setGID(list.length ? list[0].id : null);
     });
 
-
     /* -----------------------------------------
-       DOUBLE-CLICK A GAME → LOCK IN
+       DOUBLE CLICK GAME → LOCK SELECTION
     ----------------------------------------- */
     dom.gameSelect.addEventListener("dblclick", () => {
       const gid = dom.gameSelect.value;
@@ -74,7 +92,6 @@ export default {
       api.setGID(gid);
       this.lock(dom, state, preview);
     });
-
 
     /* -----------------------------------------
        CREATE GAME
@@ -101,7 +118,6 @@ export default {
       }
     });
 
-
     /* -----------------------------------------
        RETURN TO PHASE 1
     ----------------------------------------- */
@@ -110,7 +126,6 @@ export default {
       dom.phase2.classList.add("hidden");
       dom.phase1.classList.remove("hidden");
     });
-
 
     /* -----------------------------------------
        CREATE DECK
@@ -132,50 +147,82 @@ export default {
 
       await decks.loadDecksUI(dom, state, api.GID());
       if (created?.id) dom.deckSelect.value = created.id;
+
+      updateExportAvailability(dom);
     });
 
-
     /* -----------------------------------------
-       CHANGE DECK → RELOAD PREVIEW
+       DECK SELECTION → PREVIEW GRID
     ----------------------------------------- */
     dom.deckSelect.addEventListener("change", () => {
       preview.reset();
       preview.load();
+      updateExportAvailability(dom);
     });
 
-
     /* -----------------------------------------
-       REFRESH PREVIEW BUTTON
+       REFRESH PREVIEW
     ----------------------------------------- */
     dom.refreshPreviewsBtn.addEventListener("click", () => {
       preview.reset();
       preview.load();
     });
 
-
     /* -----------------------------------------
        EXPORT BUTTON
     ----------------------------------------- */
-    dom.exportBtn.addEventListener("click", () => exporter.start(dom, state));
-
-
-    /* -----------------------------------------
-       CANCEL UPLOAD
-    ----------------------------------------- */
-    dom.cancelExportButton.addEventListener("click", () => exporter.cancel());
-
+    dom.exportBtn.addEventListener("click", () => {
+      if (!dom.exportBtn.disabled) {
+        exporter.start(dom, state);
+      }
+    });
 
     /* -----------------------------------------
        OPEN/CLOSE MODAL
     ----------------------------------------- */
-    dom.openBtn.addEventListener("click", () => this.open(dom, state, preview));
+    dom.openBtn.addEventListener("click", () =>
+      this.open(dom, state, preview)
+    );
+
     dom.closeBtn.addEventListener("click", () => this.close(dom));
 
     dom.modal.addEventListener("click", (e) => {
       if (e.target === dom.modal) this.close(dom);
     });
-  },
 
+    /* -----------------------------------------
+       CONFLICT MODAL BUTTONS
+    ----------------------------------------- */
+    dom.conflictReplaceBtn.addEventListener("click", () =>
+      this.resolveConflict("replace")
+    );
+
+    dom.conflictSkipBtn.addEventListener("click", () =>
+      this.resolveConflict("skip")
+    );
+
+    dom.conflictCopyBtn.addEventListener("click", () =>
+      this.resolveConflict("copy")
+    );
+
+    /* -----------------------------------------
+       ★ COLLISION MODE BADGE CLICK HANDLER
+    ----------------------------------------- */
+    dom.collisionBadge.addEventListener("click", () => {
+      if (state.collisionMode === "replace") {
+        state.collisionMode = "skip";
+        dom.collisionBadge.textContent = "Skip Existing";
+      } else if (state.collisionMode === "skip") {
+        state.collisionMode = "copy";
+        dom.collisionBadge.textContent = "Keep Both";
+      } else {
+        state.collisionMode = "replace";
+        dom.collisionBadge.textContent = "Replace Existing";
+      }
+    });
+
+    updateExportAvailability(dom);
+  },
 
   /* ========================================================
      OPEN MODAL
@@ -196,7 +243,6 @@ export default {
     }
   },
 
-
   /* ========================================================
      CLOSE MODAL
   ======================================================== */
@@ -204,9 +250,8 @@ export default {
     dom.modal.classList.add("hidden");
   },
 
-
   /* ========================================================
-     LOCK PHASE: Designer | Game → Show Deck UI
+     LOCK PHASE
   ======================================================== */
   lock(dom, state, preview) {
     const did = api.DID();
@@ -215,7 +260,8 @@ export default {
     const designer = state.designers.find(d => d.id === did);
     const game = state.games.find(g => g.id === gid);
 
-    dom.lockedInfo.textContent = `${designer?.name ?? "?"} | ${game?.name ?? "?"}`;
+    dom.lockedInfo.textContent =
+      `${designer?.name ?? "?"} | ${game?.name ?? "?"}`;
 
     dom.phase1.classList.add("hidden");
     dom.phase2.classList.remove("hidden");
@@ -223,6 +269,43 @@ export default {
     decks.loadDecksUI(dom, state, gid).then(() => {
       preview.reset();
       preview.load();
+
+      updateExportAvailability(dom);
+
+      if (!dom.deckSelect || dom.deckSelect.options.length === 0) {
+        dom.newDeckRow.classList.remove("hidden");
+        const today = new Date().toISOString().slice(0, 10);
+        dom.newDeckName.value = `Custom Playing Cards - ${today}`;
+        dom.newDeckName.focus();
+      }
     });
+  },
+
+  /* ========================================================
+     CONFLICT MODAL LOGIC
+  ======================================================== */
+  _conflictResolver: null,
+
+  async promptCardConflict(cardName) {
+    const modal = document.getElementById("tgcConflictModal");
+    const title = document.getElementById("tgcConflictTitle");
+
+    title.textContent = `Card Exists: ${cardName}`;
+    modal.classList.remove("hidden");
+
+    return new Promise(resolve => {
+      this._conflictResolver = resolve;
+    });
+  },
+
+  resolveConflict(answer) {
+    const modal = document.getElementById("tgcConflictModal");
+
+    modal.classList.add("hidden");
+
+    if (this._conflictResolver) {
+      this._conflictResolver(answer);
+      this._conflictResolver = null;
+    }
   }
 };

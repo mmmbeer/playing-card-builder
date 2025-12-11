@@ -497,6 +497,8 @@
 
   </div>
 </div>
+
+
 <!-- =========================================
      TGC EXPORT MODAL
 ========================================= -->
@@ -631,11 +633,37 @@
 
 
       <!-- =====================================================
+           ★ NEW: Collision Behavior Toggle Badge
+      ====================================================== -->
+
+      <div style="margin-top:16px; margin-bottom:8px; display:flex; align-items:center;">
+        <span style="font-size:13px; margin-right:8px; opacity:.8;">
+          Collision Behavior:
+        </span>
+
+        <div id="tgcCollisionSetting"
+             style="
+               display:inline-block;
+               padding:4px 10px;
+               background:#444;
+               color:#fff;
+               border-radius:6px;
+               cursor:pointer;
+               user-select:none;
+               font-size:12px;
+             ">
+          Replace Existing
+        </div>
+      </div>
+
+
+
+      <!-- =====================================================
            UPLOAD BUTTON
       ====================================================== -->
       <button id="tgcExportButton"
               class="pill-btn pill-tgc"
-              style="margin-top: 20px;">
+              style="margin-top: 10px;">
         Upload Cards to This Deck
       </button>
 
@@ -658,17 +686,71 @@
         Cancel Upload
       </button>
 
-      <!-- Completed link -->
-      <a id="tgcExportDoneLink"
-         href="#"
-         target="_blank"
-         class="hidden"
-         style="margin-top:14px; display:inline-block;">
-        Open Deck in The Game Crafter
-      </a>
+      
 
 
     </div> <!-- END EXPORT PANEL -->
+
+  </div>
+</div>
+
+
+
+<!-- =========================================
+     CARD CONFLICT MODAL (NEW)
+========================================= -->
+<div id="tgcConflictModal" class="modal hidden">
+  <div class="modal-content small">
+
+    <h3 id="tgcConflictTitle" style="margin-bottom:10px;">
+      <!-- JS inserts: Card Exists: Ace of Spades -->
+    </h3>
+
+    <p>This card already exists. What would you like to do?</p>
+
+    <div style="display:flex; gap:10px; margin-top:15px; justify-content:center;">
+      <button id="tgcConflictReplace" class="primary">Replace</button>
+      <button id="tgcConflictSkip" class="secondary">Skip</button>
+      <button id="tgcConflictCopy" class="primary">Create Copy</button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- =========================================
+     GLOBAL PROGRESS OVERLAY
+========================================= -->
+<div id="progressOverlay" class="progress-overlay hidden">
+  <div class="progress-panel">
+
+    <div id="progressOverlayTitle" class="progress-title">
+      Processing…
+    </div>
+
+    <!-- NEW: operation text -->
+    <div id="progressOperation" class="progress-operation">
+      Initializing…
+    </div>
+
+    <div class="progress-bar-shell">
+      <div id="progressBarFill" class="progress-bar-fill"></div>
+    </div>
+
+    <div class="progress-meta">
+      <span id="progressCurrent">0</span>
+      /
+      <span id="progressTotal">0</span>
+    </div>
+
+    <!-- NEW: result / error output -->
+    <div id="progressResult" class="progress-result hidden"></div>
+
+    <button
+      id="progressCancel"
+      class="secondary small progress-cancel-btn">
+      Cancel
+    </button>
 
   </div>
 </div>

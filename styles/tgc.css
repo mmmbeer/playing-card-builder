@@ -79,3 +79,118 @@
 #tgcExportProgressContainer.hidden {
   display: none;
 }
+
+
+/* ============================================================
+   TGC CONFLICT MODAL
+   (Replace / Skip / Create Copy)
+============================================================ */
+
+/* Fullscreen cover */
+#tgcConflictModal.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 6000; /* Above all other TGC UI */
+}
+
+/* Hide by default */
+#tgcConflictModal.hidden {
+  display: none;
+}
+
+/* Modal content */
+#tgcConflictModal .modal-content.small {
+  background: var(--surface);
+  padding: 22px 26px;
+  border-radius: 10px;
+  width: 340px;
+  max-width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  animation: tgcConflictFadeIn 0.18s ease-out;
+}
+
+/* Title */
+#tgcConflictTitle {
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+/* Description text */
+#tgcConflictModal p {
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+
+/* Layout for buttons */
+#tgcConflictModal .modal-content.small div {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Button styles (reuse standard styles if defined) */
+#tgcConflictReplace.primary,
+#tgcConflictCopy.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#tgcConflictSkip.secondary {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Hover states */
+#tgcConflictReplace.primary:hover,
+#tgcConflictCopy.primary:hover {
+  opacity: 0.9;
+}
+
+#tgcConflictSkip.secondary:hover {
+  background: var(--surface-3);
+}
+
+/* Fade-in animation */
+@keyframes tgcConflictFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+.collision-badge {
+    display: inline-block;
+    padding: 6px 10px;
+    background: #444;
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 12px;
+}
+.collision-badge:hover {
+    background: #555;
+}

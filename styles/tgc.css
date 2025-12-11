@@ -49,6 +49,38 @@
 /* ------------------------------
    General Form Elements
 ------------------------------ */
+/* Seamless combo-search dropdown */
+#tgcGameSelect {
+  width: 100%;
+  background: rgba(15,23,42,0.9);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  color: var(--text);
+  font-size: 13px;
+  margin-top: 6px;
+
+  /* Dynamic list height */
+  max-height: calc(10 * 1.65em); /* approx height of 10 rows */
+  overflow-y: auto;
+}
+
+
+/* Combine search input + dropdown visually */
+#tgcGameSearch {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+#tgcGameSelect {
+  margin-top: -2px; /* fuse borders */
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+
+
+
 #tgcModal select,
 #tgcModal input[type="text"],
 #tgcModal input[type="password"] {

@@ -529,33 +529,30 @@ export function initTgcExport() {
   }
 
   if (gameSearch) {
-    gameSearch.addEventListener("input", () => {
-      const q = gameSearch.value.toLowerCase()
+  gameSearch.addEventListener("input", () => {
+    const q = gameSearch.value.trim().toLowerCase();
 
-      console.log(`Game search: ${q}`)
+    const list = q
+      ? gameList.filter(g => g.name.toLowerCase().includes(q))
+      : gameList; // Show ALL results when empty
 
-      const filtered = gameList.filter(g =>
-        g.name.toLowerCase().includes(q)
-      )
+    gameSelect.innerHTML = "";
 
-      if (!gameSelect) return
+    list.forEach(g => {
+      const opt = document.createElement("option");
+      opt.value = g.id;
+      opt.textContent = g.name;
+      gameSelect.appendChild(opt);
+    });
 
-      gameSelect.innerHTML = ""
-      filtered.forEach(g => {
-        const opt = document.createElement("option")
-        opt.value = g.id
-        opt.textContent = g.name
-        gameSelect.appendChild(opt)
-      })
-
-      if (filtered.length) {
-        gameSelect.value = filtered[0].id
-        setGID(filtered[0].id)
-      } else {
-        setGID(null)
-      }
-    })
-  }
+    if (list.length) {
+      gameSelect.value = list[0].id;
+      setGID(list[0].id);
+    } else {
+      setGID(null);
+    }
+  });
+}
 
   if (gameSelect) {
     gameSelect.addEventListener("dblclick", () => {

@@ -1,0 +1,31 @@
+.bulk-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+
+.bulk-row td { text-align: center; vertical-align: middle; }
+
+.bulk-map-table {
+  width: 100%;
+  margin-top: 12px;
+  border-collapse: collapse;
+}
+
+.bulk-map-table th, .bulk-map-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+.bulk-thumb {
+  width: 64px;
+  height: auto;
+  border: 1px solid #aaa;
+}
+

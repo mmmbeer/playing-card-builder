@@ -1,0 +1,7 @@
+<IfModule mod_headers.c>
+    Header always set Access-Control-Allow-Headers "X-GameCrafter-Developer-ID, X-GameCrafter-Developer-Key, Content-Type"
+</IfModule>
+
+RewriteEngine On
+RewriteRule .* - [env=HTTP_X_GAMECRAFTER_DEVELOPER_ID:%{HTTP:X-GameCrafter-Developer-ID}]
+RewriteRule .* - [env=HTTP_X_GAMECRAFTER_DEVELOPER_KEY:%{HTTP:X-GameCrafter-Developer-Key}]

@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Poker Card Designer</title>
+  <link rel="stylesheet" href="styles/main.css" />
+  <link rel="icon" type="image/png" href="./favicon.png" />
+
+  <!-- Google WebFont Loader (for any Google Fonts family name) -->
+  <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
+
+  <!-- JSZip for exporting all cards as a single ZIP file -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+</head>
+
+<body>
+<div class="app">
+  <div class="sidebar">
+    <h1>Card Designer</h1>
+
+    <!-- Card selection -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>Card selection</span>
+      </div>
+      <div class="field-row">
+        <div class="field" style="flex:1">
+          <label for="suitSelect">Suit</label>
+          <select id="suitSelect">
+            <option value="spades">Spades (♠)</option>
+            <option value="hearts">Hearts (♥)</option>
+            <option value="clubs">Clubs (♣)</option>
+            <option value="diamonds">Diamonds (♦)</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1">
+          <label for="rankSelect">Rank</label>
+          <select id="rankSelect"></select>
+        </div>
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="mirrorCardCheckbox">
+        <label for="mirrorCardCheckbox">Mirror corners for this card</label>
+      </div>
+
+      <div class="hint">
+        This selection controls the card shown in the preview and the image you assign as its face.
+      </div>
+    </div>
+	
+	<!-- Face image for current card -->
+	<div class="panel">
+	  <div class="panel-header">
+		  <span>Face image (current card)</span>
+		  <span id="bulkUploadBadge" class="badge clickable">⬆️ bulk</span>
+		</div>
+
+
+	  <div class="field">
+		<div class="file-input-label">Image for this suit / rank</div>
+
+		<!-- Single image upload -->
+		<div id="faceImageWrapper" class="file-display">
+		  <span id="faceImageLabel" class="file-label clickable">Click to add…</span>
+		  <input id="faceImageInput" type="file" accept="image/*" style="display:none">
+		</div>
+
+	  </div>
+
+	  <div class="two-col">
+		<div class="field">
+		  <label for="faceScaleInput">Zoom</label>
+		  <input id="faceScaleInput" type="range" min="0.2" max="3" step="0.05" value="1">
+		</div>
+		<div class="field">
+		  <label for="faceRotationInput">Rotation (°)</label>
+		  <input id="faceRotationInput" type="range" min="-180" max="180" step="1" value="0">
+		</div>
+	  </div>
+
+	  <div class="field-row">
+		<div class="checkbox-row">
+		  <input type="checkbox" id="faceFlipHCheckbox">
+		  <label for="faceFlipHCheckbox">Flip horizontally</label>
+		</div>
+	  </div>
+
+	  <div class="field-row">
+		<div class="checkbox-row">
+		  <input type="checkbox" id="faceFlipVCheckbox">
+		  <label for="faceFlipVCheckbox">Flip vertically</label>
+		</div>
+	  </div>
+
+	  <div class="field-row">
+		<button type="button" class="secondary" id="resetFaceTransformButton">Reset transform</button>
+	  </div>
+
+	  <div class="hint">
+		Drag the face image on the preview to adjust its position.  
+		Zoom, rotate and flip controls are per card.
+	  </div>
+	</div>
+
+    <!-- Font settings -->
+    <div class="panel">
+      <div class="panel-header collapsible">
+        <span>Rank/Index font</span>  <span class="chevron">▾</span>
+      </div>
+
+		<div class="field-row">
+		  <div id="fontFamilyWrapper" class="font-family-box">
+  <span id="fontFamilyInput" class="font-family-text"></span>
+  <span class="font-family-icon">🔎</span>
+</div>
+
+
+
+		</div>
+
+
+      <div class="two-col">
+        <div class="field">
+          <label for="fontSizeInput">Size (px)</label>
+          <input id="fontSizeInput" type="number" min="16" max="180" value="72">
+        </div>
+        <div class="field">
+          <label for="fontWeightSelect">Weight</label>
+          <select id="fontWeightSelect">
+            <option value="400">400</option>
+            <option value="500">500</option>
+            <option value="600">600</option>
+            <option value="700" selected>700</option>
+            <option value="800">800</option>
+            <option value="900">900</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="field">
+          <label for="fontColorInput">Color</label>
+          <input id="fontColorInput" type="color" value="#000000">
+        </div>
+        <div class="field">
+          <label for="fontOpacityInput">Opacity</label>
+          <input id="fontOpacityInput" type="range" min="0" max="1" step="0.05" value="1">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="overlayTypeSelect">Overlay / effect</label>
+        <select id="overlayTypeSelect">
+          <option value="none">None</option>
+          <option value="shadow">Soft shadow</option>
+          <option value="glow">Glow</option>
+        </select>
+      </div>
+
+      <div class="two-col">
+        <div class="field">
+          <div class="checkbox-row">
+            <input type="checkbox" id="outlineCheckbox">
+            <label for="outlineCheckbox">Outline / border</label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="outlineWidthInput">Outline width</label>
+          <input id="outlineWidthInput" type="range" min="0" max="10" step="0.5" value="3">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="outlineColorInput">Outline color</label>
+        <input id="outlineColorInput" type="color" value="#000000">
+      </div>
+    </div>
+
+    <!-- Suit icon settings -->
+    <div class="panel">
+      <div class="panel-header collapsible">
+        <span>Suit icons </span> <span class="chevron">▾</span>
+      </div>
+
+      <div class="field">
+        <label for="iconPresetSelect">Built-in suit sets</label>
+        <select id="iconPresetSelect"></select>
+      </div>
+
+      <div class="field">
+        <div class="file-input-label">
+          Or upload your own sprite sheet (2×2 grid, any size)
+        </div>
+        <input id="iconSheetInput" type="file" accept="image/*">
+      </div>
+
+      <div class="two-col">
+        <div class="field">
+          <label for="iconColorInput">Icon color</label>
+          <input id="iconColorInput" type="color" value="#000000">
+        </div>
+        <div class="field">
+          <label for="iconOpacityInput">Opacity</label>
+          <input id="iconOpacityInput" type="range" min="0" max="1" step="0.05" value="1">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="iconScaleInput">Icon scale</label>
+        <input id="iconScaleInput" type="range" min="0.4" max="2" step="0.05" value="1">
+      </div>
+
+      <div class="hint">
+        Sprite order (by default): top-left ♠, top-right ♥, bottom-left ♣, bottom-right ♦.
+      </div>
+    </div>
+	
+	<!-- Deck & ranks configuration -->
+    <div class="panel collapsed" title=" (Optional) Customize the suits and ranks">
+      <div class="panel-header collapsible">
+        <span>Deck & ranks</span>  <span class="chevron">▾</span>
+      </div>
+
+      <div class="field">
+        <label for="customRanksInput">Custom ranks (comma-separated)</label>
+        <input id="customRanksInput" type="text"
+               placeholder="Leave blank for standard A,2,3,...,K">
+        <div class="hint">
+          Example: 0,1,2,3,4,5 or A,2,3,4,5,6,7,8,9,10,J,Q,K,X
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field-row">
+        <div class="checkbox-row">
+          <input type="checkbox" id="includeJokersCheckbox">
+          <label for="includeJokersCheckbox">Include jokers / wild cards in export</label>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="field">
+          <label for="jokerCountInput">Number of jokers</label>
+          <input id="jokerCountInput" type="number" min="1" max="8" value="2">
+        </div>
+        <div class="field">
+          <label for="jokerLabelInput">Joker label</label>
+          <input id="jokerLabelInput" type="text" value="JOKER">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="checkbox-row">
+          <input type="checkbox" id="jokerWildCheckbox">
+          <label for="jokerWildCheckbox">Mark jokers as wild</label>
+        </div>
+      </div>
+
+      <div class="hint">
+        Jokers are exported as extra cards with the chosen label and no pip pattern.
+      </div>
+    </div>
+
+    <!-- Layout and options -->
+    <div class="panel collapsed" title="Advanced Layout Features">
+      <div class="panel-header collapsible">
+        <span>Layout & global options</span>  <span class="chevron">▾</span>
+      </div>
+
+      <div class="field">
+        <label>Rank / suit arrangement (corners)</label>
+        <div class="pill-select" id="layoutButtons">
+          <button type="button" data-layout="rankAboveSuit" class="active">Rank above suit</button>
+          <button type="button" data-layout="suitAboveRank">Suit above rank</button>
+          <button type="button" data-layout="sideBySide">Side by side</button>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="checkbox-row">
+          <input type="checkbox" id="showPipsCheckbox" checked>
+          <label for="showPipsCheckbox">Show standard pip pattern on body</label>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="checkbox-row">
+          <input type="checkbox" id="mirrorDefaultCheckbox" checked>
+          <label for="mirrorDefaultCheckbox">Mirror rank/suit to bottom on new cards</label>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <label>Corner fine-tuning</label>
+        <div class="two-col">
+          <div class="field">
+            <label for="rankOffsetXInput">Rank offset X (px)</label>
+            <input id="rankOffsetXInput" type="number" step="1" value="0">
+          </div>
+          <div class="field">
+            <label for="rankOffsetYInput">Rank offset Y (px)</label>
+            <input id="rankOffsetYInput" type="number" step="1" value="0">
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="field">
+            <label for="suitOffsetXInput">Suit offset X (px)</label>
+            <input id="suitOffsetXInput" type="number" step="1" value="0">
+          </div>
+          <div class="field">
+            <label for="suitOffsetYInput">Suit offset Y (px)</label>
+            <input id="suitOffsetYInput" type="number" step="1" value="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <label>Pip vertical positions (safe-area %)</label>
+        <div class="two-col">
+          <div class="field">
+            <label for="pipTopInput">Top</label>
+            <input id="pipTopInput" type="number" min="0" max="100" value="25">
+          </div>
+          <div class="field">
+            <label for="pipInnerTopInput">Inner top</label>
+            <input id="pipInnerTopInput" type="number" min="0" max="100" value="42.5">
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="pipCenterInput">Center</label>
+            <input id="pipCenterInput" type="number" min="0" max="100" value="50">
+          </div>
+          <div class="field">
+            <label for="pipInnerBottomInput">Inner bottom</label>
+            <input id="pipInnerBottomInput" type="number" min="0" max="100" value="57.5">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="pipBottomInput">Bottom</label>
+          <input id="pipBottomInput" type="number" min="0" max="100" value="75">
+        </div>
+
+        <div class="hint">
+          These control the vertical rows for pip layouts (2–10). Values are percentages of the safe area height.
+        </div>
+      </div>
+    </div>
+
+    
+
+    <!-- Export -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>Export</span>
+        <span id="saveProgressBadge" class="badge clickable">💾 Save Progress</span>
+        <span id="importProgressBadge" class="badge clickable">🗃️ Import</span>
+      </div>
+
+      <!-- Hidden file input used by the Import badge -->
+      <input
+        type="file"
+        id="importProgressInput"
+        accept=".zip"
+        style="display: none;"
+      />
+
+      <div class="pill-button-stack">
+
+		  <!-- ZIP BUTTON -->
+		  <button type="button" id="exportDeckButton" class="pill-btn pill-zip">
+			<span class="pill-icon">📦</span>
+			<span>Export as ZIP File</span>
+		  </button>
+
+		  <!-- TGC BUTTON -->
+		  <button type="button" id="tgcExportOpenButton" class="pill-btn pill-tgc">
+			<img src="assets/tgc.png" class="pill-img-icon" />
+			<span>Export to The Game Crafter</span>
+		  </button>
+
+		</div>
+
+      <div class="small-text">
+        Exports all configured ranks × suits plus optional Jokers as PNG files (825×1125 px, 80 px bleed).
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="preview-wrapper">
+      <div class="preview-card">
+        <div class="preview-info">
+		
+		  <button type="button" id="prevCardBtn" class="icon-button">⟨</button>
+		  <div class="badge">
+			<span>Dimensions</span>
+			<span id="canvasSizeInfo"></span>
+		  </div>
+		  <div class="badge">
+			<span>Safe zone</span>
+			<span id="safeZoneInfo"></span>
+		  </div>
+		  
+
+		  <!-- NEW: guideline toggle moved here -->
+		  <div class="badge">
+			<input type="checkbox" id="showGuidelinesCheckbox" checked>
+			<label for="showGuidelinesCheckbox">Show guidelines</label>
+		  </div>
+		  
+		  <button type="button" id="downloadCardButton" class="icon-button" title="Download current card">
+			⬇️
+		  </button>
+		  
+		  <div class="badge">
+			  <span id="autosaveStatus" class="autosave-badge">—</span>
+			</div>
+
+		  
+		  
+		  
+		  <button type="button" id="nextCardBtn" class="icon-button">⟩</button>
+		</div>
+
+
+        <canvas id="cardCanvas" width="825" height="1125"></canvas>
+
+        <div class="preview-info">
+          <span class="small-text">Drag to move face image.</span>
+          <span class="small-text">Layout, fonts and icons apply to all cards.</span>
+          <span class="small-text">Pip layouts are adjustable for finer spacing.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FONT BROWSER MODAL -->
+<div id="fontModal" class="modal modal--wide hidden">
+  <div class="modal-content">
+    <button id="closeFontModal" class="modal-close">×</button>
+
+    <h3>Select Google Font</h3>
+    
+    <input id="fontSearch" type="text" placeholder="Search Google Fonts…">
+
+    <div id="fontList" class="font-list"></div>
+
+  </div>
+</div>
+
+<!-- BULK FACE IMAGE LOADER MODAL -->
+<div id="bulkFaceModal" class="modal hidden">
+  <div class="modal-content">
+    <button id="bulkCloseBtn" class="modal-close">×</button>
+
+    <h2>Bulk Load Face Images</h2>
+
+    <p class="small-text">
+      Select multiple images. The system tries to extract rank & suit from filenames.
+      You can adjust mappings before applying.
+    </p>
+
+    <!-- multi-file input -->
+    <input
+      id="bulkFaceInput"
+      type="file"
+      accept="image/*"
+      multiple
+      style="margin: 10px 0;"
+    />
+
+    <!-- mapping table -->
+    <table class="bulk-map-table">
+      <thead>
+        <tr>
+          <th>Preview</th>
+          <th>Rank</th>
+          <th>Suit</th>
+        </tr>
+      </thead>
+      <tbody id="bulkFaceTable"></tbody>
+    </table>
+
+    <!-- action buttons -->
+    <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+      <button id="bulkApplyButton" class="primary">Apply</button>
+      <button id="bulkCancelButton" class="secondary">Cancel</button>
+    </div>
+
+  </div>
+</div>
+<!-- =========================================
+     TGC EXPORT MODAL
+========================================= -->
+<div id="tgcModal" class="modal hidden">
+  <div class="modal-content">
+
+    <!-- TITLE BAR -->
+    <div class="tgc-title">
+      <img src="assets/tgc.png" class="tgc-title-logo" />
+      <h2>Export to The Game Crafter</h2>
+      <button id="closeTgcModal" class="modal-close">×</button>
+    </div>
+
+    <!-- LOGIN PANEL -->
+    <div id="tgcLoginPanel" class="tgc-section">
+      <button id="tgcLoginButton" class="pill-btn pill-tgc">
+        <img src="assets/tgc.png" class="pill-img-icon" />
+        <span>Log in with The Game Crafter</span>
+      </button>
+    </div>
+
+
+    <!-- =====================================================
+         EXPORT PANEL (hidden until login)
+         PHASED UI:
+         1. Designer + Game Selection Phase
+         2. Locked Phase (Designer | Game) → Deck Selection
+    ====================================================== -->
+    <div id="tgcExportPanel" class="tgc-section hidden">
+
+
+      <!-- ============================
+           PHASE 1: Designer + Game
+      ============================= -->
+      <div id="tgcPhase1" class="tgc-section-block">
+
+        <!-- DESIGNER SELECT -->
+        <div class="tgc-section-label">Designer</div>
+
+        <div class="field-row">
+          <select id="tgcDesignerSelect"
+                  class="tgc-input"
+                  style="max-width: 10em;"></select>
+
+          <input id="tgcGameSearch"
+                 type="text"
+                 placeholder="Type to find game…"
+                 class="tgc-input"
+                 style="flex:1; margin-left:8px;">
+
+          <button id="tgcCreateGameButton"
+                  class="secondary small tgc-plus-btn"
+                  title="Create new game">+</button>
+        </div>
+
+        <!-- GAME LIST -->
+        <div class="field" style="margin-top:8px;">
+          <select id="tgcGameSelect" size="6"></select>
+        </div>
+
+        <!-- Create new game panel -->
+        <div id="tgcNewGameRow" class="tgc-subpanel hidden">
+          <input id="tgcNewGameName"
+                 type="text"
+                 placeholder="New game name…">
+          <button id="tgcConfirmCreateGame"
+                  class="primary small">Create</button>
+        </div>
+      </div>
+
+
+      <!-- ================================================
+           PHASE 2: Locked (Designer | Game) + Deck Select
+      ================================================= -->
+      <div id="tgcPhase2" class="tgc-section-block hidden">
+
+        <!-- LOCKED HEADER -->
+        <div class="tgc-section-label">Selected</div>
+
+        <div class="field-row" style="align-items:center;">
+
+          <div id="tgcLockedInfo"
+               class="tgc-locked-pill">
+            <!-- Filled by JS:
+                 Designer Name | Game Name  ♻️ -->
+          </div>
+
+          <button id="tgcRestartButton"
+                  class="secondary small"
+                  style="margin-left:8px;"
+                  title="Change game">♻️</button>
+
+        </div>
+
+
+        <!-- DECK SELECT -->
+        <div class="tgc-section-label" style="margin-top:16px;">Deck</div>
+
+        <div class="field-row">
+
+          <select id="tgcDeckSelect"
+                  class="tgc-input"
+                  style="flex:1;"></select>
+
+          <button id="tgcCreateDeckButton"
+                  class="secondary small tgc-plus-btn"
+                  title="Create new deck">+</button>
+
+        </div>
+
+        <!-- Create new deck panel -->
+        <div id="tgcNewDeckRow" class="tgc-subpanel hidden">
+          <input id="tgcNewDeckName"
+                 type="text"
+                 placeholder="New deck name…">
+          <button id="tgcConfirmCreateDeck"
+                  class="primary small">Create</button>
+        </div>
+      </div>
+
+
+      <!-- 🔹 CARD PREVIEW -->
+      <div id="tgcPreviewPanel"
+           style="margin-top: 20px; max-height: 250px; overflow-y: auto;">
+      </div>
+
+
+      <button id="tgcExportButton"
+              class="pill-btn pill-tgc"
+              style="margin-top: 20px;">
+        Upload Cards to This Deck
+      </button>
+
+    </div> <!-- END EXPORT PANEL -->
+
+  </div>
+</div>
+
+
+<!-- Main module -->
+<script type="module" src="scripts/main.js"></script>
+
+</body>
+</html>

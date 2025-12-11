@@ -1,0 +1,9 @@
+# ignore common generated / hosting files
+node_modules/
+npm-debug.log*
+dist/
+build/
+.DS_Store
+.env
+.env.local
+*.log

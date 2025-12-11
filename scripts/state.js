@@ -57,7 +57,11 @@ export const settings = wrapSettings({
   showGuidelines: true,
 
   // NEW — safe zone inset (overlays use this)
-  safeZoneInset: 80
+  safeZoneInset: 80,
+  
+  deckIdentity: 'PokerDeck',
+
+  
 });
 
 // Offscreen canvas used to tint suit icons

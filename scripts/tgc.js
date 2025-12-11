@@ -1,3 +1,6 @@
+import { settings } from "./state.js"
+
+
 // =============================================================
 // TGC EXPORT MODULE — FINAL, API-CORRECT, ERROR-PROOF
 // =============================================================
@@ -625,12 +628,15 @@ export function initTgcExport() {
       if (!name) return
 
       const res = await tgcApi("deck", "POST", {
-        data: {
-          session_id: SID(),
-          designer_id: DID(),
-          name
-        }
-      })
+		  data: {
+			session_id: SID(),
+			designer_id: DID(),
+			game_id: GID(),
+			name,
+			identity: settings.deckIdentity   // Now configurable
+		  }
+		});
+
 
       if (newDeckRow) newDeckRow.classList.add("hidden")
       newDeckName.value = ""

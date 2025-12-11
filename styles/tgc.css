@@ -1,228 +1,81 @@
-/* =====================================================
-   THE GAME CRAFTER — CONTENT STYLING ONLY
-   (Modal shell lives in modal.css)
-===================================================== */
-
-/* Modal content overrides for TGC styling */
-#tgcModal .modal-content {
-  width: 520px;
-  max-width: 90%;
-  background: radial-gradient(circle at top left, #111827 0, #020617 70%);
-  color: var(--text);
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  box-shadow: 0 0 25px rgba(0,0,0,0.5);
-  padding: 24px;
-  position: relative;
-}
-
-/* ------------------------------
-   Title Bar With Logo
------------------------------- */
-.tgc-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.tgc-title h2 {
-  flex: 1;
-  margin: 0;
-  font-size: 20px;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
+/* Preview grid (3 across, responsive) */
 .tgc-title-logo {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
+	float: left;
+	border-radius: 50%;
+	width: 35px;
+	margin-right: 10px;
 }
 
-/* (button.modal-close comes from modal.css) */
 
-
-/* ------------------------------
-   General Form Elements
------------------------------- */
-/* Seamless combo-search dropdown */
-#tgcGameSelect {
-  width: 100%;
-  background: rgba(15,23,42,0.9);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 8px;
-  color: var(--text);
-  font-size: 13px;
-  margin-top: 6px;
-
-  /* Dynamic list height */
-  max-height: calc(10 * 1.65em); /* approx height of 10 rows */
+.tgc-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  padding: 8px 4px;
   overflow-y: auto;
 }
 
-
-/* Combine search input + dropdown visually */
-#tgcGameSearch {
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-}
-
-#tgcGameSelect {
-  margin-top: -2px; /* fuse borders */
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-}
-
-
-
-
-#tgcModal select,
-#tgcModal input[type="text"],
-#tgcModal input[type="password"] {
-  background: rgba(15,23,42,0.9);
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  padding: 6px 8px;
-  color: var(--text);
-  font-size: 13px;
-  width: 100%;
-}
-
-#tgcModal .field-row {
+/* Each preview block */
+.tgc-thumb-wrapper {
   display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-#tgcModal button {
-  margin-top: 6px;
-}
-
-/* ------------------------------
-   Section Blocks
------------------------------- */
-.tgc-section {
-  margin-top: 18px;
-}
-
-.tgc-section-block {
-  margin-top: 18px;
-}
-
-.tgc-section-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #9ca3af;
-  margin-bottom: 6px;
-}
-
-/* ------------------------------
-   Subpanels (Create Game/Deck)
------------------------------- */
-.tgc-subpanel {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  padding: 10px;
-  margin-top: 10px;
-  display: flex;
-  gap: 10px;
+  flex-direction: column;
   align-items: center;
 }
 
-.tgc-subpanel input {
-  flex: 1;
-}
-
-/* ------------------------------
-   Custom Card List (future use)
------------------------------- */
-#tgcCustomCardList {
-  max-height: 180px;
-  overflow-y: auto;
-  border: 1px solid var(--border);
+/* Thumbnail canvas */
+.tgc-thumb-wrapper canvas {
+  width: 100%;
+  height: auto;
   border-radius: 10px;
-  padding: 8px;
-  background: rgba(15,23,42,0.7);
+  background: #fff;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.25);
 }
 
-#tgcCustomCardList div {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+/* Label text */
+.tgc-thumb-label {
   font-size: 12px;
   color: var(--muted);
-  padding: 1px 0;
+  margin-top: 6px;
+  text-align: center;
 }
 
-/* =====================================================
-   PROGRESS BAR
-===================================================== */
-
-.tgc-progress-container {
-  margin-top: 16px;
-  width: 100%;
-  background: rgba(255,255,255,0.08);
-  border-radius: 10px;
-  height: 14px;
-  overflow: hidden;
-  border: 1px solid var(--border);
+/* Refresh button */
+#tgcRefreshPreviews {
+  margin: 6px 0 10px 0;
+  font-size: 12px;
+  opacity: 0.8;
 }
 
-.tgc-progress-bar {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(135deg, var(--accent) 0%, #2563eb 100%);
-  transition: width 0.15s ease-out;
-}
-
-/* Export lock state */
 #tgcModal.exporting .modal-content {
   opacity: 0.55;
   pointer-events: none;
 }
 
+#tgcModal.exporting .modal-content {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+
+#tgcExportProgressContainer {
+  margin-top: 12px;
+}
+
 #tgcCancelExportButton {
-  margin-top: 10px;
-  width: 100%;
+  margin-top: 12px;
   background: var(--danger);
   border-color: var(--danger);
 }
 
-#tgcCancelExportButton:hover {
-  filter: brightness(1.1);
-}
-
-/* Align + button nicely with input */
-.tgc-plus-btn {
-  width: 38px;
-  padding: 0;
-  font-size: 18px;
-  line-height: 1;
-  text-align: center;
-  height: 32px;
-}
-
-/* Make search inputs consistent */
-#tgcModal .tgc-input {
-  flex: 1;
-  background: rgba(15,23,42,0.9);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 8px;
-  color: var(--text);
+#tgcExportDoneLink {
+  margin-top: 14px;
+  display: inline-block;
   font-size: 13px;
+  color: var(--accent);
 }
 
-/* Ensures search+button row looks clean */
-#tgcModal .field-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 10px;
+#tgcExportDoneLink.hidden,
+#tgcCancelExportButton.hidden,
+#tgcExportProgressContainer.hidden {
+  display: none;
 }

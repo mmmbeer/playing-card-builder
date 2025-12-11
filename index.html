@@ -448,7 +448,6 @@
 <div id="fontModal" class="modal modal--wide hidden">
   <div class="modal-content">
     <button id="closeFontModal" class="modal-close">×</button>
-
     <h3>Select Google Font</h3>
     
     <input id="fontSearch" type="text" placeholder="Search Google Fonts…">
@@ -462,8 +461,7 @@
 <div id="bulkFaceModal" class="modal hidden">
   <div class="modal-content">
     <button id="bulkCloseBtn" class="modal-close">×</button>
-
-    <h2>Bulk Load Face Images</h2>
+    <h3>Bulk Load Face Images</h3>
 
     <p class="small-text">
       Select multiple images. The system tries to extract rank & suit from filenames.
@@ -502,17 +500,19 @@
 <!-- =========================================
      TGC EXPORT MODAL
 ========================================= -->
-<div id="tgcModal" class="modal hidden">
+<div id="tgcModal" class="modal modal--wide hidden">
   <div class="modal-content">
 
-    <!-- TITLE BAR -->
-    <div class="tgc-title">
+    <h3>
       <img src="assets/tgc.png" class="tgc-title-logo" />
-      <h2>Export to The Game Crafter</h2>
-      <button id="closeTgcModal" class="modal-close">×</button>
-    </div>
+      Export to The Game Crafter
+    </h3>
+    <button id="closeTgcModal" class="modal-close">×</button>
 
-    <!-- LOGIN PANEL -->
+
+    <!-- =====================================================
+         LOGIN PANEL
+    ====================================================== -->
     <div id="tgcLoginPanel" class="tgc-section">
       <button id="tgcLoginButton" class="pill-btn pill-tgc">
         <img src="assets/tgc.png" class="pill-img-icon" />
@@ -523,19 +523,16 @@
 
     <!-- =====================================================
          EXPORT PANEL (hidden until login)
-         PHASED UI:
-         1. Designer + Game Selection Phase
-         2. Locked Phase (Designer | Game) → Deck Selection
     ====================================================== -->
     <div id="tgcExportPanel" class="tgc-section hidden">
 
 
-      <!-- ============================
-           PHASE 1: Designer + Game
-      ============================= -->
+      <!-- =====================================================
+           PHASE 1: Designer & Game Selection
+      ====================================================== -->
       <div id="tgcPhase1" class="tgc-section-block">
 
-        <!-- DESIGNER SELECT -->
+        <!-- Designer -->
         <div class="tgc-section-label">Designer</div>
 
         <div class="field-row">
@@ -554,7 +551,7 @@
                   title="Create new game">+</button>
         </div>
 
-        <!-- GAME LIST -->
+        <!-- Game List -->
         <div class="field" style="margin-top:8px;">
           <select id="tgcGameSelect" size="6"></select>
         </div>
@@ -570,20 +567,18 @@
       </div>
 
 
-      <!-- ================================================
-           PHASE 2: Locked (Designer | Game) + Deck Select
-      ================================================= -->
+
+      <!-- =====================================================
+           PHASE 2: Locked Designer | Game + Deck Selection
+      ====================================================== -->
       <div id="tgcPhase2" class="tgc-section-block hidden">
 
-        <!-- LOCKED HEADER -->
         <div class="tgc-section-label">Selected</div>
 
         <div class="field-row" style="align-items:center;">
 
-          <div id="tgcLockedInfo"
-               class="tgc-locked-pill">
-            <!-- Filled by JS:
-                 Designer Name | Game Name  ♻️ -->
+          <div id="tgcLockedInfo" class="tgc-locked-pill">
+            <!-- JS populates: Designer Name | Game Name -->
           </div>
 
           <button id="tgcRestartButton"
@@ -593,12 +588,10 @@
 
         </div>
 
-
-        <!-- DECK SELECT -->
+        <!-- Deck Select -->
         <div class="tgc-section-label" style="margin-top:16px;">Deck</div>
 
         <div class="field-row">
-
           <select id="tgcDeckSelect"
                   class="tgc-input"
                   style="flex:1;"></select>
@@ -606,7 +599,6 @@
           <button id="tgcCreateDeckButton"
                   class="secondary small tgc-plus-btn"
                   title="Create new deck">+</button>
-
         </div>
 
         <!-- Create new deck panel -->
@@ -620,17 +612,61 @@
       </div>
 
 
-      <!-- 🔹 CARD PREVIEW -->
+
+      <!-- =====================================================
+           CARD PREVIEW GRID + REFRESH BUTTON
+      ====================================================== -->
+
+      <button id="tgcRefreshPreviews"
+              class="secondary small"
+              style="margin:10px 0 4px 0;">
+        ↻ Refresh Previews
+      </button>
+
       <div id="tgcPreviewPanel"
-           style="margin-top: 20px; max-height: 250px; overflow-y: auto;">
+           class="tgc-preview-grid"
+           style="max-height: 250px; overflow-y: auto;">
       </div>
 
 
+
+      <!-- =====================================================
+           UPLOAD BUTTON
+      ====================================================== -->
       <button id="tgcExportButton"
               class="pill-btn pill-tgc"
               style="margin-top: 20px;">
         Upload Cards to This Deck
       </button>
+
+
+
+      <!-- =====================================================
+           UPLOAD PROGRESS
+      ====================================================== -->
+
+      <!-- Progress bar -->
+      <div id="tgcExportProgressContainer"
+           class="tgc-progress-container hidden">
+        <div id="tgcExportProgressBar" class="tgc-progress-bar"></div>
+      </div>
+
+      <!-- Cancel button -->
+      <button id="tgcCancelExportButton"
+              class="hidden"
+              style="width:100%; margin-top:12px;">
+        Cancel Upload
+      </button>
+
+      <!-- Completed link -->
+      <a id="tgcExportDoneLink"
+         href="#"
+         target="_blank"
+         class="hidden"
+         style="margin-top:14px; display:inline-block;">
+        Open Deck in The Game Crafter
+      </a>
+
 
     </div> <!-- END EXPORT PANEL -->
 

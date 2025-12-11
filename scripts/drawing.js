@@ -369,34 +369,25 @@ export function renderCard(ctx, suitId, rank) {
    PREVIEW VERSION (with overlays)
 ------------------------------------------------------------- */
 
-export function renderCardForPreview(ctx, suitId, rank) {
-  // 1. Resolve context if missing
+export function renderCardForPreview(ctx, suitId, rank, showOverlays = true) {
   if (!ctx) {
     const canvas = document.getElementById("cardCanvas");
-    if (!canvas) {
-      console.error("renderCardForPreview: canvas not found");
-      return;
-    }
     ctx = canvas.getContext("2d");
   }
 
-  // 2. Resolve suit/rank if missing
   if (!suitId || !rank) {
     suitId = suitId || document.getElementById("suitSelect")?.value;
     rank   = rank   || document.getElementById("rankSelect")?.value;
   }
 
-  // 3. Reject if still incomplete
-  if (!suitId || !rank) {
-    console.warn("renderCardForPreview: missing suit/rank");
-    return;
-  }
+  if (!suitId || !rank) return;
 
-  // 4. Delegate to main renderer
   renderCard(ctx, suitId, rank);
-  renderOverlays(ctx, CARD_WIDTH, CARD_HEIGHT);
-}
 
+  if (showOverlays) {
+    renderOverlays(ctx, CARD_WIDTH, CARD_HEIGHT);
+  }
+}
 
 /* ------------------------------------------------------------
    EXPORT VERSION (clean)

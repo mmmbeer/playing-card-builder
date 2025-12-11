@@ -3,36 +3,24 @@ header("Content-Type: text/html; charset=utf-8");
 
 /*
 |--------------------------------------------------------------------------
-| LOAD TGC API KEY
-|--------------------------------------------------------------------------
-| Using existing DEVELOPER_ID and DEVELOPER_KEY config keys
-| These map cleanly to TGC's expected:
-|   api_key_id
-|   private_key
+| LOAD TGC API KEYS
 |--------------------------------------------------------------------------
 */
 
 $config = parse_ini_file("/home/fairwayg/.secrets/tgc.ini");
 
-// DO NOT change these unless your ini changes
 $API_KEY_ID  = $config["DEVELOPER_ID"];
 $PRIVATE_KEY = $config["DEVELOPER_KEY"];
 
 
 /*
 |--------------------------------------------------------------------------
-| HELPER: POST to TGC
+| GENERIC TGC REQUEST HELPERS
 |--------------------------------------------------------------------------
 */
 
-/*
-|--------------------------------------------------------------------------
-| GENERIC TGC REQUEST (supports GET/POST/PUT/DELETE)
-|--------------------------------------------------------------------------
-*/
 function tgc_request($method, $url, $fields = []) {
     $method = strtoupper($method ?: 'GET');
-
     $ch = curl_init();
 
     if ($method === 'GET' || $method === 'DELETE') {
@@ -42,6 +30,7 @@ function tgc_request($method, $url, $fields = []) {
         }
     } else {
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
+
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
         } else {
@@ -76,7 +65,6 @@ function tgc_request($method, $url, $fields = []) {
 
     return $json;
 }
-
 
 function tgc_post($url, $fields) {
     $ch = curl_init($url);
@@ -113,12 +101,11 @@ function tgc_post($url, $fields) {
 
 /*
 |--------------------------------------------------------------------------
-| 1. START SSO
+| SSO: START
 |--------------------------------------------------------------------------
 */
 
 function start_sso($apiKeyId) {
-
     $postback = urlencode(
         "https://fairway3games.com/playing-cards/api/tgc.php?action=sso_return"
     );
@@ -146,12 +133,11 @@ function start_sso($apiKeyId) {
 
 /*
 |--------------------------------------------------------------------------
-| 2. SSO RETURN HANDLER
+| SSO: RETURN HANDLER
 |--------------------------------------------------------------------------
 */
 
 function handle_sso_return($apiKeyId, $privateKey) {
-
     $ssoId = $_GET["sso_id"] ?? null;
 
     if (!$ssoId) {
@@ -159,7 +145,6 @@ function handle_sso_return($apiKeyId, $privateKey) {
         exit;
     }
 
-    // Correct TGC SSO session exchange
     $resp = tgc_post(
         "https://www.thegamecrafter.com/api/session/sso/$ssoId",
         [
@@ -202,54 +187,151 @@ You may close this window.
 
 /*
 |--------------------------------------------------------------------------
-| 3. PROXY: Browser → PHP → TGC API
+| NEW: CARD UPLOAD HANDLER
+|--------------------------------------------------------------------------
+*/
+
+function handle_card_upload($apiKeyId, $privateKey) {
+
+    if (!isset($_FILES["file"])) {
+        echo json_encode(["error" => ["message" => "No file uploaded"]]);
+        exit;
+    }
+
+    $sessionId   = $_POST["session_id"]   ?? "";
+    $designerId  = $_POST["designer_id"]  ?? "";
+    $deckId      = $_POST["deck_id"]      ?? "";
+    $cardSuit    = $_POST["card_suit"]    ?? "";
+    $cardRank    = $_POST["card_rank"]    ?? "";
+
+    $fileTmp = $_FILES["file"]["tmp_name"];
+    $fileName = $_FILES["file"]["name"];
+
+    /*
+    |----------------------------------------------------------------------
+    | STEP 1: Upload Image to TGC (/api/file)
+    |----------------------------------------------------------------------
+    */
+    $url = "https://www.thegamecrafter.com/api/file";
+
+    $postFields = [
+        "api_key_id"  => $apiKeyId,
+        "private_key" => $privateKey,
+        "session_id"  => $sessionId,
+        "designer_id" => $designerId,
+        "name"        => $fileName,
+        "file"        => new CURLFile($fileTmp, "image/png", $fileName)
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $postFields,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 40,
+    ]);
+
+    $uploadResp = curl_exec($ch);
+    $uploadErr  = curl_error($ch);
+    curl_close($ch);
+
+    if ($uploadErr) {
+        echo json_encode(["error" => ["message" => $uploadErr]]);
+        exit;
+    }
+
+    $uploadJson = json_decode($uploadResp, true);
+
+    if (!$uploadJson || !isset($uploadJson["result"]["id"])) {
+        echo json_encode([
+            "error" => [
+                "message" => "Bad file upload response",
+                "raw" => $uploadResp
+            ]
+        ]);
+        exit;
+    }
+
+    $fileId = $uploadJson["result"]["id"];
+
+
+    /*
+    |----------------------------------------------------------------------
+    | STEP 2: Create/Update Card (/api/card)
+    |----------------------------------------------------------------------
+    */
+    $cardName = strtoupper($cardRank) . " of " . ucfirst($cardSuit);
+
+    $url = "https://www.thegamecrafter.com/api/card";
+
+    $cardFields = [
+        "api_key_id"        => $apiKeyId,
+        "private_key"       => $privateKey,
+        "session_id"        => $sessionId,
+        "deck_id"           => $deckId,
+        "name"              => $cardName,
+        "quantity"          => 1,
+        "face_id"           => $fileId,
+        "has_proofed_face"  => 1
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => http_build_query($cardFields),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 20
+    ]);
+
+    $cardResp = curl_exec($ch);
+    $cardErr  = curl_error($ch);
+    curl_close($ch);
+
+    if ($cardErr) {
+        echo json_encode(["error" => ["message" => $cardErr]]);
+        exit;
+    }
+
+    echo $cardResp;
+    exit;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| PROXY FOR NORMAL JSON REQUESTS (Browser → PHP → TGC)
 |--------------------------------------------------------------------------
 */
 
 function proxy_api_request($apiKeyId, $privateKey) {
-
-    // Read JSON body (for POST from browser)
     $rawBody   = file_get_contents("php://input");
     $inputData = $rawBody ? json_decode($rawBody, true) : [];
 
-    // Allow path to come from body or query string (for backwards compat)
-    $pathFromBody = is_array($inputData) && isset($inputData["path"])
-        ? $inputData["path"]
-        : null;
+    $pathFromBody = $inputData["path"] ?? null;
     $pathFromGet  = $_GET["path"] ?? null;
     $path         = $pathFromBody ?: $pathFromGet ?: "";
 
-    // Determine HTTP method to use *toward TGC*:
-    // - Prefer explicit "method" field in JSON body
-    // - Fallback to the browser's HTTP method (GET/POST/...)
     $browserMethod = $_SERVER["REQUEST_METHOD"] ?? "GET";
     $tgcMethod     = isset($inputData["method"])
         ? strtoupper($inputData["method"])
         : strtoupper($browserMethod);
 
-    // Base auth payload for TGC
-    $baseFields = [
+    $base = [
         "api_key_id"  => $apiKeyId,
-        "private_key" => $privateKey,
+        "private_key" => $privateKey
     ];
 
-    // Build request fields
-    $queryFields = [];
-    $bodyFields  = [];
-
     if ($tgcMethod === "GET" || $tgcMethod === "DELETE") {
-        // Collect query params from both URL and JSON "query" field
         $queryFields = $_GET;
         unset($queryFields["action"], $queryFields["path"]);
 
-        if (is_array($inputData) && isset($inputData["query"]) && is_array($inputData["query"])) {
+        if (isset($inputData["query"]) && is_array($inputData["query"])) {
             $queryFields = array_merge($queryFields, $inputData["query"]);
         }
 
-        $fieldsForRequest = array_merge($baseFields, $queryFields);
+        $fields = array_merge($base, $queryFields);
     } else {
-        // For POST/PUT/etc, treat whole JSON body (or "data" field) as payload
-        if (is_array($inputData) && isset($inputData["data"]) && is_array($inputData["data"])) {
+        if (isset($inputData["data"]) && is_array($inputData["data"])) {
             $bodyFields = $inputData["data"];
         } elseif (is_array($inputData)) {
             $bodyFields = $inputData;
@@ -259,17 +341,18 @@ function proxy_api_request($apiKeyId, $privateKey) {
 
         unset($bodyFields["path"], $bodyFields["method"], $bodyFields["query"]);
 
-        $fieldsForRequest = array_merge($baseFields, $bodyFields);
+        $fields = array_merge($base, $bodyFields);
     }
 
     $url = "https://www.thegamecrafter.com/api/" . ltrim($path, "/");
 
-    $response = tgc_request($tgcMethod, $url, $fieldsForRequest);
+    $response = tgc_request($tgcMethod, $url, $fields);
 
     header("Content-Type: application/json");
     echo json_encode($response);
     exit;
 }
+
 
 /*
 |--------------------------------------------------------------------------
@@ -287,6 +370,10 @@ switch ($action) {
 
     case "sso_return":
         handle_sso_return($API_KEY_ID, $PRIVATE_KEY);
+        break;
+
+    case "upload_card":
+        handle_card_upload($API_KEY_ID, $PRIVATE_KEY);
         break;
 
     default:

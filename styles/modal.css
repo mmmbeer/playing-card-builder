@@ -17,7 +17,6 @@
 
 .modal-content {
   background: rgba(15, 23, 42, 0.98);
-  width: 420px;
   max-width: 90%;
   padding: 25px;
   border-radius: 12px;
@@ -27,6 +26,7 @@
 
   max-height: 90vh;
   overflow-y: auto;
+  width: 450px;
 }
 
 .modal-close {
@@ -40,8 +40,10 @@
   line-height: 1;
 }
 
+.modal h3 { margin: 0; margin-bottom: .75em; }
+
 .modal--wide .modal-content {
-  width: 520px;
+  width: 750px;
 }
 
 body.dark-mode .modal-content {

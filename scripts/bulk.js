@@ -100,16 +100,16 @@ function createRow(file, parsed) {
 // ------------------------------------------------
 async function applyMappings() {
   for (let i = 0; i < pendingFiles.length; i++) {
-    const entry = pendingFiles[i];
-    const file = entry.file;
+    const mapping = pendingFiles[i];
+    const file = mapping.file;
 
-    const rank = entry.rankSelect.value.trim();
-    const suit = entry.suitSelect.value.trim();
+    const rank = mapping.rankSelect.value.trim();
+    const suit = mapping.suitSelect.value.trim();
 
     if (!rank || !suit) continue;
 
-    const entry = deck[suit]?.[rank];
-    const card = Array.isArray(entry) ? entry[0] : entry;
+    const cardEntry = deck[suit]?.[rank];
+    const card = Array.isArray(cardEntry) ? cardEntry[0] : cardEntry;
     if (!card) continue;
 
     const url = URL.createObjectURL(file);

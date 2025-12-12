@@ -53,9 +53,8 @@ export async function downloadSingleCard(selectionOrSuit, rankMaybe, copyIndexMa
     return;
   }
 
-  renderCardForExport(ctx, selection.suitId, selection.rank, copyIndex);
-
   const copyIndex = selection.copyIndex || 1;
+  renderCardForExport(ctx, selection.suitId, selection.rank, copyIndex);
   canvas.toBlob(blob => {
     if (!blob) return;
 

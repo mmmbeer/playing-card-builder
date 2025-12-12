@@ -318,7 +318,17 @@ export async function initUI() {
     if (dom.pipBottomValue) dom.pipBottomValue.textContent = bottomVal;
 
     // ---- Icon Controls ----
-    dom.iconColorInput.value = settings.iconColor;
+    if (dom.iconColorModeSelect) dom.iconColorModeSelect.value = settings.iconColorMode || "single";
+    if (dom.iconColorInput) dom.iconColorInput.value = settings.iconColor;
+    if (dom.iconColorBlackInput) dom.iconColorBlackInput.value = settings.iconColorBlack;
+    if (dom.iconColorRedInput) dom.iconColorRedInput.value = settings.iconColorRed;
+    if (dom.iconColorSpadesInput) dom.iconColorSpadesInput.value = settings.iconColorSpades;
+    if (dom.iconColorHeartsInput) dom.iconColorHeartsInput.value = settings.iconColorHearts;
+    if (dom.iconColorClubsInput) dom.iconColorClubsInput.value = settings.iconColorClubs;
+    if (dom.iconColorDiamondsInput) dom.iconColorDiamondsInput.value = settings.iconColorDiamonds;
+    if (dom.iconSingleGroup) dom.iconSingleGroup.classList.toggle("hidden", (settings.iconColorMode || "single") !== "single");
+    if (dom.iconBiColorGroup) dom.iconBiColorGroup.classList.toggle("hidden", (settings.iconColorMode || "single") !== "bi");
+    if (dom.iconPerSuitGroup) dom.iconPerSuitGroup.classList.toggle("hidden", (settings.iconColorMode || "single") !== "perSuit");
     dom.iconOpacityInput.value = settings.iconOpacity;
     dom.iconScaleInput.value = settings.iconScale;
 

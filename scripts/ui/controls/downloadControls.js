@@ -1,9 +1,9 @@
 // ui/controls/downloadControls.js
 import { downloadSingleCard } from "../../save.js";
 
-export function initDownloadControls(dom, getCardIds) {
+export function initDownloadControls(dom, getSelection) {
   dom.downloadCardButton.addEventListener("click", () => {
-    const { suit, rank } = getCardIds();
-    downloadSingleCard(suit, rank);
+    const selection = getSelection();
+    downloadSingleCard(selection);
   });
 }

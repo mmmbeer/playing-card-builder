@@ -21,6 +21,12 @@ import { initMirrorControls } from "./controls/mirrorControls.js";
 import { initCornerOffsetControls } from "./controls/cornerOffsetControls.js";
 import { initDownloadControls } from "./controls/downloadControls.js";
 import { initNavControls } from "./controls/navControls.js";
+import {
+  JOKER_SUIT_ID,
+  decodeRankValue,
+  encodeRankValue,
+  enumerateRankSlots
+} from "./navigation.js";
 
 import { initProgressControls } from "./controls/progressControls.js";
 import { initProgressOverlay } from "./controls/progressOverlay.js";
@@ -34,11 +40,14 @@ import {
   activeRanks,
   initDeck,
   updateActiveRanksFromSettings,
-  getCurrentCard
+  getCurrentCard,
+  ensureJokerCards,
+  getJokerCard
 } from "../state.js";
 
 import {
-  renderCardForPreview as renderCurrentCard
+  renderCardForPreview,
+  renderJokerCard
 } from "../drawing.js";
 
 import { openFontBrowser, initFontBrowser } from "../fonts.js";
@@ -47,10 +56,6 @@ import { exportFullDeck } from "../save.js";
 import { openBulkModal, initBulkLoader } from "../bulk.js";
 
 import { CARD_WIDTH, CARD_HEIGHT, BLEED, SAFE_WIDTH, SAFE_HEIGHT, SUITS } from "../config.js";
-
-// Restore original default behavior
-if (!dom.suitSelect.value) dom.suitSelect.value = settings.lastSuitId ?? "spades";
-if (!dom.rankSelect.value) dom.rankSelect.value = settings.lastRank ?? activeRanks[0];
 
 
 // ---------------------------------------------------------------------
@@ -68,6 +73,8 @@ export async function initUI() {
   initBulkLoader();
   updateActiveRanksFromSettings();
   initProgressOverlay();
+
+  if (!dom.suitSelect.value) dom.suitSelect.value = settings.lastSuitId ?? (SUITS[0]?.id || "");
 
 
 
@@ -97,32 +104,29 @@ export async function initUI() {
   // hydration + preset restoration has already populated UI
   //
 
-  initSuitControls(dom, stateCtx(), doSync, renderCurrentCard);
-  initRankControls(dom, stateCtx(), refreshRankDropdown, doSync, renderCurrentCard);
-  initLayoutControls(dom, settings, renderCurrentCard);
+  initSuitControls(dom, stateCtx(), renderSelectedCard, doSync, () => refreshRankDropdown(false));
+  initRankControls(dom, stateCtx(), refreshRankDropdown, doSync, renderSelectedCard);
+  initLayoutControls(dom, settings, renderSelectedCard);
   
   // Font controls MUST be initialized AFTER hydration
   dom.fontFamilyInput = document.getElementById("fontFamilyInput");
 
-  initFontControls(dom, settings, renderCurrentCard, openFontBrowser);
+  initFontControls(dom, settings, renderSelectedCard, openFontBrowser);
 
-    initIconControls(dom, settings, renderCurrentCard);
-  initPipControls(dom, settings, renderCurrentCard);
-  initGuidelineControls(dom, settings, renderCurrentCard);
-  initJokerControls(dom, settings);
-  initMirrorControls(dom, getCurrent, settings, renderCurrentCard);
-  initCornerOffsetControls(dom, settings, renderCurrentCard);
-  initAbilityControls(dom, settings, getCurrent, renderCurrentCard);
+    initIconControls(dom, settings, renderSelectedCard);
+  initPipControls(dom, settings, renderSelectedCard);
+  initGuidelineControls(dom, settings, renderSelectedCard);
+  initJokerControls(dom, settings, handleJokerSettingsChange);
+  initMirrorControls(dom, getCurrent, settings, renderSelectedCard);
+  initCornerOffsetControls(dom, settings, renderSelectedCard);
+  initAbilityControls(dom, settings, getCurrent, renderSelectedCard);
 
-  initDownloadControls(dom, () => ({
-    suit: stateCtx().currentSuitId,
-    rank: stateCtx().currentRank
-  }));
+  initDownloadControls(dom, () => getSelection());
 
   // Save/Import progress (ZIP wrapper around the autosave payload)
   initProgressControls();
 
-  initNavControls(dom, stateCtx, applyNewCard, doSync, renderCurrentCard);
+  initNavControls(dom, stateCtx, applyNewCard, doSync, renderSelectedCard);
   initCollapsibles();
 
   
@@ -162,7 +166,7 @@ export async function initUI() {
   //
   // ---------- PRESETS + RANK DROPDOWN ----------
   //
-  initIconPresets(dom, settings, renderCurrentCard);
+  initIconPresets(dom, settings, renderSelectedCard);
   refreshRankDropdown();
 
 
@@ -173,11 +177,11 @@ export async function initUI() {
     dom.suitSelect.value = SUITS[0].id;
   }
   if (!dom.rankSelect.value && activeRanks.length > 0) {
-    dom.rankSelect.value = activeRanks[0];
+    refreshRankDropdown(false);
   }
   
   
-    initFaceControls(dom, settings, getCurrent, doSync, renderCurrentCard);
+    initFaceControls(dom, settings, getCurrent, doSync, renderSelectedCard);
 
 
 
@@ -188,7 +192,7 @@ export async function initUI() {
   // Initial render will occur after WebFont.load active callback
   // (set in hydrateUIFromSettings)
   // Do NOT render explicitly here
-  // renderCurrentCard(...)
+  // renderSelectedCard(...)
   
 
 
@@ -221,6 +225,11 @@ export async function initUI() {
     if (dom.customRanksInput) {
       dom.customRanksInput.value = settings.customRanksString || "";
     }
+
+    if (dom.includeJokersCheckbox) dom.includeJokersCheckbox.checked = !!settings.includeJokers;
+    if (dom.jokerCountInput) dom.jokerCountInput.value = settings.jokerCount;
+    if (dom.jokerLabelInput) dom.jokerLabelInput.value = settings.jokerLabel;
+    if (dom.jokerWildCheckbox) dom.jokerWildCheckbox.checked = !!settings.jokerWild;
 
     // ---- Font UI Fields ----
     if (dom.fontFamilyInput) dom.fontFamilyInput.textContent = settings.fontFamily;
@@ -284,7 +293,7 @@ export async function initUI() {
     if (settings.fontFamily) {
       WebFont.load({
         google: { families: [settings.fontFamily] },
-        active: () => renderCurrentCard()
+        active: () => renderSelectedCard()
       });
 
       if (dom.fontFamilyInput) {
@@ -297,9 +306,11 @@ export async function initUI() {
     if (abilityFonts.length) {
       WebFont.load({
         google: { families: abilityFonts },
-        active: () => renderCurrentCard()
+        active: () => renderSelectedCard()
       });
     }
+
+    syncJokerSuitOption();
   }
 
 
@@ -313,42 +324,169 @@ export async function initUI() {
 
 
   function getCurrent() {
-    const suit = stateCtx().currentSuitId;
-    const rank = stateCtx().currentRank;
-    return getCurrentCard(suit, rank);
+    const selection = getSelection();
+    if (selection.isJoker) return getJokerCard(selection.jokerIndex);
+    return getCurrentCard(selection.suitId, selection.rank);
   }
 
 
   function stateCtx() {
+    const selection = getSelection();
     return {
-      currentSuitId: dom.suitSelect.value,
-      currentRank: dom.rankSelect.value,
+      currentSuitId: selection.suitId,
+      currentRank: selection.rank,
+      currentCopyIndex: selection.copyIndex,
+      currentIsJoker: selection.isJoker,
+      currentJokerIndex: selection.jokerIndex,
       activeRanks,
-      SUITS
+      SUITS,
+      includeJokers: settings.includeJokers,
+      jokerCount: settings.jokerCount
     };
   }
 
 
-  function applyNewCard(suit, rank) {
-    dom.suitSelect.value = suit;
-    dom.rankSelect.value = rank;
+  function applyNewCard(card) {
+    if (card.isJoker) {
+      syncJokerSuitOption();
+      dom.suitSelect.value = JOKER_SUIT_ID;
+      refreshRankDropdown(false);
+      dom.rankSelect.value = encodeJokerValue(card.jokerIndex);
+      return;
+    }
+
+    dom.suitSelect.value = card.suit;
+    refreshRankDropdown(false);
+    dom.rankSelect.value = encodeRankValue(card.rank, card.copyIndex ?? 1);
   }
 
 
-  function refreshRankDropdown() {
-    updateActiveRanksFromSettings();
+  function refreshRankDropdown(shouldUpdateRanks = true) {
+    if (shouldUpdateRanks) updateActiveRanksFromSettings();
+
+    syncJokerSuitOption();
+
+    const suitId = dom.suitSelect.value;
+    const prevValue = dom.rankSelect.value;
     dom.rankSelect.innerHTML = "";
-    activeRanks.forEach(rank => {
-      const opt = document.createElement("option");
-      opt.value = rank;
-      opt.textContent = rank;
-      dom.rankSelect.appendChild(opt);
+
+    if (suitId === JOKER_SUIT_ID) {
+      const count = clampJokerCount(settings.jokerCount);
+      for (let i = 1; i <= count; i++) {
+        const opt = document.createElement("option");
+        opt.value = encodeJokerValue(i);
+        opt.textContent = count > 1 ? `${settings.jokerLabel || "JOKER"} ${i}` : settings.jokerLabel || "JOKER";
+        dom.rankSelect.appendChild(opt);
+      }
+
+      dom.rankSelect.value = prevValue && prevValue.startsWith("joker-")
+        ? prevValue
+        : encodeJokerValue(1);
+
+      return;
+    }
+
+    const slots = enumerateRankSlots(activeRanks);
+    const options = slots.map(slot => ({
+      value: encodeRankValue(slot.rank, slot.copyIndex),
+      label: slot.total > 1 ? `${slot.rank} (${slot.copyIndex}/${slot.total})` : slot.rank
+    }));
+
+    options.forEach(opt => {
+      const node = document.createElement("option");
+      node.value = opt.value;
+      node.textContent = opt.label;
+      dom.rankSelect.appendChild(node);
     });
+
+    const targetValue = options.find(o => o.value === prevValue)?.value || options[0]?.value;
+    if (targetValue) dom.rankSelect.value = targetValue;
   }
 
 
   function doSync() {
     syncControls(getCurrent(), settings, dom);
+  }
+
+
+  function getSelection() {
+    const suitId = dom.suitSelect.value || SUITS[0]?.id;
+
+    if (suitId === JOKER_SUIT_ID) {
+      const jokerIndex = decodeJokerValue(dom.rankSelect.value);
+      return { suitId, rank: null, copyIndex: 1, isJoker: true, jokerIndex };
+    }
+
+    const defaultRank = activeRanks[0] ?? "";
+    const fallbackValue = defaultRank ? encodeRankValue(defaultRank, 1) : "";
+    const value = dom.rankSelect.value || fallbackValue;
+    const { rank, copyIndex } = decodeRankValue(value || "__1");
+
+    return { suitId, rank, copyIndex, isJoker: false, jokerIndex: null };
+  }
+
+
+  function encodeJokerValue(index) {
+    return `joker-${index}`;
+  }
+
+
+  function decodeJokerValue(value) {
+    const num = Number((value || "").split("-")[1]);
+    return num >= 1 ? num : 1;
+  }
+
+
+  function clampJokerCount(n) {
+    if (!n || n < 1) return 1;
+    if (n > 8) return 8;
+    return n;
+  }
+
+
+  function syncJokerSuitOption() {
+    const option = dom.suitSelect.querySelector(`option[value="${JOKER_SUIT_ID}"]`);
+    const shouldShow = settings.includeJokers && clampJokerCount(settings.jokerCount) > 0;
+
+    if (shouldShow && !option) {
+      const opt = document.createElement("option");
+      opt.value = JOKER_SUIT_ID;
+      opt.textContent = "Jokers";
+      dom.suitSelect.appendChild(opt);
+    }
+
+    if (!shouldShow && option) {
+      const isSelected = dom.suitSelect.value === JOKER_SUIT_ID;
+      option.remove();
+      if (isSelected) {
+        dom.suitSelect.value = SUITS[0]?.id || "";
+      }
+    }
+  }
+
+
+  function renderSelectedCard() {
+    const selection = getSelection();
+    const canvas = document.getElementById("cardCanvas");
+    const ctx = canvas.getContext("2d");
+
+    if (selection.isJoker) {
+      renderJokerCard(ctx, selection.jokerIndex, { preview: true });
+      return;
+    }
+
+    if (!selection.rank) return;
+
+    renderCardForPreview(ctx, selection.suitId, selection.rank, true);
+  }
+
+
+  function handleJokerSettingsChange() {
+    ensureJokerCards();
+    syncJokerSuitOption();
+    refreshRankDropdown(false);
+    doSync();
+    renderSelectedCard();
   }
 
 
@@ -366,7 +504,7 @@ export async function initUI() {
   }
 window.addEventListener("forceSyncAndRender", () => {
   doSync();
-  renderCurrentCard();
+  renderSelectedCard();
 });
 }
 

@@ -6,7 +6,7 @@ export function initNavControls(dom, ctxProvider, applyNewCard, sync, render) {
     const ctx = ctxProvider();
     const next = computeNextCard(direction, ctx);
 
-    applyNewCard(next.suit, next.rank);
+    applyNewCard(next);
     sync();
     render();
   }

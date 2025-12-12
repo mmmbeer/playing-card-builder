@@ -379,7 +379,8 @@ export function renderCardForPreview(ctx, suitId, rank, showOverlays = true) {
 
   if (!suitId || !rank) {
     suitId = suitId || document.getElementById("suitSelect")?.value;
-    rank   = rank   || document.getElementById("rankSelect")?.value;
+    const rawRank = rank || document.getElementById("rankSelect")?.value;
+    rank = rawRank?.split("__")[0];
   }
 
   if (!suitId || !rank) return;

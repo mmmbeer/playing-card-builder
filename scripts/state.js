@@ -39,7 +39,14 @@ export const settings = wrapSettings({
   mirrorDefault: true,
 
   iconSheet: null, // HTMLImageElement
+  iconColorMode: 'single', // 'single' | 'bi' | 'perSuit'
   iconColor: '#000000',
+  iconColorRed: '#d12d2d',
+  iconColorBlack: '#000000',
+  iconColorSpades: '#000000',
+  iconColorHearts: '#d12d2d',
+  iconColorClubs: '#000000',
+  iconColorDiamonds: '#d12d2d',
   iconOpacity: 1,
   iconScale: 1,
 

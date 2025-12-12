@@ -1,5 +1,6 @@
 // ui/controls/iconControls.js
 import { markDirty } from "../../autosave.js";
+import { bindColorPicker } from "./colorPicker.js";
 import { loadPreset } from "../presets.js"; // we expose this in presets.js
 
 export function initIconControls(dom, settings, render) {
@@ -68,11 +69,95 @@ export function initIconControls(dom, settings, render) {
   /* ================================================================
      ICON COLOR
      ================================================================ */
-  dom.iconColorInput.addEventListener("input", () => {
-    settings.iconColor = dom.iconColorInput.value;
-    markDirty();
-    render();
+  const syncColorGroups = () => {
+    const mode = settings.iconColorMode || "single";
+    if (dom.iconColorModeSelect) dom.iconColorModeSelect.value = mode;
+    if (dom.iconSingleGroup) dom.iconSingleGroup.classList.toggle("hidden", mode !== "single");
+    if (dom.iconBiColorGroup) dom.iconBiColorGroup.classList.toggle("hidden", mode !== "bi");
+    if (dom.iconPerSuitGroup) dom.iconPerSuitGroup.classList.toggle("hidden", mode !== "perSuit");
+  };
+
+  if (dom.iconColorModeSelect) {
+    dom.iconColorModeSelect.addEventListener("change", () => {
+      settings.iconColorMode = dom.iconColorModeSelect.value;
+      syncColorGroups();
+      render();
+    });
+  }
+
+  const onBeforeSample = () => render();
+
+  bindColorPicker({
+    input: dom.iconColorInput,
+    button: dom.iconColorEyedropper,
+    onChange: value => {
+      settings.iconColor = value;
+      render();
+    },
+    onBeforeSample
   });
+
+  bindColorPicker({
+    input: dom.iconColorBlackInput,
+    button: dom.iconColorBlackEyedropper,
+    onChange: value => {
+      settings.iconColorBlack = value;
+      render();
+    },
+    onBeforeSample
+  });
+
+  bindColorPicker({
+    input: dom.iconColorRedInput,
+    button: dom.iconColorRedEyedropper,
+    onChange: value => {
+      settings.iconColorRed = value;
+      render();
+    },
+    onBeforeSample
+  });
+
+  bindColorPicker({
+    input: dom.iconColorSpadesInput,
+    button: dom.iconColorSpadesEyedropper,
+    onChange: value => {
+      settings.iconColorSpades = value;
+      render();
+    },
+    onBeforeSample
+  });
+
+  bindColorPicker({
+    input: dom.iconColorHeartsInput,
+    button: dom.iconColorHeartsEyedropper,
+    onChange: value => {
+      settings.iconColorHearts = value;
+      render();
+    },
+    onBeforeSample
+  });
+
+  bindColorPicker({
+    input: dom.iconColorClubsInput,
+    button: dom.iconColorClubsEyedropper,
+    onChange: value => {
+      settings.iconColorClubs = value;
+      render();
+    },
+    onBeforeSample
+  });
+
+  bindColorPicker({
+    input: dom.iconColorDiamondsInput,
+    button: dom.iconColorDiamondsEyedropper,
+    onChange: value => {
+      settings.iconColorDiamonds = value;
+      render();
+    },
+    onBeforeSample
+  });
+
+  syncColorGroups();
 
   /* ================================================================
      ICON OPACITY

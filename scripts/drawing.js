@@ -84,6 +84,27 @@ function getRankColor(suitId) {
   return settings.fontColor;
 }
 
+function getIconColor(suitId) {
+  if (settings.iconColorMode === 'bi') {
+    const isBlackSuit = suitId === 'spades' || suitId === 'clubs';
+    const isRedSuit = suitId === 'hearts' || suitId === 'diamonds';
+    if (isBlackSuit) return settings.iconColorBlack;
+    if (isRedSuit) return settings.iconColorRed;
+  }
+
+  if (settings.iconColorMode === 'perSuit') {
+    switch (suitId) {
+      case 'spades': return settings.iconColorSpades;
+      case 'hearts': return settings.iconColorHearts;
+      case 'clubs': return settings.iconColorClubs;
+      case 'diamonds': return settings.iconColorDiamonds;
+      default: break;
+    }
+  }
+
+  return settings.iconColor;
+}
+
 function fillBackground(ctx) {
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -152,8 +173,11 @@ function drawSuitIcon(ctx, suitId, x, y, size, rotationRad = 0) {
   const dw = size * settings.iconScale;
   const dh = size * settings.iconScale;
 
+  const { r, g, b } = hexToRgb(getIconColor(suitId));
+  const hasTint = r !== 0 || g !== 0 || b !== 0;
+
   // Fast path: no tint
-  if (settings.iconColor.toLowerCase() === '#000000') {
+  if (!hasTint) {
     ctx.save();
     ctx.translate(x, y);
     if (rotationRad) ctx.rotate(rotationRad);
@@ -179,16 +203,18 @@ function drawSuitIcon(ctx, suitId, x, y, size, rotationRad = 0) {
   const imageData = iconWorkCtx.getImageData(0, 0, sw, sh);
   const data = imageData.data;
 
-  const { r, g, b } = hexToRgb(settings.iconColor);
   const opacity = settings.iconOpacity;
+  const rFactor = r / 255;
+  const gFactor = g / 255;
+  const bFactor = b / 255;
 
   for (let i = 0; i < data.length; i += 4) {
     const alpha = data[i + 3];
     if (alpha === 0) continue;
 
-    data[i]     = r;
-    data[i + 1] = g;
-    data[i + 2] = b;
+    data[i]     = Math.round(data[i] * rFactor);
+    data[i + 1] = Math.round(data[i + 1] * gFactor);
+    data[i + 2] = Math.round(data[i + 2] * bFactor);
     data[i + 3] = alpha * opacity;
   }
 

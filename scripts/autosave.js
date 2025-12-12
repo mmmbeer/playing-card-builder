@@ -58,6 +58,13 @@ function applyNewSettingDefaults(target) {
   target.fontColorHearts = target.fontColorHearts || "#d12d2d";
   target.fontColorClubs = target.fontColorClubs || "#000000";
   target.fontColorDiamonds = target.fontColorDiamonds || "#d12d2d";
+  target.iconColorMode = target.iconColorMode || "single";
+  target.iconColorBlack = target.iconColorBlack || "#000000";
+  target.iconColorRed = target.iconColorRed || "#d12d2d";
+  target.iconColorSpades = target.iconColorSpades || "#000000";
+  target.iconColorHearts = target.iconColorHearts || "#d12d2d";
+  target.iconColorClubs = target.iconColorClubs || "#000000";
+  target.iconColorDiamonds = target.iconColorDiamonds || "#d12d2d";
   target.backgroundStyle = target.backgroundStyle || "solid";
   target.backgroundColorPrimary = target.backgroundColorPrimary || "#ffffff";
   target.backgroundColorSecondary = target.backgroundColorSecondary || target.backgroundColorPrimary;

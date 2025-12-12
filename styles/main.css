@@ -356,9 +356,9 @@ canvas {
   background: var(--card-bg);
   border-radius: 18px;
   box-shadow:
-	0 8px 16px rgba(0,0,0,0.5),
-	0 0 0 1px rgba(0,0,0,0.7);
-  max-height: calc(100vh - 200px);
+        0 8px 16px rgba(0,0,0,0.5),
+        0 0 0 1px rgba(0,0,0,0.7);
+  max-width: 100%;
 }
 
 .preview-info {

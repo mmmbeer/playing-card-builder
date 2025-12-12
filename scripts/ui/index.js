@@ -381,9 +381,16 @@ export async function initUI() {
       canvas.width = cardWidth;
       canvas.height = cardHeight;
 
+      const aspectRatio = cardHeight / cardWidth;
       const availableWidth = canvas.parentElement?.clientWidth || cardWidth;
-      const displayWidth = Math.max(1, availableWidth);
-      const displayHeight = displayWidth * (cardHeight / cardWidth);
+      const viewportHeight = typeof window !== "undefined" ? window.innerHeight : 0;
+      const maxDisplayHeight = viewportHeight > 0 ? Math.max(1, viewportHeight - 200) : Number.POSITIVE_INFINITY;
+      const maxWidthFromHeight = Number.isFinite(maxDisplayHeight)
+        ? maxDisplayHeight / aspectRatio
+        : availableWidth;
+
+      const displayWidth = Math.max(1, Math.min(availableWidth, maxWidthFromHeight));
+      const displayHeight = displayWidth * aspectRatio;
       canvas.style.width = `${displayWidth}px`;
       canvas.style.height = `${displayHeight}px`;
     }

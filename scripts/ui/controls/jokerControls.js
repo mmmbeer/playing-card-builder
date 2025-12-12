@@ -45,7 +45,15 @@ export function initJokerControls(dom, settings, onChange) {
   });
 
   dom.jokerSuitStyleSelect.addEventListener("change", () => {
-    const allowed = new Set(["centerCircle", "centerSquare", "diamond", "belowLabelRow", "centerColumn", "none"]);
+    const allowed = new Set([
+      "centerCircle",
+      "centerSquare",
+      "diamond",
+      "belowLabelRow",
+      "centerRowSplit",
+      "centerColumn",
+      "none"
+    ]);
     const value = allowed.has(dom.jokerSuitStyleSelect.value)
       ? dom.jokerSuitStyleSelect.value
       : "centerCircle";

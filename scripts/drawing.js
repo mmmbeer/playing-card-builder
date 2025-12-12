@@ -24,6 +24,8 @@ import { getPipLayout } from './pips.js'; // NEW
 import { renderOverlays } from './overlays.js';
 import { renderAbilityText } from './abilityText.js';
 
+const measureCtx = document.createElement('canvas').getContext('2d');
+
 /* ------------------------------------------------------------
    COLOR HELPERS
 ------------------------------------------------------------- */
@@ -185,14 +187,34 @@ function drawRankText(ctx, text, x, y, align = 'left', baseline = 'top', options
   ctx.restore();
 }
 
+function getAdjustedCornerFontSize(rank, requestedSize, rankOrientation) {
+  if (rankOrientation !== 'vertical') return requestedSize;
+
+  let fontSize = requestedSize;
+
+  for (let i = 0; i < 2; i++) {
+    const marginY = BLEED + fontSize * 0.3;
+    const availableHeight = SAFE_HEIGHT - marginY * 2;
+    const requiredHeight = fontSize * 0.95 * rank.length;
+
+    if (requiredHeight <= availableHeight || availableHeight <= 0) {
+      break;
+    }
+
+    fontSize *= availableHeight / requiredHeight;
+  }
+
+  return fontSize;
+}
+
 /* ------------------------------------------------------------
    CORNER RENDERING (unchanged)
 ------------------------------------------------------------- */
 
 function drawCorners(ctx, suitId, rank, mirror, options = {}) {
-  const fontSize = options.fontSize ?? settings.fontSize;
-  const layout = options.layout ?? settings.layout;
   const rankOrientation = options.rankOrientation || 'horizontal';
+  let fontSize = getAdjustedCornerFontSize(rank, options.fontSize ?? settings.fontSize, rankOrientation);
+  const layout = options.layout ?? settings.layout;
 
   const marginX = BLEED + fontSize * 0.3;
   const marginY = BLEED + fontSize * 0.3;
@@ -201,13 +223,28 @@ function drawCorners(ctx, suitId, rank, mirror, options = {}) {
   const topY = marginY;
 
   const iconSize = fontSize * 0.9;
+  const lineHeight = rankOrientation === 'vertical' ? fontSize * 0.95 : fontSize;
+
+  function measureRank(ctx2) {
+    if (rankOrientation === 'vertical') {
+      const widths = [...rank].map(letter => ctx2.measureText(letter).width || 0);
+      return {
+        width: widths.length ? Math.max(...widths) : 0,
+        height: lineHeight * rank.length
+      };
+    }
+
+    const metrics = ctx2.measureText(rank);
+    return { width: metrics.width, height: fontSize };
+  }
 
   function drawRankMark(ctx2, rankX, rankY) {
     if (rankOrientation === 'vertical') {
       ctx2.save();
       ctx2.translate(rankX + settings.cornerRankOffsetX, rankY + settings.cornerRankOffsetY);
-      ctx2.rotate(-Math.PI / 2);
-      drawRankText(ctx2, rank, 0, 0, 'center', 'middle', { fontSize });
+      [...rank].forEach((letter, idx) => {
+        drawRankText(ctx2, letter, 0, idx * lineHeight, 'center', 'top', { fontSize });
+      });
       ctx2.restore();
       return;
     }
@@ -232,8 +269,7 @@ function drawCorners(ctx, suitId, rank, mirror, options = {}) {
     }
 
     ctx2.font = `${settings.fontWeight} ${fontSize}px "${settings.fontFamily}"`;
-    const metrics = ctx2.measureText(rank);
-    const rankWidth = metrics.width;
+    const { width: rankWidth } = measureRank(ctx2);
 
     const suitDrawSize = iconSize * settings.iconScale;
     const centeredRankX = baseX + (suitDrawSize - rankWidth) / 2;
@@ -443,6 +479,31 @@ function getPipGuidelinesWithFallback() {
   ];
 }
 
+function getJokerLabelMetrics() {
+  const text = settings.jokerLabel || 'JOKER';
+  const rankOrientation = settings.jokerLabelOrientation || 'horizontal';
+  const fontSize = getAdjustedCornerFontSize(text, settings.jokerFontSize || settings.fontSize, rankOrientation);
+
+  measureCtx.font = `${settings.fontWeight} ${fontSize}px "${settings.fontFamily}"`;
+
+  const lineHeight = rankOrientation === 'vertical' ? fontSize * 0.95 : fontSize;
+  const width =
+    rankOrientation === 'vertical'
+      ? Math.max(...[...text].map(letter => measureCtx.measureText(letter).width || 0), 0)
+      : measureCtx.measureText(text).width;
+  const height = rankOrientation === 'vertical' ? lineHeight * text.length : fontSize;
+  const marginY = BLEED + fontSize * 0.3;
+
+  return {
+    fontSize,
+    lineHeight,
+    width,
+    height,
+    marginY,
+    labelBottomY: marginY + height
+  };
+}
+
 function getJokerSuitPlacements(mode) {
   const [topY, innerTopY, centerY, innerBottomY, bottomY] = getPipGuidelinesWithFallback();
   const centerX = BLEED + settings.pipCenterX * SAFE_WIDTH;
@@ -453,7 +514,11 @@ function getJokerSuitPlacements(mode) {
   const verticalSpan = innerBottomY - innerTopY;
   const radius = Math.max(Math.min(innerSpanX, verticalSpan) / 2, Math.min(SAFE_WIDTH, SAFE_HEIGHT) * 0.08);
   const rowSpacing = innerSpanX / 3 || SAFE_WIDTH * 0.12;
-  const labelOffset = (settings.jokerFontSize || settings.fontSize) * 0.35;
+  const labelMetrics = getJokerLabelMetrics();
+  const belowLabelY = Math.min(
+    labelMetrics.labelBottomY + labelMetrics.fontSize * 0.4,
+    BLEED + SAFE_HEIGHT - labelMetrics.fontSize * 0.6
+  );
 
   switch (mode) {
     case 'centerCircle':
@@ -480,8 +545,14 @@ function getJokerSuitPlacements(mode) {
     case 'belowLabelRow':
       return [-1.5, -0.5, 0.5, 1.5].map(mult => ({
         x: centerX + rowSpacing * mult,
-        y: innerTopY - labelOffset,
+        y: belowLabelY,
         scale: 0.7
+      }));
+    case 'centerRowSplit':
+      return [-1.5, -0.5, 0.5, 1.5].map((mult, idx) => ({
+        x: centerX + rowSpacing * mult,
+        y: centerY,
+        rotation: idx < 2 ? 0 : Math.PI
       }));
     case 'centerColumn':
       return [

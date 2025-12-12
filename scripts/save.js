@@ -18,6 +18,12 @@ import {
 } from "./drawing.js";
 import { JOKER_SUIT_ID } from "./ui/navigation.js";
 
+let exportInProgress = false;
+
+export function isExporting() {
+  return exportInProgress;
+}
+
 
 // -------------------------------------------------------
 // Download ONE card (clean, no overlays)
@@ -74,64 +80,69 @@ export async function downloadSingleCard(selectionOrSuit, rankMaybe, copyIndexMa
 // Export FULL deck (ZIP of PNG files)
 // -------------------------------------------------------
 export async function exportFullDeck() {
-  const zip = new JSZip();
-  const tmpCanvas = document.createElement("canvas");
-  const { cardWidth, cardHeight } = getCardMetrics();
-  tmpCanvas.width = cardWidth;
-  tmpCanvas.height = cardHeight;
-  const tmpCtx = tmpCanvas.getContext("2d");
+  exportInProgress = true;
+  try {
+    const zip = new JSZip();
+    const tmpCanvas = document.createElement("canvas");
+    const { cardWidth, cardHeight } = getCardMetrics();
+    tmpCanvas.width = cardWidth;
+    tmpCanvas.height = cardHeight;
+    const tmpCtx = tmpCanvas.getContext("2d");
 
-  // Standard cards
-  const totalsByRank = activeRanks.reduce((map, rank) => {
-    map[rank] = (map[rank] || 0) + 1;
-    return map;
-  }, {});
+    // Standard cards
+    const totalsByRank = activeRanks.reduce((map, rank) => {
+      map[rank] = (map[rank] || 0) + 1;
+      return map;
+    }, {});
 
-  for (const suit of SUITS) {
-    const seen = {};
-    for (const rank of activeRanks) {
-      const copyIndex = (seen[rank] || 0) + 1;
-      seen[rank] = copyIndex;
+    for (const suit of SUITS) {
+      const seen = {};
+      for (const rank of activeRanks) {
+        const copyIndex = (seen[rank] || 0) + 1;
+        seen[rank] = copyIndex;
 
-      renderCardForExport(tmpCtx, suit.id, rank, copyIndex);
-      const blob = await new Promise(resolve =>
-        tmpCanvas.toBlob(resolve, "image/png")
-      );
-      if (!blob) continue;
+        renderCardForExport(tmpCtx, suit.id, rank, copyIndex);
+        const blob = await new Promise(resolve =>
+          tmpCanvas.toBlob(resolve, "image/png")
+        );
+        if (!blob) continue;
 
-      const suffix = totalsByRank[rank] > 1 ? `_${copyIndex}` : "";
-      const filename = `${rank}${suit.symbol}${suffix}.png`;
-      zip.file(filename, blob);
+        const suffix = totalsByRank[rank] > 1 ? `_${copyIndex}` : "";
+        const filename = `${rank}${suit.symbol}${suffix}.png`;
+        zip.file(filename, blob);
+      }
     }
-  }
 
-  // Jokers
-  if (settings.includeJokers && settings.jokerCount > 0) {
-    const count = Math.min(Math.max(settings.jokerCount, 1), 8);
+    // Jokers
+    if (settings.includeJokers && settings.jokerCount > 0) {
+      const count = Math.min(Math.max(settings.jokerCount, 1), 8);
 
-    for (let i = 1; i <= count; i++) {
-      renderJokerCard(tmpCtx, i, { preview: false });
-      const blob = await new Promise(resolve =>
-        tmpCanvas.toBlob(resolve, "image/png")
-      );
-      if (!blob) continue;
+      for (let i = 1; i <= count; i++) {
+        renderJokerCard(tmpCtx, i, { preview: false });
+        const blob = await new Promise(resolve =>
+          tmpCanvas.toBlob(resolve, "image/png")
+        );
+        if (!blob) continue;
 
-      const baseLabel = (settings.jokerLabel || "JOKER").replace(/\s+/g, "");
-      const suffix = count > 1 ? `_${i}` : "";
-      const filename = `${baseLabel}${suffix}.png`;
+        const baseLabel = (settings.jokerLabel || "JOKER").replace(/\s+/g, "");
+        const suffix = count > 1 ? `_${i}` : "";
+        const filename = `${baseLabel}${suffix}.png`;
 
-      zip.file(filename, blob);
+        zip.file(filename, blob);
+      }
     }
+
+    // Download ZIP
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(zipBlob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "custom-playing-cards.zip";
+    a.click();
+
+    URL.revokeObjectURL(url);
+  } finally {
+    exportInProgress = false;
   }
-
-  // Download ZIP
-  const zipBlob = await zip.generateAsync({ type: "blob" });
-  const url = URL.createObjectURL(zipBlob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "custom-playing-cards.zip";
-  a.click();
-
-  URL.revokeObjectURL(url);
 }

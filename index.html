@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Poker Card Designer</title>
+  <meta name="app-version" content="1.0.0" />
   <link rel="stylesheet" href="styles/main.css" />
   <link rel="icon" type="image/png" href="./favicon.png" />
 
@@ -18,6 +19,7 @@
 
 <body>
 <button type="button" id="helpLauncher" class="help-fab" title="Open help">?</button>
+<button type="button" id="bugReportLauncher" class="help-fab bug-fab" title="Report a bug">🐞</button>
 <div class="app">
   <div class="sidebar">
     <div class="title-row">
@@ -907,6 +909,50 @@
       <div class="help-topic-list" id="helpTopicList"></div>
       <div class="help-content" id="helpContent" tabindex="0"></div>
     </div>
+  </div>
+</div>
+
+<!-- BUG REPORT MODAL -->
+<div id="bugReportModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="bugModalTitle">
+  <div class="modal-content bug-modal">
+    <button id="closeBugModal" class="modal-close" aria-label="Close bug report">×</button>
+    <h3 id="bugModalTitle">Report a bug</h3>
+    <form id="bugReportForm">
+      <div class="field">
+        <label for="bugSummary">Short summary *</label>
+        <input id="bugSummary" type="text" name="summary" required maxlength="160" placeholder="Brief description" />
+      </div>
+      <div class="field">
+        <label for="bugDetails">What happened</label>
+        <textarea id="bugDetails" name="details" rows="3" placeholder="Optional details"></textarea>
+      </div>
+      <div class="field">
+        <label for="bugSteps">Steps to reproduce</label>
+        <textarea id="bugSteps" name="steps" rows="3" placeholder="Optional steps"></textarea>
+      </div>
+
+      <details class="tech-details">
+        <summary>Technical details</summary>
+        <textarea id="bugTechnicalDetails" readonly rows="8"></textarea>
+      </details>
+
+      <div class="field-row">
+        <div class="checkbox-row">
+          <input type="checkbox" id="includeAppState" checked />
+          <label for="includeAppState">Include current app state</label>
+        </div>
+      </div>
+
+      <div class="bug-modal__footer">
+        <div class="modal-status" id="bugStatus"></div>
+        <div class="modal-status-link" id="bugStatusLink"></div>
+        <a href="#" id="bugFallbackLink" class="hidden" target="_blank" rel="noopener">Open GitHub issue manually</a>
+        <div class="button-row">
+          <button type="submit" class="primary" id="bugSubmit">Submit</button>
+          <button type="button" class="secondary" id="bugCancel">Cancel</button>
+        </div>
+      </div>
+    </form>
   </div>
 </div>
 

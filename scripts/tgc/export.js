@@ -1,7 +1,8 @@
 import api from "./api.js";
-import { renderCardForExport } from "../drawing.js";
-import { activeRanks } from "../state.js";
-import { CARD_WIDTH, CARD_HEIGHT } from "../config.js";
+import { renderCardForExport, renderJokerCard } from "../drawing.js";
+import { activeRanks, settings } from "../state.js";
+import { CARD_WIDTH, CARD_HEIGHT, SUITS } from "../config.js";
+import { enumerateRankSlots, JOKER_SUIT_ID } from "../ui/navigation.js";
 
 import {
   showProgress,
@@ -34,23 +35,7 @@ export default {
     const deckId = dom.deckSelect.value;
     if (!gameId || !deckId) return;
 
-    const suits = ["spades", "hearts", "clubs", "diamonds"];
-    const items = [];
-
-    const totalsByRank = activeRanks.reduce((map, rank) => {
-      map[rank] = (map[rank] || 0) + 1;
-      return map;
-    }, {});
-
-    suits.forEach(suit => {
-      const seen = {};
-      activeRanks.forEach(rank => {
-        const copyIndex = (seen[rank] || 0) + 1;
-        seen[rank] = copyIndex;
-
-        items.push({ suit, rank, copyIndex, total: totalsByRank[rank] || 1 });
-      });
-    });
+    const items = buildExportItems();
 
     const total = items.length;
     let index = 0;
@@ -66,33 +51,23 @@ export default {
     });
 
     for (const item of items) {
-          if (isProgressCancelled()) break;
+      if (isProgressCancelled()) break;
 
-          const rankLabel =
-                item.total > 1
-                  ? `${capitalize(item.rank)} (${item.copyIndex}/${item.total})`
-                  : capitalize(item.rank);
+      setProgressOperation(item.progressLabel);
 
-          setProgressOperation(
-                `Uploading ${rankLabel} of ${capitalize(item.suit)}`
-          );
+      const ok = await this.uploadCard(
+        item,
+        deckId,
+        state.collisionMode
+      );
 
-          const ok = await this.uploadCard(
-                item.suit,
-                item.rank,
-                item.copyIndex || 1,
-                item.total || 1,
-                deckId,
-                state.collisionMode
-          );
+      if (!ok) {
+        failures.push(item.failureLabel);
+      }
 
-	  if (!ok) {
-		failures.push(`${item.rank} of ${item.suit}`);
-	  }
-
-	  index++;
-	  updateProgress(index);
-	}
+      index++;
+      updateProgress(index);
+    }
 
     if (cancelExport || isProgressCancelled()) {
       finishProgressError("Upload cancelled.");
@@ -114,17 +89,21 @@ export default {
   /* ------------------------------------------------------------
      UPLOAD ONE CARD
   ------------------------------------------------------------ */
-  async uploadCard(suit, rank, copyIndex, totalCopies, deckId, decision) {
+  async uploadCard(item, deckId, decision) {
     try {
       const canvas = document.createElement("canvas");
       canvas.width = CARD_WIDTH;
       canvas.height = CARD_HEIGHT;
 
       const ctx = canvas.getContext("2d");
-      renderCardForExport(ctx, suit, rank, copyIndex);
+      if (item.isJoker) {
+        renderJokerCard(ctx, item.jokerIndex, { preview: false });
+      } else {
+        renderCardForExport(ctx, item.suit, item.rank, item.copyIndex);
+      }
 
-      const suffix = totalCopies > 1 ? `_${copyIndex}` : "";
-      const uploadRank = `${rank}${suffix}`;
+      const suffix = item.total > 1 ? `_${item.copyIndex}` : "";
+      const uploadRank = `${normalizeRank(item.rank)}${suffix}`;
 
       const blob = await new Promise(resolve =>
         canvas.toBlob(resolve, "image/png")
@@ -137,10 +116,10 @@ export default {
       form.append("user_id", api.UID());
       form.append("designer_id", api.DID());
       form.append("deck_id", deckId);
-      form.append("card_suit", suit);
+      form.append("card_suit", item.isJoker ? JOKER_SUIT_ID : item.suit);
       form.append("card_rank", uploadRank);
       form.append("collision_mode", decision);
-      form.append("file", blob, `${suit}-${uploadRank}.png`);
+      form.append("file", blob, `${item.suit}-${uploadRank}.png`);
 
       const res = await fetch(
         "/playing-cards/api/tgc.php?action=upload_card",
@@ -178,4 +157,61 @@ function capitalize(v) {
   return String(v)
     .replace(/_/g, " ")
     .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function clampJokerCount(n) {
+  if (!n || n < 1) return 1;
+  if (n > 8) return 8;
+  return n;
+}
+
+function normalizeRank(rank) {
+  return String(rank || "JOKER").replace(/\s+/g, "_");
+}
+
+function buildExportItems() {
+  const items = [];
+
+  const slots = enumerateRankSlots(activeRanks);
+
+  SUITS.forEach(suit => {
+    slots.forEach(slot => {
+      const progressRank =
+        slot.total > 1
+          ? `${slot.rank} (${slot.copyIndex}/${slot.total})`
+          : slot.rank;
+
+      items.push({
+        isJoker: false,
+        suit: suit.id,
+        rank: slot.rank,
+        copyIndex: slot.copyIndex,
+        total: slot.total,
+        progressLabel: `Uploading ${capitalize(progressRank)} of ${capitalize(suit.label || suit.id)}`,
+        failureLabel: `${slot.rank} of ${suit.label || suit.id}`
+      });
+    });
+  });
+
+  if (settings.includeJokers && settings.jokerCount > 0) {
+    const count = clampJokerCount(settings.jokerCount);
+    const baseLabel = settings.jokerLabel || "JOKER";
+
+    for (let i = 1; i <= count; i++) {
+      const progressRank = count > 1 ? `${baseLabel} ${i}` : baseLabel;
+
+      items.push({
+        isJoker: true,
+        suit: JOKER_SUIT_ID,
+        rank: baseLabel,
+        copyIndex: i,
+        total: count,
+        jokerIndex: i,
+        progressLabel: `Uploading ${progressRank} of Jokers`,
+        failureLabel: progressRank
+      });
+    }
+  }
+
+  return items;
 }

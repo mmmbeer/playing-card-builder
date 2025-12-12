@@ -230,6 +230,9 @@ export async function initUI() {
     if (dom.jokerCountInput) dom.jokerCountInput.value = settings.jokerCount;
     if (dom.jokerLabelInput) dom.jokerLabelInput.value = settings.jokerLabel;
     if (dom.jokerWildCheckbox) dom.jokerWildCheckbox.checked = !!settings.jokerWild;
+    if (dom.jokerLabelOrientationSelect) dom.jokerLabelOrientationSelect.value = settings.jokerLabelOrientation;
+    if (dom.jokerFontSizeInput) dom.jokerFontSizeInput.value = settings.jokerFontSize;
+    if (dom.jokerSuitStyleSelect) dom.jokerSuitStyleSelect.value = settings.jokerSuitStyle;
 
     // ---- Font UI Fields ----
     if (dom.fontFamilyInput) dom.fontFamilyInput.textContent = settings.fontFamily;

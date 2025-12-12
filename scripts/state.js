@@ -43,6 +43,9 @@ export const settings = wrapSettings({
   jokerCount: 2,
   jokerLabel: 'JOKER',
   jokerWild: false,
+  jokerLabelOrientation: 'horizontal', // 'horizontal' | 'vertical'
+  jokerFontSize: 72,
+  jokerSuitStyle: 'centerCircle',
 
   // Pip layout vertical positions (fractions of safe area height)
   pipTop: 0.25,

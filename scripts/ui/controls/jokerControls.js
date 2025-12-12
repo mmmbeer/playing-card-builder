@@ -28,4 +28,37 @@ export function initJokerControls(dom, settings, onChange) {
     settings.jokerWild = dom.jokerWildCheckbox.checked;
     notify();
   });
+
+  dom.jokerLabelOrientationSelect.addEventListener("change", () => {
+    const value = dom.jokerLabelOrientationSelect.value === "vertical" ? "vertical" : "horizontal";
+    settings.jokerLabelOrientation = value;
+    notify();
+  });
+
+  dom.jokerFontSizeInput.addEventListener("input", () => {
+    let size = Number(dom.jokerFontSizeInput.value);
+    if (isNaN(size) || size < 24) size = 24;
+    if (size > 160) size = 160;
+    dom.jokerFontSizeInput.value = size;
+    settings.jokerFontSize = size;
+    notify();
+  });
+
+  dom.jokerSuitStyleSelect.addEventListener("change", () => {
+    const allowed = new Set([
+      "centerCircle",
+      "centerSquare",
+      "diamond",
+      "belowLabelRow",
+      "centerRowSplit",
+      "centerColumn",
+      "cornerRows",
+      "none"
+    ]);
+    const value = allowed.has(dom.jokerSuitStyleSelect.value)
+      ? dom.jokerSuitStyleSelect.value
+      : "centerCircle";
+    settings.jokerSuitStyle = value;
+    notify();
+  });
 }

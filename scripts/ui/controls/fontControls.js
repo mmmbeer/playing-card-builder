@@ -1,5 +1,6 @@
 // ui/controls/fontControls.js
 import { markDirty } from "../../autosave.js";
+import { bindColorPicker } from "./colorPicker.js";
 
 export function initFontControls(dom, settings, render, openFontBrowser) {
 
@@ -43,11 +44,92 @@ export function initFontControls(dom, settings, render, openFontBrowser) {
     render();
   });
 
-  // Color
-  dom.fontColorInput.addEventListener("input", () => {
-    settings.fontColor = dom.fontColorInput.value;
-    markDirty();
-    render();
+  const syncColorGroups = () => {
+    const mode = settings.fontColorMode || "single";
+    if (dom.fontColorModeSelect) dom.fontColorModeSelect.value = mode;
+    if (dom.fontSingleGroup) dom.fontSingleGroup.classList.toggle("hidden", mode !== "single");
+    if (dom.fontBiColorGroup) dom.fontBiColorGroup.classList.toggle("hidden", mode !== "bi");
+    if (dom.fontPerSuitGroup) dom.fontPerSuitGroup.classList.toggle("hidden", mode !== "perSuit");
+  };
+
+  if (dom.fontColorModeSelect) {
+    dom.fontColorModeSelect.addEventListener("change", () => {
+      settings.fontColorMode = dom.fontColorModeSelect.value;
+      syncColorGroups();
+      render();
+    });
+  }
+
+  const onBeforeSample = () => render();
+
+  bindColorPicker({
+    input: dom.fontColorInput,
+    button: dom.fontColorEyedropper,
+    onChange: value => {
+      settings.fontColor = value;
+      render();
+    },
+    onBeforeSample
+  });
+
+  bindColorPicker({
+    input: dom.fontColorBlackInput,
+    button: dom.fontColorBlackEyedropper,
+    onChange: value => {
+      settings.fontColorBlack = value;
+      render();
+    },
+    onBeforeSample
+  });
+
+  bindColorPicker({
+    input: dom.fontColorRedInput,
+    button: dom.fontColorRedEyedropper,
+    onChange: value => {
+      settings.fontColorRed = value;
+      render();
+    },
+    onBeforeSample
+  });
+
+  bindColorPicker({
+    input: dom.fontColorSpadesInput,
+    button: dom.fontColorSpadesEyedropper,
+    onChange: value => {
+      settings.fontColorSpades = value;
+      render();
+    },
+    onBeforeSample
+  });
+
+  bindColorPicker({
+    input: dom.fontColorHeartsInput,
+    button: dom.fontColorHeartsEyedropper,
+    onChange: value => {
+      settings.fontColorHearts = value;
+      render();
+    },
+    onBeforeSample
+  });
+
+  bindColorPicker({
+    input: dom.fontColorClubsInput,
+    button: dom.fontColorClubsEyedropper,
+    onChange: value => {
+      settings.fontColorClubs = value;
+      render();
+    },
+    onBeforeSample
+  });
+
+  bindColorPicker({
+    input: dom.fontColorDiamondsInput,
+    button: dom.fontColorDiamondsEyedropper,
+    onChange: value => {
+      settings.fontColorDiamonds = value;
+      render();
+    },
+    onBeforeSample
   });
 
   // Opacity
@@ -84,4 +166,6 @@ export function initFontControls(dom, settings, render, openFontBrowser) {
     markDirty();
     render();
   });
+
+  syncColorGroups();
 }

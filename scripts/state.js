@@ -15,12 +15,24 @@ export const settings = wrapSettings({
   fontFamily: 'Roboto',
   fontWeight: '700',
   fontSize: 72,
+  fontColorMode: 'single', // 'single' | 'bi' | 'perSuit'
   fontColor: '#000000',
+  fontColorRed: '#d12d2d',
+  fontColorBlack: '#000000',
+  fontColorSpades: '#000000',
+  fontColorHearts: '#d12d2d',
+  fontColorClubs: '#000000',
+  fontColorDiamonds: '#d12d2d',
   fontOpacity: 1,
   overlayType: 'none', // 'none' | 'shadow' | 'glow'
   outline: false,
   outlineWidth: 3,
   outlineColor: '#000000',
+
+  // Background
+  backgroundStyle: 'solid', // 'solid' | 'vertical' | 'horizontal' | 'diagDown' | 'diagUp' | 'radial'
+  backgroundColorPrimary: '#ffffff',
+  backgroundColorSecondary: '#f0f0f0',
 
   layout: 'rankAboveSuit', // 'rankAboveSuit' | 'suitAboveRank' | 'sideBySide'
   showPips: true,
@@ -48,11 +60,11 @@ export const settings = wrapSettings({
   jokerSuitStyle: 'centerCircle',
 
   // Pip layout vertical positions (fractions of safe area height)
-  pipTop: 0.25,
-  pipInnerTop: 0.425,
+  pipTop: 0.5,
+  pipInnerTop: 0.5,
   pipCenter: 0.5,
-  pipInnerBottom: 0.575,
-  pipBottom: 0.75,
+  pipInnerBottom: 0.5,
+  pipBottom: 0.5,
 
   // Pip horizontal positions
   pipLeft: 0.30,

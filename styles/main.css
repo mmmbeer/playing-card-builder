@@ -143,6 +143,82 @@ h1 {
   width: 100%;
 }
 
+.field-row.tight {
+  align-items: center;
+  gap: 10px;
+}
+
+.inline-label {
+  min-width: 60px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.color-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.color-picker-row span {
+  min-width: 90px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.color-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.eyedropper-btn {
+  background: rgba(15,23,42,0.9);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.color-mode-group {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  background: rgba(15,23,42,0.4);
+}
+
+.pip-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.pip-slider-row span:first-child {
+  min-width: 100px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pip-slider-row input[type="range"] {
+  flex: 1;
+}
+
+.pip-value {
+  min-width: 36px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.sampling-cursor {
+  cursor: crosshair !important;
+}
+
 .checkbox-row {
   display: flex;
   align-items: center;

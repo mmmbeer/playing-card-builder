@@ -274,15 +274,76 @@
         </div>
       </div>
 
-      <div class="two-col">
-        <div class="field">
-          <label for="fontColorInput">Color</label>
-          <input id="fontColorInput" type="color" value="#000000">
+      <div class="field">
+        <label for="fontColorModeSelect">Color mode</label>
+        <select id="fontColorModeSelect">
+          <option value="single">Single color</option>
+          <option value="bi">Bi-color (red / black)</option>
+          <option value="perSuit">Per suit</option>
+        </select>
+      </div>
+
+      <div class="color-mode-group" id="fontSingleGroup">
+        <div class="color-picker-row">
+          <span>All suits</span>
+          <div class="color-picker">
+            <input id="fontColorInput" type="color" value="#000000">
+            <button type="button" id="fontColorEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
         </div>
-        <div class="field">
-          <label for="fontOpacityInput">Opacity</label>
-          <input id="fontOpacityInput" type="range" min="0" max="1" step="0.05" value="1">
+      </div>
+
+      <div class="color-mode-group" id="fontBiColorGroup">
+        <div class="color-picker-row">
+          <span>Black suits</span>
+          <div class="color-picker">
+            <input id="fontColorBlackInput" type="color" value="#000000">
+            <button type="button" id="fontColorBlackEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
         </div>
+        <div class="color-picker-row">
+          <span>Red suits</span>
+          <div class="color-picker">
+            <input id="fontColorRedInput" type="color" value="#d12d2d">
+            <button type="button" id="fontColorRedEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="color-mode-group" id="fontPerSuitGroup">
+        <div class="color-picker-row">
+          <span>Spades</span>
+          <div class="color-picker">
+            <input id="fontColorSpadesInput" type="color" value="#000000">
+            <button type="button" id="fontColorSpadesEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
+        </div>
+        <div class="color-picker-row">
+          <span>Hearts</span>
+          <div class="color-picker">
+            <input id="fontColorHeartsInput" type="color" value="#d12d2d">
+            <button type="button" id="fontColorHeartsEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
+        </div>
+        <div class="color-picker-row">
+          <span>Clubs</span>
+          <div class="color-picker">
+            <input id="fontColorClubsInput" type="color" value="#000000">
+            <button type="button" id="fontColorClubsEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
+        </div>
+        <div class="color-picker-row">
+          <span>Diamonds</span>
+          <div class="color-picker">
+            <input id="fontColorDiamondsInput" type="color" value="#d12d2d">
+            <button type="button" id="fontColorDiamondsEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fontOpacityInput">Opacity</label>
+        <input id="fontOpacityInput" type="range" min="0" max="1" step="0.05" value="1">
       </div>
 
       <div class="field">
@@ -437,6 +498,37 @@
       </div>
 
       <div class="field">
+        <label>Card background</label>
+        <div class="field-row tight">
+          <label class="inline-label" for="backgroundStyleSelect">Style</label>
+          <select id="backgroundStyleSelect">
+            <option value="solid">Solid</option>
+            <option value="vertical">Gradient: Top → Bottom</option>
+            <option value="horizontal">Gradient: Left → Right</option>
+            <option value="diagDown">Gradient: Diagonal ↘</option>
+            <option value="diagUp">Gradient: Diagonal ↗</option>
+            <option value="radial">Radial</option>
+          </select>
+        </div>
+
+        <div class="color-picker-row">
+          <span>Primary</span>
+          <div class="color-picker">
+            <input id="backgroundPrimaryInput" type="color" value="#ffffff">
+            <button type="button" id="backgroundPrimaryEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
+        </div>
+
+        <div class="color-picker-row" id="backgroundSecondaryGroup">
+          <span>Secondary</span>
+          <div class="color-picker">
+            <input id="backgroundSecondaryInput" type="color" value="#f0f0f0">
+            <button type="button" id="backgroundSecondaryEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
         <label>Rank / suit arrangement (corners)</label>
         <div class="pill-select" id="layoutButtons">
           <button type="button" data-layout="rankAboveSuit" class="active">Rank above suit</button>
@@ -489,31 +581,34 @@
 
       <div class="field">
         <label>Pip vertical positions (safe-area %)</label>
-        <div class="two-col">
-          <div class="field">
-            <label for="pipTopInput">Top</label>
-            <input id="pipTopInput" type="number" min="0" max="100" value="25">
-          </div>
-          <div class="field">
-            <label for="pipInnerTopInput">Inner top</label>
-            <input id="pipInnerTopInput" type="number" min="0" max="100" value="42.5">
-          </div>
+        <div class="pip-slider-row">
+          <span>Top</span>
+          <input id="pipTopInput" type="range" min="0" max="100" step="1" value="50">
+          <span class="pip-value" id="pipTopValue">50</span>
         </div>
 
-        <div class="two-col">
-          <div class="field">
-            <label for="pipCenterInput">Center</label>
-            <input id="pipCenterInput" type="number" min="0" max="100" value="50">
-          </div>
-          <div class="field">
-            <label for="pipInnerBottomInput">Inner bottom</label>
-            <input id="pipInnerBottomInput" type="number" min="0" max="100" value="57.5">
-          </div>
+        <div class="pip-slider-row">
+          <span>Inner top</span>
+          <input id="pipInnerTopInput" type="range" min="0" max="100" step="1" value="50">
+          <span class="pip-value" id="pipInnerTopValue">50</span>
         </div>
 
-        <div class="field">
-          <label for="pipBottomInput">Bottom</label>
-          <input id="pipBottomInput" type="number" min="0" max="100" value="75">
+        <div class="pip-slider-row">
+          <span>Center</span>
+          <input id="pipCenterInput" type="range" min="0" max="100" step="1" value="50">
+          <span class="pip-value" id="pipCenterValue">50</span>
+        </div>
+
+        <div class="pip-slider-row">
+          <span>Inner bottom</span>
+          <input id="pipInnerBottomInput" type="range" min="0" max="100" step="1" value="50">
+          <span class="pip-value" id="pipInnerBottomValue">50</span>
+        </div>
+
+        <div class="pip-slider-row">
+          <span>Bottom</span>
+          <input id="pipBottomInput" type="range" min="0" max="100" step="1" value="50">
+          <span class="pip-value" id="pipBottomValue">50</span>
         </div>
 
         <div class="hint">

@@ -1,3 +1,5 @@
+import { isSamplingActive } from "./colorSampler.js";
+
 // ui/canvasInteractions.js
 function getCanvasCoords(canvas, evt) {
   const rect = canvas.getBoundingClientRect();
@@ -14,6 +16,7 @@ export function initCanvasDrag(dom, getCard, render) {
   let startX, startY, origX, origY;
 
   dom.canvas.addEventListener("mousedown", evt => {
+    if (isSamplingActive()) return;
     const card = getCard();
     if (!card?.faceImage) return;
 

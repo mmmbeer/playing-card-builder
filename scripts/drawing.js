@@ -63,6 +63,73 @@ function hexToRgb(hex) {
   };
 }
 
+function getRankColor(suitId) {
+  if (settings.fontColorMode === 'bi') {
+    const isBlackSuit = suitId === 'spades' || suitId === 'clubs';
+    const isRedSuit = suitId === 'hearts' || suitId === 'diamonds';
+    if (isBlackSuit) return settings.fontColorBlack;
+    if (isRedSuit) return settings.fontColorRed;
+  }
+
+  if (settings.fontColorMode === 'perSuit') {
+    switch (suitId) {
+      case 'spades': return settings.fontColorSpades;
+      case 'hearts': return settings.fontColorHearts;
+      case 'clubs': return settings.fontColorClubs;
+      case 'diamonds': return settings.fontColorDiamonds;
+      default: break;
+    }
+  }
+
+  return settings.fontColor;
+}
+
+function fillBackground(ctx) {
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+
+  const style = settings.backgroundStyle || 'solid';
+  const colorA = settings.backgroundColorPrimary || '#ffffff';
+  const colorB = settings.backgroundColorSecondary || colorA;
+
+  if (style === 'solid') {
+    ctx.fillStyle = colorA;
+  } else {
+    let gradient;
+    if (style === 'radial') {
+      const radius = Math.hypot(CARD_WIDTH, CARD_HEIGHT) / 2;
+      gradient = ctx.createRadialGradient(
+        CARD_WIDTH / 2,
+        CARD_HEIGHT / 2,
+        0,
+        CARD_WIDTH / 2,
+        CARD_HEIGHT / 2,
+        radius
+      );
+    } else {
+      let x0 = 0, y0 = 0, x1 = CARD_WIDTH, y1 = CARD_HEIGHT;
+      if (style === 'horizontal') {
+        y1 = 0;
+      } else if (style === 'vertical') {
+        x1 = 0;
+      } else if (style === 'diagUp') {
+        x0 = 0; y0 = CARD_HEIGHT; x1 = CARD_WIDTH; y1 = 0;
+      } else {
+        x0 = 0; y0 = 0; x1 = CARD_WIDTH; y1 = CARD_HEIGHT;
+      }
+      gradient = ctx.createLinearGradient(x0, y0, x1, y1);
+    }
+
+    gradient.addColorStop(0, colorA);
+    gradient.addColorStop(1, colorB);
+    ctx.fillStyle = gradient;
+  }
+
+  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+  ctx.restore();
+}
+
 /* ------------------------------------------------------------
    SUIT ICON RENDERING (same as before)
 ------------------------------------------------------------- */
@@ -215,6 +282,7 @@ function drawCorners(ctx, suitId, rank, mirror, options = {}) {
   const rankOrientation = options.rankOrientation || 'horizontal';
   let fontSize = getAdjustedCornerFontSize(rank, options.fontSize ?? settings.fontSize, rankOrientation);
   const layout = options.layout ?? settings.layout;
+  const rankColor = getRankColor(suitId);
 
   const marginX = BLEED + fontSize * 0.3;
   const marginY = BLEED + fontSize * 0.3;
@@ -243,7 +311,7 @@ function drawCorners(ctx, suitId, rank, mirror, options = {}) {
       ctx2.save();
       ctx2.translate(rankX + settings.cornerRankOffsetX, rankY + settings.cornerRankOffsetY);
       [...rank].forEach((letter, idx) => {
-        drawRankText(ctx2, letter, 0, idx * lineHeight, 'center', 'top', { fontSize });
+        drawRankText(ctx2, letter, 0, idx * lineHeight, 'center', 'top', { fontSize, fontColor: rankColor });
       });
       ctx2.restore();
       return;
@@ -256,7 +324,7 @@ function drawCorners(ctx, suitId, rank, mirror, options = {}) {
       rankY + settings.cornerRankOffsetY,
       'left',
       'top',
-      { fontSize }
+      { fontSize, fontColor: rankColor }
     );
   }
 
@@ -614,13 +682,7 @@ function drawJokerSuits(ctx, mode) {
 function renderCardSurface(ctx, { card, suitId, rankLabel, pipRank, cornerOptions }) {
   if (!card) return;
 
-  ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-  ctx.restore();
-
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+  fillBackground(ctx);
 
   const safeTopY = BLEED;
   const safeBottomY = BLEED + SAFE_HEIGHT;

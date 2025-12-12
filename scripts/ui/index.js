@@ -31,6 +31,7 @@ import {
 import { initProgressControls } from "./controls/progressControls.js";
 import { initProgressOverlay } from "./controls/progressOverlay.js";
 import { initAbilityControls } from "./controls/abilityControls.js";
+import { initBackgroundControls } from "./controls/backgroundControls.js";
 
 
 
@@ -56,6 +57,7 @@ import { exportFullDeck } from "../save.js";
 import { openBulkModal, initBulkLoader } from "../bulk.js";
 
 import { CARD_WIDTH, CARD_HEIGHT, BLEED, SAFE_WIDTH, SAFE_HEIGHT, SUITS } from "../config.js";
+import { registerSamplingCanvas } from "./colorSampler.js";
 
 
 // ---------------------------------------------------------------------
@@ -73,6 +75,7 @@ export async function initUI() {
   initBulkLoader();
   updateActiveRanksFromSettings();
   initProgressOverlay();
+  registerSamplingCanvas(dom.canvas);
 
   if (!dom.suitSelect.value) dom.suitSelect.value = settings.lastSuitId ?? (SUITS[0]?.id || "");
 
@@ -107,7 +110,8 @@ export async function initUI() {
   initSuitControls(dom, stateCtx(), renderSelectedCard, doSync, () => refreshRankDropdown(false));
   initRankControls(dom, stateCtx(), refreshRankDropdown, doSync, renderSelectedCard);
   initLayoutControls(dom, settings, renderSelectedCard);
-  
+  initBackgroundControls(dom, settings, renderSelectedCard);
+
   // Font controls MUST be initialized AFTER hydration
   dom.fontFamilyInput = document.getElementById("fontFamilyInput");
 
@@ -238,7 +242,17 @@ export async function initUI() {
     if (dom.fontFamilyInput) dom.fontFamilyInput.textContent = settings.fontFamily;
     if (dom.fontSizeInput) dom.fontSizeInput.value = settings.fontSize;
     if (dom.fontWeightSelect) dom.fontWeightSelect.value = settings.fontWeight;
+    if (dom.fontColorModeSelect) dom.fontColorModeSelect.value = settings.fontColorMode || "single";
     if (dom.fontColorInput) dom.fontColorInput.value = settings.fontColor;
+    if (dom.fontColorBlackInput) dom.fontColorBlackInput.value = settings.fontColorBlack;
+    if (dom.fontColorRedInput) dom.fontColorRedInput.value = settings.fontColorRed;
+    if (dom.fontColorSpadesInput) dom.fontColorSpadesInput.value = settings.fontColorSpades;
+    if (dom.fontColorHeartsInput) dom.fontColorHeartsInput.value = settings.fontColorHearts;
+    if (dom.fontColorClubsInput) dom.fontColorClubsInput.value = settings.fontColorClubs;
+    if (dom.fontColorDiamondsInput) dom.fontColorDiamondsInput.value = settings.fontColorDiamonds;
+    if (dom.fontSingleGroup) dom.fontSingleGroup.classList.toggle("hidden", (settings.fontColorMode || "single") !== "single");
+    if (dom.fontBiColorGroup) dom.fontBiColorGroup.classList.toggle("hidden", (settings.fontColorMode || "single") !== "bi");
+    if (dom.fontPerSuitGroup) dom.fontPerSuitGroup.classList.toggle("hidden", (settings.fontColorMode || "single") !== "perSuit");
     if (dom.fontOpacityInput) dom.fontOpacityInput.value = settings.fontOpacity;
 
     if (dom.overlayTypeSelect) dom.overlayTypeSelect.value = settings.overlayType;
@@ -273,6 +287,10 @@ export async function initUI() {
 
     if (dom.showPipsCheckbox) dom.showPipsCheckbox.checked = settings.showPips;
     if (dom.mirrorDefaultCheckbox) dom.mirrorDefaultCheckbox.checked = settings.mirrorDefault;
+    if (dom.backgroundStyleSelect) dom.backgroundStyleSelect.value = settings.backgroundStyle || "solid";
+    if (dom.backgroundPrimaryInput) dom.backgroundPrimaryInput.value = settings.backgroundColorPrimary;
+    if (dom.backgroundSecondaryInput) dom.backgroundSecondaryInput.value = settings.backgroundColorSecondary;
+    if (dom.backgroundSecondaryGroup) dom.backgroundSecondaryGroup.classList.toggle("hidden", (settings.backgroundStyle || "solid") === "solid");
 
     // ---- Corner Offsets ----
     dom.rankOffsetXInput.value = settings.cornerRankOffsetX;
@@ -281,11 +299,23 @@ export async function initUI() {
     dom.suitOffsetYInput.value = settings.cornerSuitOffsetY;
 
     // ---- Pip Verticals ----
-    dom.pipTopInput.value = settings.pipTop * 100;
-    dom.pipInnerTopInput.value = settings.pipInnerTop * 100;
-    dom.pipCenterInput.value = settings.pipCenter * 100;
-    dom.pipInnerBottomInput.value = settings.pipInnerBottom * 100;
-    dom.pipBottomInput.value = settings.pipBottom * 100;
+    const topVal = Math.round(settings.pipTop * 100);
+    const innerTopVal = Math.round(settings.pipInnerTop * 100);
+    const centerVal = Math.round(settings.pipCenter * 100);
+    const innerBottomVal = Math.round(settings.pipInnerBottom * 100);
+    const bottomVal = Math.round(settings.pipBottom * 100);
+
+    dom.pipTopInput.value = topVal;
+    dom.pipInnerTopInput.value = innerTopVal;
+    dom.pipCenterInput.value = centerVal;
+    dom.pipInnerBottomInput.value = innerBottomVal;
+    dom.pipBottomInput.value = bottomVal;
+
+    if (dom.pipTopValue) dom.pipTopValue.textContent = topVal;
+    if (dom.pipInnerTopValue) dom.pipInnerTopValue.textContent = innerTopVal;
+    if (dom.pipCenterValue) dom.pipCenterValue.textContent = centerVal;
+    if (dom.pipInnerBottomValue) dom.pipInnerBottomValue.textContent = innerBottomVal;
+    if (dom.pipBottomValue) dom.pipBottomValue.textContent = bottomVal;
 
     // ---- Icon Controls ----
     dom.iconColorInput.value = settings.iconColor;

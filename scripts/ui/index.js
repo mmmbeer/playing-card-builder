@@ -270,10 +270,15 @@ export async function initUI() {
     if (dom.fontOpacityInput) dom.fontOpacityInput.value = settings.fontOpacity;
 
     if (dom.overlayTypeSelect) dom.overlayTypeSelect.value = settings.overlayType;
+    if (dom.overlayOpacityInput) dom.overlayOpacityInput.value = settings.overlayOpacity;
+    if (dom.overlayBlurInput) dom.overlayBlurInput.value = settings.overlayBlur;
+    if (dom.shadowOffsetXInput) dom.shadowOffsetXInput.value = settings.shadowOffsetX;
+    if (dom.shadowOffsetYInput) dom.shadowOffsetYInput.value = settings.shadowOffsetY;
 
     if (dom.outlineCheckbox) dom.outlineCheckbox.checked = settings.outline;
     if (dom.outlineWidthInput) dom.outlineWidthInput.value = settings.outlineWidth;
     if (dom.outlineColorInput) dom.outlineColorInput.value = settings.outlineColor;
+    if (dom.outlinePositionSelect) dom.outlinePositionSelect.value = settings.outlinePosition || "center";
 
     // ---- Ability Text ----
     if (dom.abilityPlacementSelect) dom.abilityPlacementSelect.value = settings.abilityPlacement;
@@ -346,6 +351,15 @@ export async function initUI() {
     if (dom.iconPerSuitGroup) dom.iconPerSuitGroup.classList.toggle("hidden", hideIconColors || iconMode !== "perSuit");
     dom.iconOpacityInput.value = settings.iconOpacity;
     dom.iconScaleInput.value = settings.iconScale;
+    if (dom.iconOverlayTypeSelect) dom.iconOverlayTypeSelect.value = settings.iconOverlayType || "none";
+    if (dom.iconOverlayOpacityInput) dom.iconOverlayOpacityInput.value = settings.iconOverlayOpacity;
+    if (dom.iconOverlayBlurInput) dom.iconOverlayBlurInput.value = settings.iconOverlayBlur;
+    if (dom.iconShadowOffsetXInput) dom.iconShadowOffsetXInput.value = settings.iconShadowOffsetX;
+    if (dom.iconShadowOffsetYInput) dom.iconShadowOffsetYInput.value = settings.iconShadowOffsetY;
+    if (dom.iconOutlineCheckbox) dom.iconOutlineCheckbox.checked = settings.iconOutline;
+    if (dom.iconOutlineWidthInput) dom.iconOutlineWidthInput.value = settings.iconOutlineWidth;
+    if (dom.iconOutlinePositionSelect) dom.iconOutlinePositionSelect.value = settings.iconOutlinePosition || "center";
+    if (dom.iconOutlineColorInput) dom.iconOutlineColorInput.value = settings.iconOutlineColor;
 
     // ---- FONT LOADING ----
     if (settings.fontFamily) {

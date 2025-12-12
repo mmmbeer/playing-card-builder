@@ -146,6 +146,30 @@ export function initFontControls(dom, settings, render, openFontBrowser) {
     render();
   });
 
+  dom.overlayOpacityInput.addEventListener("input", () => {
+    settings.overlayOpacity = Number(dom.overlayOpacityInput.value);
+    markDirty();
+    render();
+  });
+
+  dom.overlayBlurInput.addEventListener("input", () => {
+    settings.overlayBlur = Number(dom.overlayBlurInput.value);
+    markDirty();
+    render();
+  });
+
+  dom.shadowOffsetXInput.addEventListener("input", () => {
+    settings.shadowOffsetX = Number(dom.shadowOffsetXInput.value);
+    markDirty();
+    render();
+  });
+
+  dom.shadowOffsetYInput.addEventListener("input", () => {
+    settings.shadowOffsetY = Number(dom.shadowOffsetYInput.value);
+    markDirty();
+    render();
+  });
+
   // Outline toggle
   dom.outlineCheckbox.addEventListener("change", () => {
     settings.outline = dom.outlineCheckbox.checked;
@@ -163,6 +187,12 @@ export function initFontControls(dom, settings, render, openFontBrowser) {
   // Outline color
   dom.outlineColorInput.addEventListener("input", () => {
     settings.outlineColor = dom.outlineColorInput.value;
+    markDirty();
+    render();
+  });
+
+  dom.outlinePositionSelect.addEventListener("change", () => {
+    settings.outlinePosition = dom.outlinePositionSelect.value;
     markDirty();
     render();
   });

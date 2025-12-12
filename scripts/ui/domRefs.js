@@ -61,6 +61,7 @@ export const dom = {
   abilityAlignmentSelect: document.getElementById('abilityAlignmentSelect'),
   abilityWidthInput: document.getElementById('abilityWidthInput'),
   abilityHeightModeSelect: document.getElementById('abilityHeightModeSelect'),
+  abilityFixedControls: document.getElementById('abilityFixedControls'),
   abilityFixedHeightInput: document.getElementById('abilityFixedHeightInput'),
   abilityOverflowSelect: document.getElementById('abilityOverflowSelect'),
   abilityBackgroundInput: document.getElementById('abilityBackgroundInput'),

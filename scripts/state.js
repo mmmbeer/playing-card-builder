@@ -65,7 +65,7 @@ export const settings = wrapSettings({
   abilityPlacement: 'bottom', // 'top' | 'bottom'
   abilityMirror: false,
   abilityAlignment: 'center', // 'left' | 'center' | 'right'
-  abilityWidthPercent: 100,
+  abilityWidthPercent: 120,
   abilityHeightMode: 'auto', // 'auto' | 'fixed'
   abilityFixedHeight: 180,
   abilityOverflow: 'shrink', // 'shrink' | 'hidden' | 'overflow'

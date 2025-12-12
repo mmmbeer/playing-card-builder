@@ -55,12 +55,31 @@ function getBlocks(markdown) {
   return blocks;
 }
 
+const SUIT_TAG_MAP = {
+  suit: null,
+  spade: 'spades',
+  spades: 'spades',
+  heart: 'hearts',
+  hearts: 'hearts',
+  club: 'clubs',
+  clubs: 'clubs',
+  diamond: 'diamonds',
+  diamonds: 'diamonds'
+};
+
 function segmentText(raw) {
-  const parts = raw.split(/(::suit::)/gi);
-  return parts.filter(Boolean).map(part => part.toLowerCase() === '::suit::'
-    ? { type: 'pip' }
-    : { type: 'text', text: part }
-  );
+  const parts = raw.split(/(::(suit|spades?|hearts?|clubs?|diamonds?)::)/gi);
+
+  return parts.filter(Boolean).map(part => {
+    const match = part.match(/^::(suit|spades?|hearts?|clubs?|diamonds?)::$/i);
+    if (match) {
+      const key = match[1].toLowerCase();
+      return SUIT_TAG_MAP.hasOwnProperty(key)
+        ? { type: 'pip', suitId: SUIT_TAG_MAP[key] || undefined }
+        : { type: 'pip' };
+    }
+    return { type: 'text', text: part };
+  });
 }
 
 function wrapSegments(ctx, segments, maxWidth, fontConfig, pipSize) {
@@ -81,7 +100,7 @@ function wrapSegments(ctx, segments, maxWidth, fontConfig, pipSize) {
       if (lineWidth + pipSize > maxWidth && currentLine.length) {
         pushLine();
       }
-      currentLine.push({ type: 'pip', width: pipSize });
+      currentLine.push({ type: 'pip', width: pipSize, suitId: seg.suitId });
       lineWidth += pipSize;
       return;
     }
@@ -161,7 +180,7 @@ function drawLayouts(ctx, layouts, rect, suitId, drawSuitIcon, pipSize, align) {
     layout.lines.forEach(line => {
       ctx.save();
       ctx.font = `${layout.fontWeight} ${layout.fontSize}px "${layout.fontFamily}"`;
-      ctx.textBaseline = 'top';
+      ctx.textBaseline = 'middle';
       ctx.fillStyle = hexToRgba(settings.abilityTextColor, settings.abilityTextOpacity);
 
       const lineWidth = line.width;
@@ -172,14 +191,17 @@ function drawLayouts(ctx, layouts, rect, suitId, drawSuitIcon, pipSize, align) {
         xCursor += (rect.w - PADDING * 2 - lineWidth);
       }
 
+      const yCenter = yCursor + layout.lineHeight / 2;
+
       line.segments.forEach(seg => {
         if (seg.type === 'pip') {
-          drawPip(ctx, drawSuitIcon, suitId, xCursor + pipSize / 2, yCursor + layout.lineHeight / 2, pipSize);
+          const pipSuitId = seg.suitId || suitId;
+          drawPip(ctx, drawSuitIcon, pipSuitId, xCursor + pipSize / 2, yCenter, pipSize);
           xCursor += pipSize;
         } else if (seg.type === 'space') {
           xCursor += seg.width;
         } else {
-          ctx.fillText(seg.text, xCursor, yCursor);
+          ctx.fillText(seg.text, xCursor, yCenter);
           xCursor += seg.width;
         }
       });

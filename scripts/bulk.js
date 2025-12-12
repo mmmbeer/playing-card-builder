@@ -1,6 +1,8 @@
 // bulk.js
 import { deck, settings, activeRanks } from "./state.js";
-import { SAFE_HEIGHT, SUITS as SUIT_OBJECTS } from "./config.js";
+import { SUITS as SUIT_OBJECTS } from "./config.js";
+import { getSafeHeight, getSafeWidth } from "./cardGeometry.js";
+import { computeScaleToSafeHeight } from "./faceImageScale.js";
 import { saveImageFromSource } from "./indexedDB.js";
 
 // convert config SUITS = [{id:"spades"},...] → ["spades","hearts"...]
@@ -122,9 +124,10 @@ async function applyMappings() {
     card.faceImageUrl = url;
     card.faceImageId = imageId;
 
-    // Auto-scale vertically into safe area
-    const baseScale = SAFE_HEIGHT / img.height;
-    card.scale = baseScale;
+    // Auto-scale vertically into safe area without distorting aspect ratio
+    const safeHeight = getSafeHeight();
+    const safeWidth = getSafeWidth();
+    card.scale = computeScaleToSafeHeight(img, safeWidth, safeHeight);
 
     // Reset transforms
     card.offsetX = 0;

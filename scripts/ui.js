@@ -23,6 +23,7 @@ import {
   renderCardForExport,
   renderJokerCard
 } from './drawing.js'
+import { computeScaleToSafeHeight } from "./faceImageScale.js";
 
 
 import { injectFontFamily, initFontBrowser, openFontBrowser } from './fonts.js'
@@ -452,9 +453,8 @@ nextCardBtn.addEventListener('click', () => goToCard(1))
 		card.flipH = false
 		card.flipV = false
 
-		// AUTO-SCALE: fill vertical safe area
-		const baseScale = SAFE_HEIGHT / img.height
-		card.scale = baseScale
+                // AUTO-SCALE: fill vertical safe area without skewing aspect ratio
+                card.scale = computeScaleToSafeHeight(img, SAFE_WIDTH, SAFE_HEIGHT)
 
 		syncCardControlsFromData()
 		renderCurrentCard()

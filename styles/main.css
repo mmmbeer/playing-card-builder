@@ -424,7 +424,7 @@ body.dark-mode .font-item:hover {
   
 }
 .hidden {
-	display: none;
+	display: none !important;
 }
 /* --------------------------------------------
    Pill Stack for EXPORT panel

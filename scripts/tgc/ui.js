@@ -4,6 +4,9 @@ import games from "./games.js";
 import decks from "./decks.js";
 import auth from "./auth.js";
 
+let userInitiatedDeckCreate = false;
+
+
 function updateExportAvailability(dom) {
   const hasDeck =
     dom.deckSelect &&
@@ -131,10 +134,14 @@ export default {
        CREATE DECK
     ----------------------------------------- */
     dom.createDeckBtn.addEventListener("click", () => {
-      dom.newDeckRow.classList.toggle("hidden");
-      const today = new Date().toISOString().slice(0, 10);
-      dom.newDeckName.value = `Custom Playing Cards - ${today}`;
-    });
+	  userInitiatedDeckCreate = true;
+	  dom.newDeckRow.classList.remove("hidden");
+
+	  const today = new Date().toISOString().slice(0, 10);
+	  dom.newDeckName.value = `Custom Playing Cards - ${today}`;
+	  dom.newDeckName.focus();
+	});
+
 
     dom.confirmCreateDeck.addEventListener("click", async () => {
       const name = dom.newDeckName.value.trim();

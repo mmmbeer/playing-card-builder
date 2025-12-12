@@ -1,196 +1,133 @@
-/* Preview grid (3 across, responsive) */
-.tgc-title-logo {
-	float: left;
-	border-radius: 50%;
-	width: 35px;
-	margin-right: 10px;
+/* =========================================================
+   TGC MODAL — FORM CONTROL NORMALIZATION
+   Aligns with global .field input / select styles
+========================================================= */
+
+/* Base inputs inside TGC modal */
+#tgcModal select,
+#tgcModal input[type="text"],
+#tgcModal input[type="number"] {
+  background: rgba(15,23,42,0.9);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  width: 100%;
 }
 
+/* Focus state */
+#tgcModal select:focus,
+#tgcModal input[type="text"]:focus,
+#tgcModal input[type="number"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
 
+/* Remove legacy tgc-input look without breaking markup */
+#tgcModal .tgc-input {
+  background: rgba(15,23,42,0.9);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+/* Large list select (game / deck list) */
+#tgcModal select[size] {
+  padding: 4px;
+  border-radius: 10px;
+  background: rgba(15,23,42,0.85);
+}
+
+/* Options inside list selects */
+#tgcModal option {
+  padding: 6px 8px;
+  background: transparent;
+  color: var(--text);
+}
+
+/* Selected option */
+#tgcModal option:checked {
+  background: var(--accent-soft);
+  color: #dbeafe;
+}
+
+/* Hover state (where supported) */
+#tgcModal option:hover {
+  background: rgba(59,130,246,0.15);
+}
+
+/* Plus buttons align visually with other secondary buttons */
+#tgcModal .tgc-plus-btn {
+  height: 30px;
+  min-width: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* Subpanels (new game / new deck rows) */
+#tgcModal .tgc-subpanel {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Locked pill consistency */
+#tgcLockedInfo {
+  background: rgba(15,23,42,0.9);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Section labels */
+.tgc-section-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.tgc-title-logo { border-radius: 50%; width: 45px; margin-right: 10px }
+
+/* Force exactly 3 columns, independent of modal width */
 .tgc-preview-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
-  padding: 8px 4px;
-  overflow-y: auto;
 }
 
-/* Each preview block */
-.tgc-thumb-wrapper {
+/* Stack search + game select vertically and lock width */
+#tgcPhase1 .field-row {
+  flex-wrap: wrap;
+}
+
+#tgcGameSearch {
+  width: 100%;
+  margin-left: 0;
+}
+
+/* Game select should align directly under search */
+#tgcGameSelect {
+  width: 100%;
+  margin-top: 6px;
+}
+
+.tgc-game-stack {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 6px;
+  flex: 1;
 }
 
-/* Thumbnail canvas */
-.tgc-thumb-wrapper canvas {
-  width: 100%;
-  height: auto;
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.25);
-}
-
-/* Label text */
-.tgc-thumb-label {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 6px;
-  text-align: center;
-}
-
-/* Refresh button */
-#tgcRefreshPreviews {
-  margin: 6px 0 10px 0;
-  font-size: 12px;
-  opacity: 0.8;
-}
-
-#tgcModal.exporting .modal-content {
-  opacity: 0.55;
-  pointer-events: none;
-}
-
-#tgcModal.exporting .modal-content {
-  opacity: 0.55;
-  pointer-events: none;
-}
-
-
-#tgcExportProgressContainer {
-  margin-top: 12px;
-}
-
-#tgcCancelExportButton {
-  margin-top: 12px;
-  background: var(--danger);
-  border-color: var(--danger);
-}
-
-#tgcExportDoneLink {
-  margin-top: 14px;
-  display: inline-block;
-  font-size: 13px;
-  color: var(--accent);
-}
-
-#tgcExportDoneLink.hidden,
-#tgcCancelExportButton.hidden,
-#tgcExportProgressContainer.hidden {
-  display: none;
-}
-
-
-/* ============================================================
-   TGC CONFLICT MODAL
-   (Replace / Skip / Create Copy)
-============================================================ */
-
-/* Fullscreen cover */
-#tgcConflictModal.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 6000; /* Above all other TGC UI */
-}
-
-/* Hide by default */
-#tgcConflictModal.hidden {
-  display: none;
-}
-
-/* Modal content */
-#tgcConflictModal .modal-content.small {
-  background: var(--surface);
-  padding: 22px 26px;
-  border-radius: 10px;
-  width: 340px;
-  max-width: 90%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-  animation: tgcConflictFadeIn 0.18s ease-out;
-}
-
-/* Title */
-#tgcConflictTitle {
-  font-size: 18px;
-  font-weight: 600;
-  text-align: center;
-  margin-bottom: 12px;
-}
-
-/* Description text */
-#tgcConflictModal p {
-  text-align: center;
-  font-size: 14px;
-  color: var(--muted);
-  margin-bottom: 18px;
-}
-
-/* Layout for buttons */
-#tgcConflictModal .modal-content.small div {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-}
-
-/* Button styles (reuse standard styles if defined) */
-#tgcConflictReplace.primary,
-#tgcConflictCopy.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-#tgcConflictSkip.secondary {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-/* Hover states */
-#tgcConflictReplace.primary:hover,
-#tgcConflictCopy.primary:hover {
-  opacity: 0.9;
-}
-
-#tgcConflictSkip.secondary:hover {
-  background: var(--surface-3);
-}
-
-/* Fade-in animation */
-@keyframes tgcConflictFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-
-.collision-badge {
-    display: inline-block;
-    padding: 6px 10px;
-    background: #444;
-    color: #fff;
-    border-radius: 6px;
-    cursor: pointer;
-    user-select: none;
-    font-size: 12px;
-}
-.collision-badge:hover {
-    background: #555;
+/* Phase 1: align controls to top, not center */
+#tgcPhase1 .field-row {
+  align-items: flex-start;
 }

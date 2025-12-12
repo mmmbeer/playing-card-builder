@@ -205,14 +205,11 @@ export async function initAutosave() {
     try {
       const data = JSON.parse(raw);
 
-      const restoredSheet = await rebuildIconSheetFromSettings(data.settings);
+      const restoredSheetPromise = rebuildIconSheetFromSettings(data.settings);
 
-      // Restore settings but preserve current iconSheet selection
+      // Restore settings immediately so UI hydration uses saved values
       const currentSheet = settings.iconSheet;
       Object.assign(settings, data.settings);
-      settings.iconSheet = restoredSheet || currentSheet;
-
-      // Preserve custom icon sheet metadata
       settings.customIconDataURL = data.settings.customIconDataURL || null;
       settings.iconPresetId = data.settings.iconPresetId || null;
 
@@ -225,6 +222,9 @@ export async function initAutosave() {
       // 2) Ensure deck structure exists for these suits/ranks
       //    This creates proxied card objects in deck[suitId][rank]
       initDeck();
+
+      const restoredSheet = await restoredSheetPromise;
+      settings.iconSheet = restoredSheet || currentSheet;
 
       // 3) Now safely apply saved per-card state (including faceImageUrl)
       await restoreDeck(data.deck);

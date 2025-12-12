@@ -16,7 +16,10 @@
 <body>
 <div class="app">
   <div class="sidebar">
-    <h1>Card Designer</h1>
+    <div class="title-row">
+      <h1>Card Designer</h1>
+      <button type="button" id="fullResetButton" class="reset-icon-button" title="Start Over">↻</button>
+    </div>
 
     <!-- Card selection -->
     <div class="panel">
@@ -104,34 +107,12 @@
     </div>
 
       <div class="panel">
-        <div class="panel-header">
-          <span>Reset options</span>
-        </div>
-
-        <div class="field-row">
-          <button type="button" class="secondary" id="resetFontsButton">Reset fonts</button>
-          <button type="button" class="secondary" id="resetIconsButton">Reset suit icons</button>
-        </div>
-
-        <div class="field-row">
-          <button type="button" class="secondary" id="resetPipsButton">Reset pips/layout</button>
-          <button type="button" class="secondary" id="resetCornersButton">Reset corners</button>
-        </div>
-
-        <div class="field-row">
-          <button type="button" class="secondary" id="resetAbilityButton">Reset ability styling</button>
-        </div>
-
-        <div class="field-row">
-          <button type="button" class="secondary" id="fullResetButton">Factory reset</button>
-        </div>
-
-        <div class="hint">Factory reset clears autosaves and uploaded images.</div>
-      </div>
-
-      <div class="panel">
         <div class="panel-header collapsible">
-          <span>Ability text</span> <span class="chevron">▾</span>
+          <span>Ability text</span>
+          <div class="header-actions">
+            <button type="button" id="resetAbilityButton" class="reset-icon-button" title="Reset ability styling">↻</button>
+            <span class="chevron">▾</span>
+          </div>
         </div>
 
         <div class="field">
@@ -268,7 +249,11 @@
     <!-- Font settings -->
     <div class="panel">
       <div class="panel-header collapsible">
-        <span>Rank/Index font</span>  <span class="chevron">▾</span>
+        <span>Rank/Index font</span>
+        <div class="header-actions">
+          <button type="button" id="resetFontsButton" class="reset-icon-button" title="Reset fonts">↻</button>
+          <span class="chevron">▾</span>
+        </div>
       </div>
 
 		<div class="field-row">
@@ -403,7 +388,11 @@
     <!-- Suit icon settings -->
     <div class="panel">
       <div class="panel-header collapsible">
-        <span>Suit icons </span> <span class="chevron">▾</span>
+        <span>Suit icons </span>
+        <div class="header-actions">
+          <button type="button" id="resetIconsButton" class="reset-icon-button" title="Reset suit icons">↻</button>
+          <span class="chevron">▾</span>
+        </div>
       </div>
 
       <div class="field">
@@ -582,7 +571,12 @@
     <!-- Layout and options -->
     <div class="panel collapsed" title="Advanced Layout Features">
       <div class="panel-header collapsible">
-        <span>Layout & global options</span>  <span class="chevron">▾</span>
+        <span>Layout & global options</span>
+        <div class="header-actions">
+          <button type="button" id="resetCornersButton" class="reset-icon-button" title="Reset corners">↻</button>
+          <button type="button" id="resetPipsButton" class="reset-icon-button" title="Reset pips & layout">↻</button>
+          <span class="chevron">▾</span>
+        </div>
       </div>
 
       <div class="field">
@@ -1122,6 +1116,17 @@
       Cancel
     </button>
 
+  </div>
+</div>
+
+<div id="fullResetModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="fullResetModalTitle">
+  <div class="modal-content">
+    <h3 id="fullResetModalTitle">Start Over?</h3>
+    <p>This will clear all selected images, custom icons, ability text, and other saved settings.</p>
+    <div class="modal-actions">
+      <button type="button" id="cancelFullResetButton" class="secondary">Cancel</button>
+      <button type="button" id="confirmFullResetButton" class="danger">OK</button>
+    </div>
   </div>
 </div>
 

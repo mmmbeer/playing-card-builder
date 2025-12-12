@@ -4,6 +4,7 @@ import { settings } from './state.js';
 import { initAutosave } from "./autosave.js";
 import { deck, getCurrentCard } from "./state.js";
 import { renderCardForPreview } from './drawing.js';
+import { initHelp } from "./help.js";
 
 window.addEventListener('DOMContentLoaded', () => {
     // DO NOT async/await this
@@ -12,6 +13,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     initUI();
     initTgcExport();
+    initHelp();
 
     window.deck = deck;
     window.renderCurrentCard = () => renderCardForPreview();

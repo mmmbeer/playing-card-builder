@@ -35,8 +35,7 @@ export const ICON_PRESETS = [
 
   { id: 'engraved',           label: 'Engraved',                  file: 'suits/engraved.png' },
 
-  { id: 'list',               label: 'List',                      file: 'suits/list.txt' },
-
+  
   { id: 'neon',               label: 'Neon',                      file: 'suits/neon.png' },
   { id: 'neon-br',            label: 'Neon (Black & Red)',        file: 'suits/neon-br.png' },
   { id: 'neon-futuristic',    label: 'Futuristic Neon',           file: 'suits/neon-futuristic.png' },

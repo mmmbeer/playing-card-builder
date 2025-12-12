@@ -52,6 +52,7 @@ export function initJokerControls(dom, settings, onChange) {
       "belowLabelRow",
       "centerRowSplit",
       "centerColumn",
+      "cornerRows",
       "none"
     ]);
     const value = allowed.has(dom.jokerSuitStyleSelect.value)

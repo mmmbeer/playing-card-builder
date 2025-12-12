@@ -366,13 +366,17 @@ function drawFaceImage(ctx, card) {
    NEW DRAW PIPS (uses pips.js)
 ------------------------------------------------------------- */
 
+function getPipIconSize() {
+  return settings.fontSize * 1.4;
+}
+
 function drawPips(ctx, suitId, rank) {
   if (!settings.showPips) return;
 
   const layout = getPipLayout(rank);
   if (!layout.length) return;
 
-  const size = settings.fontSize * 1.4;
+  const size = getPipIconSize();
 
   layout.forEach(p => {
     const px = BLEED + p.x * SAFE_WIDTH;
@@ -504,6 +508,14 @@ function getJokerLabelMetrics() {
   };
 }
 
+function mirrorPlacementsVertically(placements) {
+  return placements.map(pos => ({
+    ...pos,
+    y: CARD_HEIGHT - pos.y,
+    rotation: (pos.rotation || 0) + Math.PI
+  }));
+}
+
 function getJokerSuitPlacements(mode) {
   const [topY, innerTopY, centerY, innerBottomY, bottomY] = getPipGuidelinesWithFallback();
   const centerX = BLEED + settings.pipCenterX * SAFE_WIDTH;
@@ -542,12 +554,15 @@ function getJokerSuitPlacements(mode) {
         { x: centerX, y: bottomY, rotation: Math.PI },
         { x: leftX, y: centerY }
       ];
-    case 'belowLabelRow':
-      return [-1.5, -0.5, 0.5, 1.5].map(mult => ({
+    case 'belowLabelRow': {
+      const row = [-1.5, -0.5, 0.5, 1.5].map(mult => ({
         x: centerX + rowSpacing * mult,
         y: belowLabelY,
         scale: 0.7
       }));
+      const mirrored = mirrorPlacementsVertically(row);
+      return [...row, ...mirrored];
+    }
     case 'centerRowSplit':
       return [-1.5, -0.5, 0.5, 1.5].map((mult, idx) => ({
         x: centerX + rowSpacing * mult,
@@ -561,6 +576,20 @@ function getJokerSuitPlacements(mode) {
         { x: centerX, y: innerBottomY, rotation: Math.PI },
         { x: centerX, y: bottomY, rotation: Math.PI }
       ];
+    case 'cornerRows': {
+      const offsetX = Math.min(innerSpanX * 0.2, SAFE_WIDTH * 0.18);
+      const rowY = Math.max(belowLabelY, topY);
+      const rowFactory = (baseX, y, rotation = 0) =>
+        [-1.5, -0.5, 0.5, 1.5].map(mult => ({
+          x: baseX + rowSpacing * 0.9 * mult,
+          y,
+          rotation,
+          scale: 0.65
+        }));
+      const topRow = rowFactory(centerX - offsetX, rowY, 0);
+      const bottomRow = rowFactory(centerX + offsetX, CARD_HEIGHT - rowY, Math.PI);
+      return [...topRow, ...bottomRow];
+    }
     default:
       return [];
   }
@@ -572,7 +601,7 @@ function drawJokerSuits(ctx, mode) {
   const placements = getJokerSuitPlacements(mode);
   if (!placements.length) return;
 
-  const baseSize = (settings.jokerFontSize || settings.fontSize) * 0.75;
+  const baseSize = getPipIconSize();
 
   placements.forEach((pos, idx) => {
     const suit = SUITS[idx % SUITS.length];

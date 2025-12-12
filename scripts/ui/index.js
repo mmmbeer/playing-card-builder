@@ -58,7 +58,8 @@ import { exportFullDeck } from "../save.js";
 import { openBulkModal, initBulkLoader } from "../bulk.js";
 import { getImageRecord } from "../indexedDB.js";
 
-import { CARD_WIDTH, CARD_HEIGHT, BLEED, SAFE_WIDTH, SAFE_HEIGHT, SUITS } from "../config.js";
+import { SUITS } from "../config.js";
+import { getCardMetrics } from "../cardGeometry.js";
 import { registerSamplingCanvas } from "./colorSampler.js";
 
 
@@ -371,11 +372,24 @@ export async function initUI() {
 
 
   function updateCanvasMetadata() {
+    const { cardWidth, cardHeight, safeWidth, safeHeight } = getCardMetrics();
     const sizeEl = document.getElementById("canvasSizeInfo");
     const safeEl = document.getElementById("safeZoneInfo");
 
-    if (sizeEl) sizeEl.textContent = `${CARD_WIDTH} × ${CARD_HEIGHT}`;
-    if (safeEl) safeEl.textContent = `${SAFE_WIDTH} × ${SAFE_HEIGHT}`;
+    const canvas = document.getElementById("cardCanvas");
+    if (canvas) {
+      canvas.width = cardWidth;
+      canvas.height = cardHeight;
+
+      const availableWidth = canvas.parentElement?.clientWidth || cardWidth;
+      const displayWidth = Math.max(1, availableWidth);
+      const displayHeight = displayWidth * (cardHeight / cardWidth);
+      canvas.style.width = `${displayWidth}px`;
+      canvas.style.height = `${displayHeight}px`;
+    }
+
+    if (sizeEl) sizeEl.textContent = `${cardWidth} × ${cardHeight}`;
+    if (safeEl) safeEl.textContent = `${safeWidth} × ${safeHeight}`;
   }
 
 
@@ -560,6 +574,7 @@ export async function initUI() {
   }
 window.addEventListener("forceSyncAndRender", () => {
   doSync();
+  updateCanvasMetadata();
   renderSelectedCard();
 });
 

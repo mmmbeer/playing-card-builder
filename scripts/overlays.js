@@ -4,15 +4,7 @@ import {
   pipGuidelineYs
 } from './state.js'
 
-import {
-  CARD_WIDTH,
-  CARD_HEIGHT,
-  BLEED,
-  SAFE_WIDTH,
-  SAFE_HEIGHT
-} from './config.js'
-
-export function renderOverlays(ctx, cardWidth, cardHeight) {
+export function renderOverlays(ctx, { cardWidth, cardHeight, bleed, safeWidth, safeHeight }) {
   const s = getSettings()
   if (!s.showGuidelines) return
 
@@ -26,7 +18,7 @@ export function renderOverlays(ctx, cardWidth, cardHeight) {
   ctx.setLineDash([10, 8])
   ctx.strokeStyle = 'rgba(148,163,184,0.55)'
   ctx.lineWidth = 2
-  ctx.strokeRect(BLEED, BLEED, SAFE_WIDTH, SAFE_HEIGHT)
+  ctx.strokeRect(bleed, bleed, safeWidth, safeHeight)
 
 
 

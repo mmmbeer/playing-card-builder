@@ -3,13 +3,8 @@
 // If JSZip is loaded globally via CDN, comment out the line above
 // and rely on window.JSZip instead.
 
-import {
-  CARD_WIDTH,
-  CARD_HEIGHT,
-  SAFE_WIDTH,
-  SAFE_HEIGHT,
-  SUITS
-} from "./config.js";
+import { SUITS } from "./config.js";
+import { getCardMetrics } from "./cardGeometry.js";
 
 import {
   settings,
@@ -33,8 +28,9 @@ export async function downloadSingleCard(selectionOrSuit, rankMaybe, copyIndexMa
     : { suitId: selectionOrSuit, rank: rankMaybe, copyIndex: copyIndexMaybe };
 
   const canvas = document.createElement("canvas");
-  canvas.width = CARD_WIDTH;
-  canvas.height = CARD_HEIGHT;
+  const { cardWidth, cardHeight } = getCardMetrics();
+  canvas.width = cardWidth;
+  canvas.height = cardHeight;
   const ctx = canvas.getContext("2d");
 
   if (selection.suitId === JOKER_SUIT_ID) {
@@ -81,8 +77,9 @@ export async function downloadSingleCard(selectionOrSuit, rankMaybe, copyIndexMa
 export async function exportFullDeck() {
   const zip = new JSZip();
   const tmpCanvas = document.createElement("canvas");
-  tmpCanvas.width = CARD_WIDTH;
-  tmpCanvas.height = CARD_HEIGHT;
+  const { cardWidth, cardHeight } = getCardMetrics();
+  tmpCanvas.width = cardWidth;
+  tmpCanvas.height = cardHeight;
   const tmpCtx = tmpCanvas.getContext("2d");
 
   // Standard cards

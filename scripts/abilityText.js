@@ -1,4 +1,4 @@
-import { CARD_WIDTH, CARD_HEIGHT, BLEED } from './config.js';
+import { getCardMetrics } from './cardGeometry.js';
 import { settings } from './state.js';
 import { marked } from 'https://cdn.jsdelivr.net/npm/marked@12.0.2/lib/marked.esm.js';
 
@@ -16,13 +16,13 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function estimateCornerWidth(ctx, rank) {
+function estimateCornerWidth(ctx, rank, bleed) {
   ctx.save();
   ctx.font = `${settings.fontWeight} ${settings.fontSize}px "${settings.fontFamily}"`;
   const rankWidth = ctx.measureText(rank || '10').width;
   const iconWidth = settings.fontSize * 0.9 * settings.iconScale;
   ctx.restore();
-  return BLEED + Math.max(rankWidth, iconWidth) + settings.fontSize * 0.8;
+  return bleed + Math.max(rankWidth, iconWidth) + settings.fontSize * 0.8;
 }
 
 function normalizeInline(text) {
@@ -222,8 +222,10 @@ export function renderAbilityText(ctx, suitId, rank, card, drawSuitIcon, allowMi
   const markdown = card?.abilityMarkdown || '';
   if (!markdown.trim()) return;
 
-  const cornerWidth = estimateCornerWidth(ctx, rank);
-  const baseWidth = CARD_WIDTH - cornerWidth * 2;
+  const { cardWidth, cardHeight, bleed } = getCardMetrics();
+
+  const cornerWidth = estimateCornerWidth(ctx, rank, bleed);
+  const baseWidth = cardWidth - cornerWidth * 2;
   const targetWidth = baseWidth * (settings.abilityWidthPercent / 100);
 
   const pipSize = settings.abilityBodyFontSize * 0.9;
@@ -257,8 +259,8 @@ export function renderAbilityText(ctx, suitId, rank, card, drawSuitIcon, allowMi
 
   const marginY = settings.fontSize * 0.6;
   const panelY = settings.abilityPlacement === 'top'
-    ? BLEED + marginY
-    : CARD_HEIGHT - BLEED - marginY - panelHeight;
+    ? bleed + marginY
+    : cardHeight - bleed - marginY - panelHeight;
 
   ctx.save();
   ctx.translate(panelX, panelY);
@@ -291,7 +293,7 @@ export function renderAbilityText(ctx, suitId, rank, card, drawSuitIcon, allowMi
 
   if (allowMirror && settings.abilityMirror) {
     ctx.save();
-    ctx.translate(CARD_WIDTH, CARD_HEIGHT);
+    ctx.translate(cardWidth, cardHeight);
     ctx.rotate(Math.PI);
     renderAbilityText(ctx, suitId, rank, card, drawSuitIcon, false);
     ctx.restore();

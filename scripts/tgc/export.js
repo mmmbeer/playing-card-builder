@@ -1,7 +1,8 @@
 import api from "./api.js";
 import { renderCardForExport, renderJokerCard } from "../drawing.js";
 import { activeRanks, settings } from "../state.js";
-import { CARD_WIDTH, CARD_HEIGHT, SUITS } from "../config.js";
+import { SUITS } from "../config.js";
+import { getCardMetrics } from "../cardGeometry.js";
 import { enumerateRankSlots, JOKER_SUIT_ID } from "../ui/navigation.js";
 
 import {
@@ -91,9 +92,10 @@ export default {
   ------------------------------------------------------------ */
   async uploadCard(item, deckId, decision) {
     try {
+      const { cardWidth, cardHeight } = getCardMetrics();
       const canvas = document.createElement("canvas");
-      canvas.width = CARD_WIDTH;
-      canvas.height = CARD_HEIGHT;
+      canvas.width = cardWidth;
+      canvas.height = cardHeight;
 
       const ctx = canvas.getContext("2d");
       if (item.isJoker) {

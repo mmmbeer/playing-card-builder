@@ -15,6 +15,22 @@ export function initCanvasDrag(dom, getCard, render) {
   let dragging = false;
   let startX, startY, origX, origY;
 
+  const refreshCursor = () => {
+    const card = getCard();
+    const hasFace = !!card?.faceImage;
+    if (!dom.canvas) return;
+
+    if (hasFace && !isSamplingActive()) {
+      dom.canvas.classList.add("face-draggable");
+    } else {
+      dom.canvas.classList.remove("face-draggable");
+    }
+  };
+
+  dom.canvas.addEventListener("mouseenter", refreshCursor);
+
+  dom.canvas.addEventListener("mousemove", refreshCursor);
+
   dom.canvas.addEventListener("mousedown", evt => {
     if (isSamplingActive()) return;
     const card = getCard();
@@ -42,5 +58,8 @@ export function initCanvasDrag(dom, getCard, render) {
   });
 
   window.addEventListener("mouseup", () => dragging = false);
-  window.addEventListener("mouseleave", () => dragging = false);
+  window.addEventListener("mouseleave", () => {
+    dragging = false;
+    refreshCursor();
+  });
 }

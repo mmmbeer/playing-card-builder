@@ -74,6 +74,31 @@ async function serializeDeck() {
   return out;
 }
 
+async function buildSettingsPayload() {
+  const { iconSheet, customIconDataURL, iconPresetId, ...settingsWithoutImage } = settings;
+
+  const resolvedCustomUrl = iconPresetId
+    ? null
+    : customIconDataURL || (await ensureDataURL(iconSheet));
+
+  return {
+    ...settingsWithoutImage,
+    customIconDataURL: resolvedCustomUrl || null,
+    iconPresetId: iconPresetId || null
+  };
+}
+
+async function rebuildIconSheetFromSettings(savedSettings) {
+  if (!savedSettings?.customIconDataURL) return null;
+
+  const img = await dataURLToImage(savedSettings.customIconDataURL);
+  if (img.decode) {
+    try { await img.decode(); } catch (_) {}
+  }
+
+  return img;
+}
+
 async function restoreDeck(serial) {
   if (!serial) return;
 
@@ -115,18 +140,10 @@ function scheduleSave() {
   saveTimeout = setTimeout(async () => {
     try {
       const deckSerialized = await serializeDeck();
-      const {
-        iconSheet,
-        customIconDataURL,
-        iconPresetId,
-        ...settingsWithoutImage
-      } = settings;
-
-      settingsWithoutImage.customIconDataURL = customIconDataURL || null;
-      settingsWithoutImage.iconPresetId = iconPresetId || null;
+      const settingsPayload = await buildSettingsPayload();
 
       const payload = {
-        settings: settingsWithoutImage,
+        settings: settingsPayload,
         deck: deckSerialized,
         activeRanks,
         timestamp: Date.now()
@@ -151,9 +168,9 @@ export function markDirty() {
 export async function forceSave() {
   setStatusSaving();
   const deckSerialized = await serializeDeck();
-  const { iconSheet, ...settingsWithoutImage } = settings;
+  const settingsPayload = await buildSettingsPayload();
   const payload = {
-    settings: settingsWithoutImage,
+    settings: settingsPayload,
     deck: deckSerialized,
     activeRanks,
     timestamp: Date.now()
@@ -166,9 +183,10 @@ export async function importSave(file) {
   try {
     const text = await file.text();
     const data = JSON.parse(text);
+    const restoredSheet = await rebuildIconSheetFromSettings(data.settings);
     const currentSheet = settings.iconSheet;
     Object.assign(settings, data.settings);
-    settings.iconSheet = currentSheet;
+    settings.iconSheet = restoredSheet || currentSheet;
     await restoreDeck(data.deck);
     requestAnimationFrame(() => {
       window.dispatchEvent(new CustomEvent("forceSyncAndRender"));
@@ -187,10 +205,12 @@ export async function initAutosave() {
     try {
       const data = JSON.parse(raw);
 
+      const restoredSheet = await rebuildIconSheetFromSettings(data.settings);
+
       // Restore settings but preserve current iconSheet selection
       const currentSheet = settings.iconSheet;
       Object.assign(settings, data.settings);
-      settings.iconSheet = currentSheet;
+      settings.iconSheet = restoredSheet || currentSheet;
 
       // Preserve custom icon sheet metadata
       settings.customIconDataURL = data.settings.customIconDataURL || null;

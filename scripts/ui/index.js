@@ -6,7 +6,7 @@
 import { dom } from "./domRefs.js";
 import { syncControls } from "./sync.js";
 import { initCanvasDrag } from "./canvasInteractions.js";
-import { initIconPresets } from "./presets.js";
+import { initIconPresets, loadPreset } from "./presets.js";
 
 import { initSuitControls } from "./controls/suitControls.js";
 import { initRankControls } from "./controls/rankControls.js";

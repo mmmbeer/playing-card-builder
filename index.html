@@ -120,6 +120,8 @@
           <textarea id="abilityMarkdownInput" rows="6" placeholder="Type ability text in markdown…"></textarea>
         </div>
 
+        <div class="hint">Reset only restores shared styling; per-card markdown content stays as-is.</div>
+
         <div class="two-col">
           <div class="field">
             <label>Header font</label>
@@ -493,7 +495,11 @@
 	<!-- Deck & ranks configuration -->
     <div class="panel collapsed" title=" (Optional) Customize the suits and ranks">
       <div class="panel-header collapsible">
-        <span>Deck & ranks</span>  <span class="chevron">▾</span>
+        <span>Deck & ranks</span>
+        <div class="header-actions">
+          <button type="button" id="resetDeckButton" class="reset-icon-button" title="Reset deck & ranks">↻</button>
+          <span class="chevron">▾</span>
+        </div>
       </div>
 
       <div class="field">
@@ -572,15 +578,16 @@
     <div class="panel collapsed" title="Advanced Layout Features">
       <div class="panel-header collapsible">
         <span>Layout & global options</span>
-        <div class="header-actions">
-          <button type="button" id="resetCornersButton" class="reset-icon-button" title="Reset corners">↻</button>
-          <button type="button" id="resetPipsButton" class="reset-icon-button" title="Reset pips & layout">↻</button>
-          <span class="chevron">▾</span>
-        </div>
+        <div class="header-actions"><span class="chevron">▾</span></div>
       </div>
 
       <div class="field">
-        <label>Card background</label>
+        <div class="field-header">
+          <label>Card background</label>
+          <div class="header-actions">
+            <button type="button" id="resetBackgroundButton" class="reset-icon-button" title="Reset background">↻</button>
+          </div>
+        </div>
         <div class="field-row tight">
           <label class="inline-label" for="backgroundStyleSelect">Style</label>
           <select id="backgroundStyleSelect">
@@ -611,7 +618,12 @@
       </div>
 
       <div class="field">
-        <label>Rank / suit arrangement (corners)</label>
+        <div class="field-header">
+          <label>Rank / suit arrangement (corners)</label>
+          <div class="header-actions">
+            <button type="button" id="resetLayoutButton" class="reset-icon-button" title="Reset rank/suit arrangement">↻</button>
+          </div>
+        </div>
         <div class="pill-select" id="layoutButtons">
           <button type="button" data-layout="rankAboveSuit" class="active">Rank above suit</button>
           <button type="button" data-layout="suitAboveRank">Suit above rank</button>
@@ -636,7 +648,12 @@
       <div class="divider"></div>
 
       <div class="field">
-        <label>Corner fine-tuning</label>
+        <div class="field-header">
+          <label>Corner fine-tuning</label>
+          <div class="header-actions">
+            <button type="button" id="resetCornersButton" class="reset-icon-button" title="Reset corners">↻</button>
+          </div>
+        </div>
         <div class="two-col">
           <div class="field">
             <label for="rankOffsetXInput">Rank offset X (px)</label>
@@ -662,17 +679,25 @@
       <div class="divider"></div>
 
       <div class="field">
-        <label>Pip vertical positions (safe-area %)</label>
+        <div class="field-header">
+          <label>Pip vertical positions (safe-area %)</label>
+          <div class="header-actions">
+            <button type="button" id="linkPipCenterButton" class="link-icon-button" title="Link all to center">🔗 center</button>
+            <button type="button" id="linkPipOuterButton" class="link-icon-button" title="Link top & bottom">🔗 outer</button>
+            <button type="button" id="linkPipInnerButton" class="link-icon-button" title="Link inner top & bottom">🔗 inner</button>
+            <button type="button" id="resetPipPositionsButton" class="reset-icon-button" title="Reset pip vertical positions">↻</button>
+          </div>
+        </div>
         <div class="pip-slider-row">
           <span>Top</span>
-          <input id="pipTopInput" type="range" min="0" max="100" step="1" value="50">
-          <span class="pip-value" id="pipTopValue">50</span>
+          <input id="pipTopInput" type="range" min="0" max="100" step="1" value="30">
+          <span class="pip-value" id="pipTopValue">30</span>
         </div>
 
         <div class="pip-slider-row">
           <span>Inner top</span>
-          <input id="pipInnerTopInput" type="range" min="0" max="100" step="1" value="50">
-          <span class="pip-value" id="pipInnerTopValue">50</span>
+          <input id="pipInnerTopInput" type="range" min="0" max="100" step="1" value="40">
+          <span class="pip-value" id="pipInnerTopValue">40</span>
         </div>
 
         <div class="pip-slider-row">
@@ -683,14 +708,14 @@
 
         <div class="pip-slider-row">
           <span>Inner bottom</span>
-          <input id="pipInnerBottomInput" type="range" min="0" max="100" step="1" value="50">
-          <span class="pip-value" id="pipInnerBottomValue">50</span>
+          <input id="pipInnerBottomInput" type="range" min="0" max="100" step="1" value="60">
+          <span class="pip-value" id="pipInnerBottomValue">60</span>
         </div>
 
         <div class="pip-slider-row">
           <span>Bottom</span>
-          <input id="pipBottomInput" type="range" min="0" max="100" step="1" value="50">
-          <span class="pip-value" id="pipBottomValue">50</span>
+          <input id="pipBottomInput" type="range" min="0" max="100" step="1" value="70">
+          <span class="pip-value" id="pipBottomValue">70</span>
         </div>
 
         <div class="hint">

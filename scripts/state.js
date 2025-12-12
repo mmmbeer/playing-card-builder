@@ -1,4 +1,4 @@
-import { SUITS, BASE_RANKS } from './config.js'
+import { SUITS, BASE_RANKS, DEFAULT_PIP_VERTICALS } from './config.js'
 import { markDirty } from "./autosave.js";
 
 
@@ -65,11 +65,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
   jokerFontSize: 72,
   jokerSuitStyle: 'centerCircle',
 
-  pipTop: 0.5,
-  pipInnerTop: 0.5,
-  pipCenter: 0.5,
-  pipInnerBottom: 0.5,
-  pipBottom: 0.5,
+  pipTop: DEFAULT_PIP_VERTICALS.top,
+  pipInnerTop: DEFAULT_PIP_VERTICALS.innerTop,
+  pipCenter: DEFAULT_PIP_VERTICALS.center,
+  pipInnerBottom: DEFAULT_PIP_VERTICALS.innerBottom,
+  pipBottom: DEFAULT_PIP_VERTICALS.bottom,
   pipLeft: 0.30,
   pipRight: 0.70,
   pipCenterX: 0.5,

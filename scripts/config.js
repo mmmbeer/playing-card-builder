@@ -4,6 +4,14 @@ export const BLEED = 80
 export const SAFE_WIDTH = CARD_WIDTH - BLEED * 2
 export const SAFE_HEIGHT = CARD_HEIGHT - BLEED * 2
 
+export const DEFAULT_PIP_VERTICALS = Object.freeze({
+  top: 0.30,
+  innerTop: 0.40,
+  center: 0.50,
+  innerBottom: 0.60,
+  bottom: 0.70
+});
+
 export const SUITS = [
   { id: 'spades',   label: 'Spades',   symbol: 'S', display: '♠', gridX: 0, gridY: 0 },
   { id: 'hearts',   label: 'Hearts',   symbol: 'H', display: '♥', gridX: 1, gridY: 0 },

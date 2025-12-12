@@ -392,20 +392,82 @@
         <input id="iconSheetInput" type="file" accept="image/*">
       </div>
 
-      <div class="two-col">
-        <div class="field">
-          <label for="iconColorInput">Icon color</label>
-          <input id="iconColorInput" type="color" value="#000000">
+      <div class="field">
+        <label for="iconColorModeSelect">Color mode</label>
+        <select id="iconColorModeSelect">
+          <option value="single">Single color</option>
+          <option value="bi">Bi-color (red / black)</option>
+          <option value="perSuit">Per suit</option>
+        </select>
+      </div>
+
+      <div class="color-mode-group" id="iconSingleGroup">
+        <div class="color-picker-row">
+          <span>All suits</span>
+          <div class="color-picker">
+            <input id="iconColorInput" type="color" value="#000000">
+            <button type="button" id="iconColorEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
         </div>
+      </div>
+
+      <div class="color-mode-group" id="iconBiColorGroup">
+        <div class="color-picker-row">
+          <span>Black suits</span>
+          <div class="color-picker">
+            <input id="iconColorBlackInput" type="color" value="#000000">
+            <button type="button" id="iconColorBlackEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
+        </div>
+        <div class="color-picker-row">
+          <span>Red suits</span>
+          <div class="color-picker">
+            <input id="iconColorRedInput" type="color" value="#d12d2d">
+            <button type="button" id="iconColorRedEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="color-mode-group" id="iconPerSuitGroup">
+        <div class="color-picker-row">
+          <span>Spades</span>
+          <div class="color-picker">
+            <input id="iconColorSpadesInput" type="color" value="#000000">
+            <button type="button" id="iconColorSpadesEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
+        </div>
+        <div class="color-picker-row">
+          <span>Hearts</span>
+          <div class="color-picker">
+            <input id="iconColorHeartsInput" type="color" value="#d12d2d">
+            <button type="button" id="iconColorHeartsEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
+        </div>
+        <div class="color-picker-row">
+          <span>Clubs</span>
+          <div class="color-picker">
+            <input id="iconColorClubsInput" type="color" value="#000000">
+            <button type="button" id="iconColorClubsEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
+        </div>
+        <div class="color-picker-row">
+          <span>Diamonds</span>
+          <div class="color-picker">
+            <input id="iconColorDiamondsInput" type="color" value="#d12d2d">
+            <button type="button" id="iconColorDiamondsEyedropper" class="eyedropper-btn" title="Pick from card">🎯</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
         <div class="field">
           <label for="iconOpacityInput">Opacity</label>
           <input id="iconOpacityInput" type="range" min="0" max="1" step="0.05" value="1">
         </div>
-      </div>
-
-      <div class="field">
-        <label for="iconScaleInput">Icon scale</label>
-        <input id="iconScaleInput" type="range" min="0.4" max="2" step="0.05" value="1">
+        <div class="field">
+          <label for="iconScaleInput">Icon scale</label>
+          <input id="iconScaleInput" type="range" min="0.4" max="2" step="0.05" value="1">
+        </div>
       </div>
 
       <div class="hint">

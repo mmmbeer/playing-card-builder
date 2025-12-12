@@ -176,4 +176,58 @@ export function initIconControls(dom, settings, render) {
     markDirty();
     render();
   });
+
+  dom.iconOverlayTypeSelect.addEventListener("change", () => {
+    settings.iconOverlayType = dom.iconOverlayTypeSelect.value;
+    markDirty();
+    render();
+  });
+
+  dom.iconOverlayOpacityInput.addEventListener("input", () => {
+    settings.iconOverlayOpacity = Number(dom.iconOverlayOpacityInput.value);
+    markDirty();
+    render();
+  });
+
+  dom.iconOverlayBlurInput.addEventListener("input", () => {
+    settings.iconOverlayBlur = Number(dom.iconOverlayBlurInput.value);
+    markDirty();
+    render();
+  });
+
+  dom.iconShadowOffsetXInput.addEventListener("input", () => {
+    settings.iconShadowOffsetX = Number(dom.iconShadowOffsetXInput.value);
+    markDirty();
+    render();
+  });
+
+  dom.iconShadowOffsetYInput.addEventListener("input", () => {
+    settings.iconShadowOffsetY = Number(dom.iconShadowOffsetYInput.value);
+    markDirty();
+    render();
+  });
+
+  dom.iconOutlineCheckbox.addEventListener("change", () => {
+    settings.iconOutline = dom.iconOutlineCheckbox.checked;
+    markDirty();
+    render();
+  });
+
+  dom.iconOutlineWidthInput.addEventListener("input", () => {
+    settings.iconOutlineWidth = Number(dom.iconOutlineWidthInput.value);
+    markDirty();
+    render();
+  });
+
+  dom.iconOutlinePositionSelect.addEventListener("change", () => {
+    settings.iconOutlinePosition = dom.iconOutlinePositionSelect.value;
+    markDirty();
+    render();
+  });
+
+  dom.iconOutlineColorInput.addEventListener("input", () => {
+    settings.iconOutlineColor = dom.iconOutlineColorInput.value;
+    markDirty();
+    render();
+  });
 }

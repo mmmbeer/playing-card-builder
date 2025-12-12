@@ -70,10 +70,10 @@
 		  <label for="faceScaleInput">Zoom</label>
 		  <input id="faceScaleInput" type="range" min="0.2" max="3" step="0.05" value="1">
 		</div>
-		<div class="field">
-		  <label for="faceRotationInput">Rotation (°)</label>
-		  <input id="faceRotationInput" type="range" min="-180" max="180" step="1" value="0">
-		</div>
+                <div class="field">
+                  <label for="faceRotationInput">Rotation (°)</label>
+                  <input id="faceRotationInput" type="range" min="-180" max="180" step="0.1" value="0">
+                </div>
 	  </div>
 
 	  <div class="field-row">
@@ -360,6 +360,28 @@
 
       <div class="two-col">
         <div class="field">
+          <label for="overlayOpacityInput">Glow / shadow opacity</label>
+          <input id="overlayOpacityInput" type="range" min="0" max="1" step="0.05" value="0.7">
+        </div>
+        <div class="field">
+          <label for="overlayBlurInput">Glow / shadow blur</label>
+          <input id="overlayBlurInput" type="range" min="0" max="40" step="1" value="10">
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="field">
+          <label for="shadowOffsetXInput">Shadow offset X</label>
+          <input id="shadowOffsetXInput" type="number" min="-50" max="50" value="2">
+        </div>
+        <div class="field">
+          <label for="shadowOffsetYInput">Shadow offset Y</label>
+          <input id="shadowOffsetYInput" type="number" min="-50" max="50" value="3">
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="field">
           <div class="checkbox-row">
             <input type="checkbox" id="outlineCheckbox">
             <label for="outlineCheckbox">Outline / border</label>
@@ -367,8 +389,16 @@
         </div>
         <div class="field">
           <label for="outlineWidthInput">Outline width</label>
-          <input id="outlineWidthInput" type="range" min="0" max="10" step="0.5" value="3">
+          <input id="outlineWidthInput" type="range" min="0" max="10" step="0.1" value="3">
         </div>
+      </div>
+
+      <div class="field">
+        <label for="outlinePositionSelect">Outline placement</label>
+        <select id="outlinePositionSelect">
+          <option value="center">Centered on text</option>
+          <option value="outside">Outside only</option>
+        </select>
       </div>
 
       <div class="field">
@@ -476,6 +506,63 @@
           <label for="iconScaleInput">Icon scale</label>
           <input id="iconScaleInput" type="range" min="0.4" max="2" step="0.05" value="1">
         </div>
+      </div>
+
+      <div class="field">
+        <label for="iconOverlayTypeSelect">Overlay / effect</label>
+        <select id="iconOverlayTypeSelect">
+          <option value="none">None</option>
+          <option value="shadow">Soft shadow</option>
+          <option value="glow">Glow</option>
+        </select>
+      </div>
+
+      <div class="two-col">
+        <div class="field">
+          <label for="iconOverlayOpacityInput">Glow / shadow opacity</label>
+          <input id="iconOverlayOpacityInput" type="range" min="0" max="1" step="0.05" value="0.7">
+        </div>
+        <div class="field">
+          <label for="iconOverlayBlurInput">Glow / shadow blur</label>
+          <input id="iconOverlayBlurInput" type="range" min="0" max="40" step="1" value="10">
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="field">
+          <label for="iconShadowOffsetXInput">Shadow offset X</label>
+          <input id="iconShadowOffsetXInput" type="number" min="-50" max="50" value="2">
+        </div>
+        <div class="field">
+          <label for="iconShadowOffsetYInput">Shadow offset Y</label>
+          <input id="iconShadowOffsetYInput" type="number" min="-50" max="50" value="3">
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="field">
+          <div class="checkbox-row">
+            <input type="checkbox" id="iconOutlineCheckbox">
+            <label for="iconOutlineCheckbox">Outline / border</label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="iconOutlineWidthInput">Outline width</label>
+          <input id="iconOutlineWidthInput" type="range" min="0" max="10" step="0.1" value="3">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="iconOutlinePositionSelect">Outline placement</label>
+        <select id="iconOutlinePositionSelect">
+          <option value="center">Centered on icon</option>
+          <option value="outside">Outside only</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="iconOutlineColorInput">Outline color</label>
+        <input id="iconOutlineColorInput" type="color" value="#000000">
       </div>
 
       <div class="hint">

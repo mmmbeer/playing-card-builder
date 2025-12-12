@@ -73,6 +73,23 @@ function hexToRgb(hex) {
   };
 }
 
+function applyShadowForType(ctx, overlayType, baseColor, opacity, blur, offsetX, offsetY) {
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+
+  if (overlayType === 'shadow') {
+    ctx.shadowColor = hexToRgba('#000000', opacity);
+    ctx.shadowBlur = blur;
+    ctx.shadowOffsetX = offsetX;
+    ctx.shadowOffsetY = offsetY;
+  } else if (overlayType === 'glow') {
+    ctx.shadowColor = hexToRgba(baseColor, opacity);
+    ctx.shadowBlur = blur;
+  }
+}
+
 function getRankColor(suitId) {
   if (settings.fontColorMode === 'bi') {
     const isBlackSuit = suitId === 'spades' || suitId === 'clubs';
@@ -165,8 +182,34 @@ function fillBackground(ctx) {
 }
 
 /* ------------------------------------------------------------
-   SUIT ICON RENDERING (same as before)
+   SUIT ICON RENDERING
 ------------------------------------------------------------- */
+
+function tintIconToCanvas(baseData, sw, sh, color, opacity = 1) {
+  const tintedData = new ImageData(new Uint8ClampedArray(baseData.data), sw, sh);
+  const { r, g, b } = color ? hexToRgb(color) : { r: 255, g: 255, b: 255 };
+  const hasTint = !!color;
+
+  const data = tintedData.data;
+  const rFactor = r / 255;
+  const gFactor = g / 255;
+  const bFactor = b / 255;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const alpha = data[i + 3];
+    if (alpha === 0) continue;
+
+    if (hasTint) {
+      data[i]     = Math.round(data[i] * rFactor);
+      data[i + 1] = Math.round(data[i + 1] * gFactor);
+      data[i + 2] = Math.round(data[i + 2] * bFactor);
+    }
+
+    data[i + 3] = alpha * opacity;
+  }
+
+  iconWorkCtx.putImageData(tintedData, 0, 0);
+}
 
 function drawSuitIcon(ctx, suitId, x, y, size, rotationRad = 0) {
   if (!settings.iconSheet) return;
@@ -187,63 +230,56 @@ function drawSuitIcon(ctx, suitId, x, y, size, rotationRad = 0) {
   const dh = size * settings.iconScale;
 
   const iconColor = getIconColor(suitId);
-  const hasTint = !!iconColor && (() => {
-    const { r, g, b } = hexToRgb(iconColor);
-    return r !== 0 || g !== 0 || b !== 0;
-  })();
+  const overlayType = settings.iconOverlayType ?? 'none';
+  const overlayOpacity = settings.iconOverlayOpacity ?? settings.overlayOpacity ?? 0;
+  const overlayBlur = settings.iconOverlayBlur ?? settings.overlayBlur ?? 0;
+  const shadowOffsetX = settings.iconShadowOffsetX ?? settings.shadowOffsetX ?? 0;
+  const shadowOffsetY = settings.iconShadowOffsetY ?? settings.shadowOffsetY ?? 0;
 
-  // Fast path: no tint
-  if (!hasTint) {
-    ctx.save();
-    ctx.translate(x, y);
-    if (rotationRad) ctx.rotate(rotationRad);
+  const outline = settings.iconOutline;
+  const outlineWidth = settings.iconOutlineWidth ?? 0;
+  const outlineColor = settings.iconOutlineColor ?? '#000000';
+  const outlinePosition = settings.iconOutlinePosition ?? 'center';
 
-    const dx = -dw / 2;
-    const dy = -dh / 2;
-
-    const prevAlpha = ctx.globalAlpha;
-    ctx.globalAlpha = prevAlpha * settings.iconOpacity;
-
-    ctx.drawImage(sheet, sx, sy, sw, sh, dx, dy, dw, dh);
-    ctx.globalAlpha = prevAlpha;
-    ctx.restore();
-    return;
-  }
-
-  // Tint path
-  const { r, g, b } = hexToRgb(iconColor || '#000000');
+  const dx = -dw / 2;
+  const dy = -dh / 2;
 
   iconWorkCanvas.width = sw;
   iconWorkCanvas.height = sh;
   iconWorkCtx.clearRect(0, 0, sw, sh);
-
   iconWorkCtx.drawImage(sheet, sx, sy, sw, sh, 0, 0, sw, sh);
-  const imageData = iconWorkCtx.getImageData(0, 0, sw, sh);
-  const data = imageData.data;
-
-  const opacity = settings.iconOpacity;
-  const rFactor = r / 255;
-  const gFactor = g / 255;
-  const bFactor = b / 255;
-
-  for (let i = 0; i < data.length; i += 4) {
-    const alpha = data[i + 3];
-    if (alpha === 0) continue;
-
-    data[i]     = Math.round(data[i] * rFactor);
-    data[i + 1] = Math.round(data[i + 1] * gFactor);
-    data[i + 2] = Math.round(data[i + 2] * bFactor);
-    data[i + 3] = alpha * opacity;
-  }
-
-  iconWorkCtx.putImageData(imageData, 0, 0);
+  const baseData = iconWorkCtx.getImageData(0, 0, sw, sh);
 
   ctx.save();
   ctx.translate(x, y);
   if (rotationRad) ctx.rotate(rotationRad);
 
-  const dx = -dw / 2;
-  const dy = -dh / 2;
+  if (outline && outlineWidth > 0) {
+    const radius = outlinePosition === 'outside' ? outlineWidth : outlineWidth / 2;
+    const steps = Math.max(8, Math.ceil(radius * 4));
+    const angleStep = (Math.PI * 2) / steps;
+
+    tintIconToCanvas(baseData, sw, sh, outlineColor, 1);
+
+    for (let i = 0; i < steps; i++) {
+      const angle = i * angleStep;
+      const ox = Math.cos(angle) * radius;
+      const oy = Math.sin(angle) * radius;
+      ctx.drawImage(iconWorkCanvas, 0, 0, sw, sh, dx + ox, dy + oy, dw, dh);
+    }
+  }
+
+  applyShadowForType(
+    ctx,
+    overlayType,
+    iconColor || '#000000',
+    overlayOpacity,
+    overlayBlur,
+    shadowOffsetX,
+    shadowOffsetY
+  );
+
+  tintIconToCanvas(baseData, sw, sh, iconColor, settings.iconOpacity);
   ctx.drawImage(iconWorkCanvas, 0, 0, sw, sh, dx, dy, dw, dh);
 
   ctx.restore();
@@ -262,9 +298,14 @@ function drawRankText(ctx, text, x, y, align = 'left', baseline = 'top', options
   const fontColor = options.fontColor ?? settings.fontColor;
   const fontOpacity = options.fontOpacity ?? settings.fontOpacity;
   const overlayType = options.overlayType ?? settings.overlayType;
+  const overlayOpacity = options.overlayOpacity ?? settings.overlayOpacity;
+  const overlayBlur = options.overlayBlur ?? settings.overlayBlur;
+  const shadowOffsetX = options.shadowOffsetX ?? settings.shadowOffsetX;
+  const shadowOffsetY = options.shadowOffsetY ?? settings.shadowOffsetY;
   const outline = typeof options.outline === 'boolean' ? options.outline : settings.outline;
   const outlineWidth = options.outlineWidth ?? settings.outlineWidth;
   const outlineColor = options.outlineColor ?? settings.outlineColor;
+  const outlinePosition = options.outlinePosition ?? settings.outlinePosition ?? 'center';
 
   ctx.font = `${fontWeight} ${fontSize}px "${fontFamily}"`;
   ctx.textAlign = align;
@@ -272,24 +313,31 @@ function drawRankText(ctx, text, x, y, align = 'left', baseline = 'top', options
 
   ctx.fillStyle = hexToRgba(fontColor, fontOpacity);
 
-  ctx.shadowColor = 'transparent';
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 0;
+  applyShadowForType(ctx, overlayType, fontColor, overlayOpacity, overlayBlur, shadowOffsetX, shadowOffsetY);
 
-  if (overlayType === 'shadow') {
-    ctx.shadowColor = hexToRgba('#000000', 0.35);
-    ctx.shadowBlur = 4;
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 3;
-  } else if (overlayType === 'glow') {
-    ctx.shadowColor = hexToRgba(fontColor, 0.7);
-    ctx.shadowBlur = 10;
+  const renderOutlineOutside = outline && outlineWidth > 0 && outlinePosition === 'outside';
+  if (renderOutlineOutside) {
+    ctx.save();
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = outlineWidth * 2;
+    ctx.strokeStyle = outlineColor;
+    ctx.strokeText(text, x, y);
+    ctx.restore();
   }
 
   ctx.fillText(text, x, y);
 
-  if (outline && outlineWidth > 0) {
+  const renderCenteredOutline = outline && outlineWidth > 0 && outlinePosition !== 'outside';
+  if (renderCenteredOutline) {
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.lineJoin = 'round';
     ctx.lineWidth = outlineWidth;
     ctx.strokeStyle = outlineColor;
     ctx.strokeText(text, x, y);

@@ -24,6 +24,7 @@ import { initNavControls } from "./controls/navControls.js";
 
 import { initProgressControls } from "./controls/progressControls.js";
 import { initProgressOverlay } from "./controls/progressOverlay.js";
+import { initAbilityControls } from "./controls/abilityControls.js";
 
 
 
@@ -111,6 +112,7 @@ export async function initUI() {
   initJokerControls(dom, settings);
   initMirrorControls(dom, getCurrent, settings, renderCurrentCard);
   initCornerOffsetControls(dom, settings, renderCurrentCard);
+  initAbilityControls(dom, settings, getCurrent, renderCurrentCard);
 
   initDownloadControls(dom, () => ({
     suit: stateCtx().currentSuitId,
@@ -129,7 +131,6 @@ export async function initUI() {
   // Initialize font browser (safe now)
   //
   initFontBrowser(dom);
-  dom.fontFamilyWrapper.addEventListener("click", () => openFontBrowser(dom));
 
 
 
@@ -234,6 +235,25 @@ export async function initUI() {
     if (dom.outlineWidthInput) dom.outlineWidthInput.value = settings.outlineWidth;
     if (dom.outlineColorInput) dom.outlineColorInput.value = settings.outlineColor;
 
+    // ---- Ability Text ----
+    if (dom.abilityPlacementSelect) dom.abilityPlacementSelect.value = settings.abilityPlacement;
+    if (dom.abilityMirrorCheckbox) dom.abilityMirrorCheckbox.checked = settings.abilityMirror;
+    if (dom.abilityAlignmentSelect) dom.abilityAlignmentSelect.value = settings.abilityAlignment;
+    if (dom.abilityWidthInput) dom.abilityWidthInput.value = settings.abilityWidthPercent;
+    if (dom.abilityHeightModeSelect) dom.abilityHeightModeSelect.value = settings.abilityHeightMode;
+    if (dom.abilityFixedHeightInput) dom.abilityFixedHeightInput.value = settings.abilityFixedHeight;
+    if (dom.abilityOverflowSelect) dom.abilityOverflowSelect.value = settings.abilityOverflow;
+    if (dom.abilityBackgroundInput) dom.abilityBackgroundInput.value = settings.abilityBackground;
+    if (dom.abilityBackgroundOpacityInput) dom.abilityBackgroundOpacityInput.value = settings.abilityBackgroundOpacity;
+    if (dom.abilityHeaderFontLabel) dom.abilityHeaderFontLabel.textContent = settings.abilityHeaderFontFamily;
+    if (dom.abilityBodyFontLabel) dom.abilityBodyFontLabel.textContent = settings.abilityBodyFontFamily;
+    if (dom.abilityHeaderFontSizeInput) dom.abilityHeaderFontSizeInput.value = settings.abilityHeaderFontSize;
+    if (dom.abilityBodyFontSizeInput) dom.abilityBodyFontSizeInput.value = settings.abilityBodyFontSize;
+    if (dom.abilityHeaderFontWeightSelect) dom.abilityHeaderFontWeightSelect.value = settings.abilityHeaderFontWeight;
+    if (dom.abilityBodyFontWeightSelect) dom.abilityBodyFontWeightSelect.value = settings.abilityBodyFontWeight;
+    if (dom.abilityTextColorInput) dom.abilityTextColorInput.value = settings.abilityTextColor;
+    if (dom.abilityTextOpacityInput) dom.abilityTextOpacityInput.value = settings.abilityTextOpacity;
+
     // ---- Layout Controls ----
     document
       .querySelector(`[data-layout="${settings.layout}"]`)
@@ -270,6 +290,15 @@ export async function initUI() {
       if (dom.fontFamilyInput) {
         dom.fontFamilyInput.textContent = settings.fontFamily;
       }
+    }
+
+    const abilityFonts = [settings.abilityHeaderFontFamily, settings.abilityBodyFontFamily]
+      .filter(Boolean);
+    if (abilityFonts.length) {
+      WebFont.load({
+        google: { families: abilityFonts },
+        active: () => renderCurrentCard()
+      });
     }
   }
 

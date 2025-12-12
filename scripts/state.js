@@ -58,8 +58,27 @@ export const settings = wrapSettings({
 
   // NEW — safe zone inset (overlays use this)
   safeZoneInset: 80,
-  
+
   deckIdentity: 'PokerDeck',
+
+  // Ability text globals
+  abilityPlacement: 'bottom', // 'top' | 'bottom'
+  abilityMirror: false,
+  abilityAlignment: 'center', // 'left' | 'center' | 'right'
+  abilityWidthPercent: 100,
+  abilityHeightMode: 'auto', // 'auto' | 'fixed'
+  abilityFixedHeight: 180,
+  abilityOverflow: 'shrink', // 'shrink' | 'hidden' | 'overflow'
+  abilityBackground: '#ffffff',
+  abilityBackgroundOpacity: 0,
+  abilityHeaderFontFamily: 'Roboto',
+  abilityHeaderFontWeight: '700',
+  abilityHeaderFontSize: 28,
+  abilityBodyFontFamily: 'Roboto',
+  abilityBodyFontWeight: '400',
+  abilityBodyFontSize: 20,
+  abilityTextColor: '#000000',
+  abilityTextOpacity: 1,
 
   
 });
@@ -122,16 +141,17 @@ export function ensureDeckForActiveRanks() {
     activeRanks.forEach(rank => {
       if (!deck[suit.id][rank]) {
         deck[suit.id][rank] = wrapCard({
-		  faceImage: null,
-		  faceImageUrl: null,
-		  offsetX: 0,
-		  offsetY: 0,
-		  scale: 1,
-		  rotation: 0,
-		  flipH: false,
-		  flipV: false,
-		  mirrorCorners: true
-		});
+                  faceImage: null,
+                  faceImageUrl: null,
+                  offsetX: 0,
+                  offsetY: 0,
+                  scale: 1,
+                  rotation: 0,
+                  flipH: false,
+                  flipV: false,
+                  mirrorCorners: true,
+                  abilityMarkdown: ''
+                });
       }
     })
   })

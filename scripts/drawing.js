@@ -19,6 +19,7 @@ import {
 import { getPipLayout } from './pips.js'; // NEW
 
 import { renderOverlays } from './overlays.js';
+import { renderAbilityText } from './abilityText.js';
 
 /* ------------------------------------------------------------
    COLOR HELPERS
@@ -356,6 +357,7 @@ export function renderCard(ctx, suitId, rank) {
 
   drawFaceImage(ctx, card);
   drawPips(ctx, suitId, rank);
+  renderAbilityText(ctx, suitId, rank, card, drawSuitIcon);
 
   const mirror =
     typeof card.mirrorCorners === 'boolean'

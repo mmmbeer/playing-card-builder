@@ -67,7 +67,7 @@ export const dom = {
 
   layoutButtons: document.getElementById('layoutButtons'),
   showPipsCheckbox: document.getElementById('showPipsCheckbox'),
-  mirrorDefaultCheckbox: document.getElementById('mirrorDefaultCheckbox'),
+  pipControlsGroup: document.getElementById('pipControlsGroup'),
   backgroundStyleSelect: document.getElementById('backgroundStyleSelect'),
   backgroundPrimaryInput: document.getElementById('backgroundPrimaryInput'),
   backgroundPrimaryEyedropper: document.getElementById('backgroundPrimaryEyedropper'),

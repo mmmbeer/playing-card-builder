@@ -124,7 +124,7 @@ export async function initUI() {
   initPipControls(dom, settings, renderSelectedCard);
   initGuidelineControls(dom, settings, renderSelectedCard);
   initJokerControls(dom, settings, handleJokerSettingsChange);
-  initMirrorControls(dom, getCurrent, settings, renderSelectedCard);
+  initMirrorControls(dom, getCurrent, renderSelectedCard);
   initCornerOffsetControls(dom, settings, renderSelectedCard);
   initAbilityControls(dom, settings, getCurrent, renderSelectedCard);
   initResetControls(dom, settings, {
@@ -300,7 +300,6 @@ export async function initUI() {
       ?.classList.add("active");
 
     if (dom.showPipsCheckbox) dom.showPipsCheckbox.checked = settings.showPips;
-    if (dom.mirrorDefaultCheckbox) dom.mirrorDefaultCheckbox.checked = settings.mirrorDefault;
     if (dom.backgroundStyleSelect) dom.backgroundStyleSelect.value = settings.backgroundStyle || "solid";
     if (dom.backgroundPrimaryInput) dom.backgroundPrimaryInput.value = settings.backgroundColorPrimary;
     if (dom.backgroundSecondaryInput) dom.backgroundSecondaryInput.value = settings.backgroundColorSecondary;
@@ -332,7 +331,7 @@ export async function initUI() {
     if (dom.pipBottomValue) dom.pipBottomValue.textContent = bottomVal;
 
     // ---- Icon Controls ----
-    if (dom.iconColorModeSelect) dom.iconColorModeSelect.value = settings.iconColorMode || "single";
+    if (dom.iconColorModeSelect) dom.iconColorModeSelect.value = settings.iconColorMode || "standard";
     if (dom.iconColorInput) dom.iconColorInput.value = settings.iconColor;
     if (dom.iconColorBlackInput) dom.iconColorBlackInput.value = settings.iconColorBlack;
     if (dom.iconColorRedInput) dom.iconColorRedInput.value = settings.iconColorRed;
@@ -340,9 +339,11 @@ export async function initUI() {
     if (dom.iconColorHeartsInput) dom.iconColorHeartsInput.value = settings.iconColorHearts;
     if (dom.iconColorClubsInput) dom.iconColorClubsInput.value = settings.iconColorClubs;
     if (dom.iconColorDiamondsInput) dom.iconColorDiamondsInput.value = settings.iconColorDiamonds;
-    if (dom.iconSingleGroup) dom.iconSingleGroup.classList.toggle("hidden", (settings.iconColorMode || "single") !== "single");
-    if (dom.iconBiColorGroup) dom.iconBiColorGroup.classList.toggle("hidden", (settings.iconColorMode || "single") !== "bi");
-    if (dom.iconPerSuitGroup) dom.iconPerSuitGroup.classList.toggle("hidden", (settings.iconColorMode || "single") !== "perSuit");
+    const iconMode = settings.iconColorMode || "standard";
+    const hideIconColors = iconMode === "standard";
+    if (dom.iconSingleGroup) dom.iconSingleGroup.classList.toggle("hidden", hideIconColors || iconMode !== "single");
+    if (dom.iconBiColorGroup) dom.iconBiColorGroup.classList.toggle("hidden", hideIconColors || iconMode !== "bi");
+    if (dom.iconPerSuitGroup) dom.iconPerSuitGroup.classList.toggle("hidden", hideIconColors || iconMode !== "perSuit");
     dom.iconOpacityInput.value = settings.iconOpacity;
     dom.iconScaleInput.value = settings.iconScale;
 

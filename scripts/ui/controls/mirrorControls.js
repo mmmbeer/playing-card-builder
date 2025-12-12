@@ -1,5 +1,5 @@
 // ui/controls/mirrorControls.js
-export function initMirrorControls(dom, getCard, settings, render) {
+export function initMirrorControls(dom, getCard, render) {
   //
   // Individual card mirror toggle
   //
@@ -8,14 +8,6 @@ export function initMirrorControls(dom, getCard, settings, render) {
     if (!card) return;
 
     card.mirrorCorners = dom.mirrorCardCheckbox.checked;
-    render();
-  });
-
-  //
-  // Default mirror toggle for new cards
-  //
-  dom.mirrorDefaultCheckbox.addEventListener("change", () => {
-    settings.mirrorDefault = dom.mirrorDefaultCheckbox.checked;
     render();
   });
 }

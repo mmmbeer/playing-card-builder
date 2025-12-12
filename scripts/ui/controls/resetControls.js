@@ -32,8 +32,7 @@ const BACKGROUND_KEYS = [
 
 const LAYOUT_KEYS = [
   "layout",
-  "showPips",
-  "mirrorDefault"
+  "showPips"
 ];
 
 const PIP_VERTICAL_KEYS = [

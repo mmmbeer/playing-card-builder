@@ -61,6 +61,13 @@ h1 {
   color: var(--muted);
 }
 
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .panel {
   background: rgba(15,23,42,0.9);
   border-radius: 12px;
@@ -74,6 +81,28 @@ h1 {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 6px;
+}
+
+.header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reset-icon-button {
+  background: rgba(15,23,42,0.9);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 13px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.reset-icon-button:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
 }
 
 .panel-header span {
@@ -250,6 +279,11 @@ button.secondary {
   background: rgba(15,23,42,0.9);
   border-color: var(--border);
   color: var(--text);
+}
+
+button.danger {
+  background: linear-gradient(135deg, var(--danger) 0, #b91c1c 100%);
+  border-color: var(--danger);
 }
 
 button:active {

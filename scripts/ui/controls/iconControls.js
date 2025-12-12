@@ -2,6 +2,7 @@
 import { markDirty } from "../../autosave.js";
 import { bindColorPicker } from "./colorPicker.js";
 import { loadPreset } from "../presets.js"; // we expose this in presets.js
+import { saveImageFromSource } from "../../indexedDB.js";
 
 export function initIconControls(dom, settings, render) {
 
@@ -14,7 +15,7 @@ export function initIconControls(dom, settings, render) {
     // User selected a built-in preset
     if (presetId && presetId !== "custom") {
       settings.iconPresetId = presetId;
-      settings.customIconDataURL = null;       // clear custom image
+      settings.customIconImageId = null;       // clear custom image
 
       // Load the preset sheet into an Image object
       const sheet = await loadPreset(presetId);
@@ -53,11 +54,9 @@ export function initIconControls(dom, settings, render) {
 
       // Set as active sheet
       settings.iconSheet = img;
-
-      // Save as DataURL so custom sheet restores later
-      const customURL = await convertImageToDataURL(img);
-      settings.customIconDataURL = customURL;
-
+      const imageId = await saveImageFromSource(img, "suit", settings.customIconImageId || null);
+      settings.customIconImageId = imageId;
+      
       markDirty();
       render();
     };
@@ -176,20 +175,4 @@ export function initIconControls(dom, settings, render) {
     markDirty();
     render();
   });
-}
-
-
-
-/* ================================================================
-   UTILITY: convert Image → DataURL for autosave
-   ================================================================ */
-async function convertImageToDataURL(img) {
-  const canvas = document.createElement("canvas");
-  canvas.width = img.naturalWidth;
-  canvas.height = img.naturalHeight;
-
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(img, 0, 0);
-
-  return canvas.toDataURL("image/png");
 }

@@ -134,19 +134,17 @@ h1 {
 
 .link-icon-button {
   background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: none;
   color: var(--muted);
   cursor: pointer;
-  padding: 4px 8px;
-  font-size: 12px;
+  font-size: 9px;
+  padding: 1px;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .link-icon-button.active,
 .link-icon-button:hover {
-  background: var(--accent-soft);
-  border-color: var(--accent);
+  background: var(--accent);
   color: var(--text);
 }
 

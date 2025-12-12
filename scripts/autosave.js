@@ -67,7 +67,8 @@ async function serializeDeck() {
         flipH: card.flipH,
         flipV: card.flipV,
         mirrorCorners: card.mirrorCorners ?? null,
-        faceImageUrl: storedDataUrl
+        faceImageUrl: storedDataUrl,
+        abilityMarkdown: card.abilityMarkdown || ''
       };
     }
   }
@@ -92,6 +93,7 @@ async function restoreDeck(serial) {
       card.flipH = saved.flipH ?? false;
       card.flipV = saved.flipV ?? false;
       card.mirrorCorners = saved.mirrorCorners ?? null;
+      card.abilityMarkdown = saved.abilityMarkdown ?? '';
 
       if (saved.faceImageUrl) {
         const img = await dataURLToImage(saved.faceImageUrl);

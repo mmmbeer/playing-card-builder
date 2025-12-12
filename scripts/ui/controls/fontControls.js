@@ -4,7 +4,7 @@ import { markDirty } from "../../autosave.js";
 export function initFontControls(dom, settings, render, openFontBrowser) {
 
   // Open font browser
-  dom.fontFamilyWrapper.addEventListener("click", openFontBrowser);
+  dom.fontFamilyWrapper.addEventListener("click", () => openFontBrowser(dom));
 
   // Font family selected (fontBrowser dispatches this event)
   document.addEventListener("fontFamilySelected", evt => {

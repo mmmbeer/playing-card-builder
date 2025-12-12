@@ -10,6 +10,8 @@ const GOOGLE_FONTS_JSON =
 
 let googleFontsData = null;
 let modal, closeBtn, list, searchBox;
+let selectionHandler = null;
+let lastDomRef = null;
 
 // lazy load: 100 at a time
 let visibleFonts = 0;
@@ -112,16 +114,21 @@ async function renderMoreFonts(dom, filter = "") {
 
     // ON CLICK
     item.onclick = () => {
-      settings.fontFamily = family;
+      const handler = selectionHandler;
+      selectionHandler = null;
 
-      // Notify fontControls
-      document.dispatchEvent(
-        new CustomEvent("fontFamilySelected", { detail: family })
-      );
+      if (handler) {
+        handler(family);
+      } else {
+        settings.fontFamily = family;
 
-      // Update UI (same dom object fontControls receives)
-      if (dom.fontFamilyInput) {
-        dom.fontFamilyInput.textContent = family;
+        document.dispatchEvent(
+          new CustomEvent("fontFamilySelected", { detail: family })
+        );
+
+        if (dom?.fontFamilyInput) {
+          dom.fontFamilyInput.textContent = family;
+        }
       }
 
       injectFontFamily(family);
@@ -167,7 +174,9 @@ async function renderMoreFonts(dom, filter = "") {
 // ----------------------------------------------------------
 // PUBLIC: open modal
 // ----------------------------------------------------------
-export async function openFontBrowser(dom) {
+export async function openFontBrowser(dom, { onSelect } = {}) {
+  selectionHandler = onSelect || null;
+  lastDomRef = dom || lastDomRef;
   modal.classList.remove("hidden");
 
   if (!googleFontsData) {
@@ -176,7 +185,7 @@ export async function openFontBrowser(dom) {
 
   searchBox.value = "";
   list.scrollTop = 0;
-  await renderFontList(dom, "");
+  await renderFontList(lastDomRef, "");
   searchBox.focus();
 }
 
@@ -197,7 +206,7 @@ export function initFontBrowser(dom) {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
       list.scrollTop = 0;
-      renderFontList(dom, searchBox.value);
+      renderFontList(lastDomRef || dom, searchBox.value);
     }, 180);
   });
 
@@ -205,7 +214,7 @@ export function initFontBrowser(dom) {
   list.addEventListener("scroll", () => {
     const bottom = list.scrollTop + list.clientHeight;
     if (bottom >= list.scrollHeight - 40) {
-      renderMoreFonts(dom, searchBox.value);
+      renderMoreFonts(lastDomRef || dom, searchBox.value);
     }
   });
 

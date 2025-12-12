@@ -97,11 +97,150 @@
 		<button type="button" class="secondary" id="resetFaceTransformButton">Reset transform</button>
 	  </div>
 
-	  <div class="hint">
-		Drag the face image on the preview to adjust its position.  
-		Zoom, rotate and flip controls are per card.
-	  </div>
-	</div>
+        <div class="hint">
+                Drag the face image on the preview to adjust its position.
+                Zoom, rotate and flip controls are per card.
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header collapsible">
+          <span>Ability text</span> <span class="chevron">▾</span>
+        </div>
+
+        <div class="field">
+          <label for="abilityMarkdownInput">Markdown content (per card)</label>
+          <textarea id="abilityMarkdownInput" rows="6" placeholder="Type ability text in markdown…"></textarea>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label>Header font</label>
+            <div id="abilityHeaderFontWrapper" class="font-family-box">
+              <span id="abilityHeaderFontLabel" class="font-family-text"></span>
+              <span class="font-family-icon">🔎</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Body font</label>
+            <div id="abilityBodyFontWrapper" class="font-family-box">
+              <span id="abilityBodyFontLabel" class="font-family-text"></span>
+              <span class="font-family-icon">🔎</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="abilityHeaderFontSizeInput">Header size (px)</label>
+            <input id="abilityHeaderFontSizeInput" type="number" min="10" max="120" value="28">
+          </div>
+          <div class="field">
+            <label for="abilityBodyFontSizeInput">Body size (px)</label>
+            <input id="abilityBodyFontSizeInput" type="number" min="8" max="120" value="20">
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="abilityHeaderFontWeightSelect">Header weight</label>
+            <select id="abilityHeaderFontWeightSelect">
+              <option value="400">400</option>
+              <option value="500">500</option>
+              <option value="600">600</option>
+              <option value="700" selected>700</option>
+              <option value="800">800</option>
+              <option value="900">900</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="abilityBodyFontWeightSelect">Body weight</label>
+            <select id="abilityBodyFontWeightSelect">
+              <option value="300">300</option>
+              <option value="400" selected>400</option>
+              <option value="500">500</option>
+              <option value="600">600</option>
+              <option value="700">700</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="abilityTextColorInput">Text color</label>
+            <input id="abilityTextColorInput" type="color" value="#000000">
+          </div>
+          <div class="field">
+            <label for="abilityTextOpacityInput">Text opacity</label>
+            <input id="abilityTextOpacityInput" type="range" min="0" max="1" step="0.05" value="1">
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="abilityPlacementSelect">Placement</label>
+            <select id="abilityPlacementSelect">
+              <option value="top">Top</option>
+              <option value="bottom" selected>Bottom</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="abilityAlignmentSelect">Alignment</label>
+            <select id="abilityAlignmentSelect">
+              <option value="left">Left</option>
+              <option value="center" selected>Center</option>
+              <option value="right">Right</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="checkbox-row">
+            <input type="checkbox" id="abilityMirrorCheckbox">
+            <label for="abilityMirrorCheckbox">Add mirrored copy on opposite side</label>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="abilityWidthInput">Panel width (%)</label>
+            <input id="abilityWidthInput" type="range" min="40" max="100" step="1" value="100">
+          </div>
+          <div class="field">
+            <label for="abilityBackgroundInput">Background color</label>
+            <input id="abilityBackgroundInput" type="color" value="#ffffff">
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="abilityBackgroundOpacityInput">Background opacity</label>
+            <input id="abilityBackgroundOpacityInput" type="range" min="0" max="1" step="0.05" value="0">
+          </div>
+          <div class="field">
+            <label for="abilityHeightModeSelect">Height</label>
+            <select id="abilityHeightModeSelect">
+              <option value="auto" selected>Auto (expand)</option>
+              <option value="fixed">Fixed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="abilityFixedHeightInput">Fixed height (px)</label>
+            <input id="abilityFixedHeightInput" type="number" min="50" max="600" value="180">
+          </div>
+          <div class="field">
+            <label for="abilityOverflowSelect">Overflow behavior</label>
+            <select id="abilityOverflowSelect">
+              <option value="shrink" selected>Shrink to fit</option>
+              <option value="hidden">Hide overflow</option>
+              <option value="overflow">Allow overflow</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
     <!-- Font settings -->
     <div class="panel">

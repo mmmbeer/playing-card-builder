@@ -13,7 +13,7 @@ export function syncControls(card, settings, dom) {
       ? card.mirrorCorners
       : settings.mirrorDefault;
 
-  if (card.faceImageUrl) {
+  if (card.faceImageId || card.faceImageUrl) {
     dom.faceImageLabel.textContent = "(image loaded)";
   } else {
     dom.faceImageLabel.textContent = "Click to add…";

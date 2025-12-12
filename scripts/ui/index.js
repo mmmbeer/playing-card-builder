@@ -32,6 +32,7 @@ import { initProgressControls } from "./controls/progressControls.js";
 import { initProgressOverlay } from "./controls/progressOverlay.js";
 import { initAbilityControls } from "./controls/abilityControls.js";
 import { initBackgroundControls } from "./controls/backgroundControls.js";
+import { initResetControls } from "./controls/resetControls.js";
 
 
 
@@ -55,6 +56,7 @@ import { openFontBrowser, initFontBrowser } from "../fonts.js";
 
 import { exportFullDeck } from "../save.js";
 import { openBulkModal, initBulkLoader } from "../bulk.js";
+import { getImageRecord } from "../indexedDB.js";
 
 import { CARD_WIDTH, CARD_HEIGHT, BLEED, SAFE_WIDTH, SAFE_HEIGHT, SUITS } from "../config.js";
 import { registerSamplingCanvas } from "./colorSampler.js";
@@ -124,6 +126,11 @@ export async function initUI() {
   initMirrorControls(dom, getCurrent, settings, renderSelectedCard);
   initCornerOffsetControls(dom, settings, renderSelectedCard);
   initAbilityControls(dom, settings, getCurrent, renderSelectedCard);
+  initResetControls(dom, settings, {
+    render: renderSelectedCard,
+    sync: doSync,
+    refreshRanks: refreshRankDropdown
+  });
 
   initDownloadControls(dom, () => getSelection());
 
@@ -205,14 +212,20 @@ export async function initUI() {
   // -------------------------------------------------------------------
 
   async function restoreIconSheet() {
-    // Custom uploaded sprite sheet
-    if (settings.customIconDataURL) {
-      const img = new Image();
-      img.src = settings.customIconDataURL;
-      await img.decode();
-      settings.iconSheet = img;
-      dom.iconPresetSelect.value = "custom";
-      return;
+    if (settings.iconSheet) return;
+
+    // Custom uploaded sprite sheet restored via IndexedDB
+    if (settings.customIconImageId) {
+      const record = await getImageRecord(settings.customIconImageId);
+      if (record?.blob) {
+        const url = URL.createObjectURL(record.blob);
+        const img = new Image();
+        img.src = url;
+        await img.decode();
+        settings.iconSheet = img;
+        dom.iconPresetSelect.value = "custom";
+        return;
+      }
     }
 
     // Built-in preset restored
@@ -549,6 +562,11 @@ window.addEventListener("forceSyncAndRender", () => {
   doSync();
   renderSelectedCard();
 });
+
+  window.addEventListener("refreshUIFromSettings", () => {
+    hydrateUIFromSettings();
+    doSync();
+  });
 }
 
 

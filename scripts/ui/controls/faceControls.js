@@ -1,16 +1,5 @@
 import { SAFE_HEIGHT } from "../../config.js";
-
-async function convertImageToDataURL(img) {
-  const w = img.naturalWidth || img.width;
-  const h = img.naturalHeight || img.height;
-  if (!w || !h) return null;
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(img, 0, 0);
-  return canvas.toDataURL("image/png");
-}
+import { saveImageFromSource } from "../../indexedDB.js";
 
 export function initFaceControls(dom, settings, getCard, sync, render) {
   dom.faceImageLabel.addEventListener("click", () => {
@@ -34,10 +23,15 @@ export function initFaceControls(dom, settings, getCard, sync, render) {
         try { await img.decode(); } catch (_) {}
       }
 
-      const dataUrl = await convertImageToDataURL(img);
+      const imageId = await saveImageFromSource(img, "face", card.faceImageId || null);
+
+      if (card.faceImageUrl && card.faceImageUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(card.faceImageUrl);
+      }
 
       card.faceImage = img;
-      card.faceImageUrl = dataUrl;
+      card.faceImageId = imageId;
+      card.faceImageUrl = blobUrl;
 
       card.offsetX = 0;
       card.offsetY = 0;

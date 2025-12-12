@@ -11,11 +11,11 @@ export const deck = {}
 // Live list of ranks used in the deck (can differ from BASE_RANKS)
 export let activeRanks = BASE_RANKS.slice()
 
-export const settings = wrapSettings({
+export const DEFAULT_SETTINGS = Object.freeze({
   fontFamily: 'Roboto',
   fontWeight: '700',
   fontSize: 72,
-  fontColorMode: 'single', // 'single' | 'bi' | 'perSuit'
+  fontColorMode: 'single',
   fontColor: '#000000',
   fontColorRed: '#d12d2d',
   fontColorBlack: '#000000',
@@ -24,22 +24,21 @@ export const settings = wrapSettings({
   fontColorClubs: '#000000',
   fontColorDiamonds: '#d12d2d',
   fontOpacity: 1,
-  overlayType: 'none', // 'none' | 'shadow' | 'glow'
+  overlayType: 'none',
   outline: false,
   outlineWidth: 3,
   outlineColor: '#000000',
 
-  // Background
-  backgroundStyle: 'solid', // 'solid' | 'vertical' | 'horizontal' | 'diagDown' | 'diagUp' | 'radial'
+  backgroundStyle: 'solid',
   backgroundColorPrimary: '#ffffff',
   backgroundColorSecondary: '#f0f0f0',
 
-  layout: 'rankAboveSuit', // 'rankAboveSuit' | 'suitAboveRank' | 'sideBySide'
+  layout: 'rankAboveSuit',
   showPips: true,
   mirrorDefault: true,
 
-  iconSheet: null, // HTMLImageElement
-  iconColorMode: 'single', // 'single' | 'bi' | 'perSuit'
+  iconSheet: null,
+  iconColorMode: 'single',
   iconColor: '#000000',
   iconColorRed: '#d12d2d',
   iconColorBlack: '#000000',
@@ -49,51 +48,44 @@ export const settings = wrapSettings({
   iconColorDiamonds: '#d12d2d',
   iconOpacity: 1,
   iconScale: 1,
+  iconPresetId: null,
+  customIconImageId: null,
 
-  // Corner fine-tuning
   cornerRankOffsetX: 0,
   cornerRankOffsetY: 0,
   cornerSuitOffsetX: 0,
   cornerSuitOffsetY: 0,
 
-  // Deck / joker configuration
   customRanksString: '',
   includeJokers: false,
   jokerCount: 2,
   jokerLabel: 'JOKER',
   jokerWild: false,
-  jokerLabelOrientation: 'horizontal', // 'horizontal' | 'vertical'
+  jokerLabelOrientation: 'horizontal',
   jokerFontSize: 72,
   jokerSuitStyle: 'centerCircle',
 
-  // Pip layout vertical positions (fractions of safe area height)
   pipTop: 0.5,
   pipInnerTop: 0.5,
   pipCenter: 0.5,
   pipInnerBottom: 0.5,
   pipBottom: 0.5,
-
-  // Pip horizontal positions
   pipLeft: 0.30,
   pipRight: 0.70,
   pipCenterX: 0.5,
 
-  // NEW — overlay toggles
   showGuidelines: true,
-
-  // NEW — safe zone inset (overlays use this)
   safeZoneInset: 80,
 
   deckIdentity: 'PokerDeck',
 
-  // Ability text globals
-  abilityPlacement: 'bottom', // 'top' | 'bottom'
+  abilityPlacement: 'bottom',
   abilityMirror: false,
-  abilityAlignment: 'center', // 'left' | 'center' | 'right'
+  abilityAlignment: 'center',
   abilityWidthPercent: 120,
-  abilityHeightMode: 'auto', // 'auto' | 'fixed'
+  abilityHeightMode: 'auto',
   abilityFixedHeight: 180,
-  abilityOverflow: 'shrink', // 'shrink' | 'hidden' | 'overflow'
+  abilityOverflow: 'shrink',
   abilityBackground: '#ffffff',
   abilityBackgroundOpacity: 0,
   abilityHeaderFontFamily: 'Roboto',
@@ -104,9 +96,9 @@ export const settings = wrapSettings({
   abilityBodyFontSize: 20,
   abilityTextColor: '#000000',
   abilityTextOpacity: 1,
-
-  
 });
+
+export const settings = wrapSettings(cloneDefaults(DEFAULT_SETTINGS));
 
 // Offscreen canvas used to tint suit icons
 export const iconWorkCanvas = document.createElement('canvas')
@@ -146,6 +138,22 @@ function wrapSettings(obj) {
       target[prop] = value;
       markDirty();
       return true;
+    }
+  });
+}
+
+function cloneDefaults(obj) {
+  if (typeof structuredClone === 'function') return structuredClone(obj);
+  return JSON.parse(JSON.stringify(obj));
+}
+
+export function resetSettingsToDefaults(keys = null) {
+  const defaults = cloneDefaults(DEFAULT_SETTINGS);
+  const targetKeys = Array.isArray(keys) ? keys : Object.keys(defaults);
+
+  targetKeys.forEach(key => {
+    if (Object.prototype.hasOwnProperty.call(defaults, key)) {
+      settings[key] = defaults[key];
     }
   });
 }
@@ -246,6 +254,13 @@ export function updateActiveRanksFromSettings() {
   ensureDeckForActiveRanks()
 }
 
+export function resetDeckState() {
+  Object.keys(deck).forEach(key => delete deck[key])
+  activeRanks = BASE_RANKS.slice()
+  initDeck()
+  ensureJokerCards()
+}
+
 export function getCurrentCard(suitId, rank, copyIndex = 1) {
   const entry = deck[suitId]?.[rank]
   if (Array.isArray(entry)) {
@@ -276,6 +291,7 @@ function createCard() {
   return wrapCard({
     faceImage: null,
     faceImageUrl: null,
+    faceImageId: null,
     offsetX: 0,
     offsetY: 0,
     scale: 1,

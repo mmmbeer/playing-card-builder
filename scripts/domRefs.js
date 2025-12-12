@@ -57,6 +57,13 @@ export const dom = {
   faceFlipVCheckbox: document.getElementById('faceFlipVCheckbox'),
   resetFaceTransformButton: document.getElementById('resetFaceTransformButton'),
 
+  resetFontsButton: document.getElementById('resetFontsButton'),
+  resetIconsButton: document.getElementById('resetIconsButton'),
+  resetPipsButton: document.getElementById('resetPipsButton'),
+  resetCornersButton: document.getElementById('resetCornersButton'),
+  resetAbilityButton: document.getElementById('resetAbilityButton'),
+  fullResetButton: document.getElementById('fullResetButton'),
+
   prevCardBtn: document.getElementById('prevCardBtn'),
   nextCardBtn: document.getElementById('nextCardBtn'),
 

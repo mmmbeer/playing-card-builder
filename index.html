@@ -394,6 +394,35 @@
         </div>
       </div>
 
+      <div class="two-col">
+        <div class="field">
+          <label for="jokerLabelOrientationSelect">Joker label orientation</label>
+          <select id="jokerLabelOrientationSelect">
+            <option value="horizontal">Horizontal</option>
+            <option value="vertical">Vertical</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="jokerFontSizeInput">Joker label size (px)</label>
+          <input id="jokerFontSizeInput" type="number" min="24" max="160" value="72">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="jokerSuitStyleSelect">Joker suit display</label>
+        <select id="jokerSuitStyleSelect">
+          <option value="centerCircle">Circle around center</option>
+          <option value="centerSquare">Square in safe area</option>
+          <option value="diamond">Diamond through center</option>
+          <option value="belowLabelRow">Row below label</option>
+          <option value="centerColumn">Column through center</option>
+          <option value="none">No suit icons</option>
+        </select>
+        <div class="hint">
+          Arrangements use the pip guidelines for spacing. Change the pip sliders to fine-tune suit icon positions.
+        </div>
+      </div>
+
       <div class="hint">
         Jokers are exported as extra cards with the chosen label and no pip pattern.
       </div>

@@ -11,6 +11,9 @@ export const dom = {
   jokerCountInput: document.getElementById('jokerCountInput'),
   jokerLabelInput: document.getElementById('jokerLabelInput'),
   jokerWildCheckbox: document.getElementById('jokerWildCheckbox'),
+  jokerLabelOrientationSelect: document.getElementById('jokerLabelOrientationSelect'),
+  jokerFontSizeInput: document.getElementById('jokerFontSizeInput'),
+  jokerSuitStyleSelect: document.getElementById('jokerSuitStyleSelect'),
 
   fontFamilyWrapper: document.getElementById('fontFamilyWrapper'),
   fontSizeInput: document.getElementById('fontSizeInput'),

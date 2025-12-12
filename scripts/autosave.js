@@ -1,4 +1,17 @@
-import { settings, deck, activeRanks, initDeck } from "./state.js";
+import {
+  settings,
+  deck,
+  activeRanks,
+  initDeck,
+  resetSettingsToDefaults,
+  resetDeckState,
+  DEFAULT_SETTINGS
+} from "./state.js";
+import {
+  saveImageFromSource,
+  getImageRecord,
+  deleteImageDatabase
+} from "./indexedDB.js";
 
 let badge;
 function getBadge() {
@@ -24,50 +37,75 @@ function setStatusError() {
   b.className = "autosave-badge error";
 }
 
-async function ensureDataURL(value) {
-  if (!value) return null;
-  if (typeof value === "string" && value.startsWith("data:image")) return value;
-  if (value instanceof HTMLImageElement) {
-    const w = value.naturalWidth || value.width;
-    const h = value.naturalHeight || value.height;
-    if (!w || !h) return null;
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(value, 0, 0);
-    return canvas.toDataURL("image/png");
-  }
-  return null;
+function applyNewSettingDefaults(target) {
+  if (!target) return;
+  Object.entries(DEFAULT_SETTINGS).forEach(([key, value]) => {
+    if (typeof target[key] === "undefined") target[key] = value;
+  });
 }
 
 function dataURLToImage(url) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Failed to load image"));
     img.src = url;
   });
 }
 
-function applyNewSettingDefaults(target) {
-  if (!target) return;
-  target.fontColorMode = target.fontColorMode || "single";
-  target.fontColorBlack = target.fontColorBlack || "#000000";
-  target.fontColorRed = target.fontColorRed || "#d12d2d";
-  target.fontColorSpades = target.fontColorSpades || "#000000";
-  target.fontColorHearts = target.fontColorHearts || "#d12d2d";
-  target.fontColorClubs = target.fontColorClubs || "#000000";
-  target.fontColorDiamonds = target.fontColorDiamonds || "#d12d2d";
-  target.iconColorMode = target.iconColorMode || "single";
-  target.iconColorBlack = target.iconColorBlack || "#000000";
-  target.iconColorRed = target.iconColorRed || "#d12d2d";
-  target.iconColorSpades = target.iconColorSpades || "#000000";
-  target.iconColorHearts = target.iconColorHearts || "#d12d2d";
-  target.iconColorClubs = target.iconColorClubs || "#000000";
-  target.iconColorDiamonds = target.iconColorDiamonds || "#d12d2d";
-  target.backgroundStyle = target.backgroundStyle || "solid";
-  target.backgroundColorPrimary = target.backgroundColorPrimary || "#ffffff";
-  target.backgroundColorSecondary = target.backgroundColorSecondary || target.backgroundColorPrimary;
+function revokeIfBlob(url) {
+  if (url && url.startsWith("blob:")) {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function loadImageRecord(imageId) {
+  if (!imageId) return { image: null, url: null };
+  const record = await getImageRecord(imageId);
+  if (!record?.blob) return { image: null, url: null };
+  const url = URL.createObjectURL(record.blob);
+  const img = await dataURLToImage(url);
+  if (img.decode) {
+    try { await img.decode(); } catch (_) {}
+  }
+  return { image: img, url };
+}
+
+async function ensureCardImageId(card) {
+  if (!card) return null;
+  if (card.faceImageId) return card.faceImageId;
+
+  if (card.faceImage) {
+    const id = await saveImageFromSource(card.faceImage, "face");
+    card.faceImageId = id;
+    return id;
+  }
+
+  if (card.faceImageUrl && card.faceImageUrl.startsWith("data:image")) {
+    try {
+      const img = await dataURLToImage(card.faceImageUrl);
+      const id = await saveImageFromSource(img, "face");
+      card.faceImageId = id;
+      card.faceImage = img;
+      return id;
+    } catch (err) {
+      console.warn("Failed to store legacy face image:", err);
+    }
+  }
+
+  return null;
+}
+
+async function ensureIconImageId() {
+  if (settings.iconPresetId) return null;
+  if (!settings.iconSheet) return settings.customIconImageId || null;
+  const id = await saveImageFromSource(
+    settings.iconSheet,
+    "suit",
+    settings.customIconImageId || null
+  );
+  settings.customIconImageId = id;
+  return id;
 }
 
 async function serializeDeck() {
@@ -94,10 +132,7 @@ async function serializeDeck() {
 }
 
 async function serializeCard(card) {
-  const storedDataUrl =
-    (await ensureDataURL(card?.faceImageUrl)) ||
-    (await ensureDataURL(card?.faceImage)) ||
-    null;
+  const imageId = await ensureCardImageId(card);
 
   return {
     offsetX: card?.offsetX,
@@ -107,34 +142,14 @@ async function serializeCard(card) {
     flipH: card?.flipH,
     flipV: card?.flipV,
     mirrorCorners: card?.mirrorCorners ?? null,
-    faceImageUrl: storedDataUrl,
-    abilityMarkdown: card?.abilityMarkdown || ''
+    faceImageId: imageId || null,
+    abilityMarkdown: card?.abilityMarkdown || ""
   };
 }
 
-async function buildSettingsPayload() {
-  const { iconSheet, customIconDataURL, iconPresetId, ...settingsWithoutImage } = settings;
-
-  const resolvedCustomUrl = iconPresetId
-    ? null
-    : customIconDataURL || (await ensureDataURL(iconSheet));
-
-  return {
-    ...settingsWithoutImage,
-    customIconDataURL: resolvedCustomUrl || null,
-    iconPresetId: iconPresetId || null
-  };
-}
-
-async function rebuildIconSheetFromSettings(savedSettings) {
-  if (!savedSettings?.customIconDataURL) return null;
-
-  const img = await dataURLToImage(savedSettings.customIconDataURL);
-  if (img.decode) {
-    try { await img.decode(); } catch (_) {}
-  }
-
-  return img;
+function buildSettingsPayload() {
+  const { iconSheet, ...settingsWithoutImage } = settings;
+  return { ...settingsWithoutImage };
 }
 
 async function restoreDeck(serial) {
@@ -173,41 +188,57 @@ async function applySavedCard(card, saved) {
   card.flipH = saved.flipH ?? false;
   card.flipV = saved.flipV ?? false;
   card.mirrorCorners = saved.mirrorCorners ?? null;
-  card.abilityMarkdown = saved.abilityMarkdown ?? '';
+  card.abilityMarkdown = saved.abilityMarkdown ?? "";
 
-  if (saved.faceImageUrl) {
-    const img = await dataURLToImage(saved.faceImageUrl);
-    if (img.decode) {
-      try { await img.decode(); } catch (_) {}
+  const savedImageId = saved.faceImageId || null;
+  let resolvedImageId = savedImageId;
+
+  if (!resolvedImageId && saved.faceImageUrl) {
+    try {
+      const img = await dataURLToImage(saved.faceImageUrl);
+      resolvedImageId = await saveImageFromSource(img, "face");
+    } catch (err) {
+      console.warn("Failed to restore face image:", err);
     }
-    card.faceImage = img;
-    card.faceImageUrl = saved.faceImageUrl;
+  }
+
+  if (resolvedImageId) {
+    const { image, url } = await loadImageRecord(resolvedImageId);
+    card.faceImageId = resolvedImageId;
+    card.faceImage = image;
+    revokeIfBlob(card.faceImageUrl);
+    card.faceImageUrl = url;
   } else {
+    revokeIfBlob(card.faceImageUrl);
+    card.faceImageId = null;
     card.faceImage = null;
     card.faceImageUrl = null;
   }
 }
 
 let saveTimeout = null;
+async function persistState() {
+  const deckSerialized = await serializeDeck();
+  const settingsPayload = buildSettingsPayload();
+  const suitIconImageId = (await ensureIconImageId()) || settings.customIconImageId || null;
+
+  const payload = {
+    settings: settingsPayload,
+    deck: deckSerialized,
+    activeRanks,
+    suitIconImageId,
+    timestamp: Date.now()
+  };
+
+  localStorage.setItem("cardDesignerAutosave", JSON.stringify(payload));
+}
+
 function scheduleSave() {
   clearTimeout(saveTimeout);
   setStatusSaving();
   saveTimeout = setTimeout(async () => {
     try {
-      const deckSerialized = await serializeDeck();
-      const settingsPayload = await buildSettingsPayload();
-
-      const payload = {
-        settings: settingsPayload,
-        deck: deckSerialized,
-        activeRanks,
-        timestamp: Date.now()
-      };
-
-      localStorage.setItem(
-        "cardDesignerAutosave",
-        JSON.stringify(payload)
-      );
+      await persistState();
       setStatusSaved();
     } catch (err) {
       console.error("Autosave failed:", err);
@@ -222,32 +253,20 @@ export function markDirty() {
 
 export async function forceSave() {
   setStatusSaving();
-  const deckSerialized = await serializeDeck();
-  const settingsPayload = await buildSettingsPayload();
-  const payload = {
-    settings: settingsPayload,
-    deck: deckSerialized,
-    activeRanks,
-    timestamp: Date.now()
-  };
-  localStorage.setItem("cardDesignerAutosave", JSON.stringify(payload));
-  setStatusSaved();
+  try {
+    await persistState();
+    setStatusSaved();
+  } catch (err) {
+    console.error("Autosave failed:", err);
+    setStatusError();
+  }
 }
 
 export async function importSave(file) {
   try {
     const text = await file.text();
     const data = JSON.parse(text);
-    const restoredSheet = await rebuildIconSheetFromSettings(data.settings);
-    const currentSheet = settings.iconSheet;
-    Object.assign(settings, data.settings);
-    applyNewSettingDefaults(settings);
-    settings.iconSheet = restoredSheet || currentSheet;
-    await restoreDeck(data.deck);
-    requestAnimationFrame(() => {
-      window.dispatchEvent(new CustomEvent("forceSyncAndRender"));
-    });
-    setStatusSaved();
+    await applyRestorePayload(data);
     window.dispatchEvent(new CustomEvent("saveImported"));
   } catch (err) {
     console.error("Failed to import save:", err);
@@ -255,53 +274,85 @@ export async function importSave(file) {
   }
 }
 
+async function applyRestorePayload(data) {
+  const restoredSettings = data.settings || {};
+
+  let legacyIconImage = null;
+  if (restoredSettings.customIconDataURL && !restoredSettings.customIconImageId) {
+    const img = await dataURLToImage(restoredSettings.customIconDataURL);
+    restoredSettings.customIconImageId = await saveImageFromSource(img, "suit");
+    legacyIconImage = img;
+  }
+
+  delete restoredSettings.customIconDataURL;
+  applyNewSettingDefaults(restoredSettings);
+
+  Object.assign(settings, restoredSettings);
+  settings.customIconImageId = data.suitIconImageId || restoredSettings.customIconImageId || null;
+
+  if (Array.isArray(data.activeRanks)) {
+    activeRanks.length = 0;
+    data.activeRanks.forEach(r => activeRanks.push(r));
+  }
+
+  initDeck();
+
+  const iconSheetPromise = restoreIconSheet(
+    settings.customIconImageId,
+    settings.iconPresetId,
+    legacyIconImage
+  );
+
+  await restoreDeck(data.deck);
+
+  settings.iconSheet = (await iconSheetPromise) || settings.iconSheet;
+
+  requestAnimationFrame(() =>
+    window.dispatchEvent(new CustomEvent("forceSyncAndRender"))
+  );
+
+  setStatusSaved();
+}
+
+async function restoreIconSheet(imageId, presetId, fallbackImage = null) {
+  if (fallbackImage) return fallbackImage;
+
+  if (imageId) {
+    const { image } = await loadImageRecord(imageId);
+    return image;
+  }
+
+  if (presetId) return null; // UI preset loader will hydrate
+  return null;
+}
+
 export async function initAutosave() {
   const raw = localStorage.getItem("cardDesignerAutosave");
   if (raw) {
     try {
       const data = JSON.parse(raw);
-
-      const restoredSheetPromise = rebuildIconSheetFromSettings(data.settings);
-
-      // Restore settings immediately so UI hydration uses saved values
-      const currentSheet = settings.iconSheet;
-      Object.assign(settings, data.settings);
-      applyNewSettingDefaults(settings);
-      settings.customIconDataURL = data.settings.customIconDataURL || null;
-      settings.iconPresetId = data.settings.iconPresetId || null;
-
-      // 1) Restore activeRanks first (this defines which cards should exist)
-      if (Array.isArray(data.activeRanks)) {
-        activeRanks.length = 0;
-        data.activeRanks.forEach(r => activeRanks.push(r));
-      }
-
-      // 2) Ensure deck structure exists for these suits/ranks
-      //    This creates proxied card objects in deck[suitId][rank]
-      initDeck();
-
-      const restoredSheet = await restoredSheetPromise;
-      settings.iconSheet = restoredSheet || currentSheet;
-
-      // 3) Now safely apply saved per-card state (including faceImageUrl)
-      await restoreDeck(data.deck);
-
-      // Force UI sync & redraw using your existing mechanism
-      requestAnimationFrame(() =>
-        window.dispatchEvent(new CustomEvent("forceSyncAndRender"))
-      );
-
-      setStatusSaved();
+      await applyRestorePayload(data);
     } catch (err) {
       console.warn("Autosave load failed:", err);
       setStatusError();
     }
   }
 
-  // Keep existing autosave wiring
   window.addEventListener("appDirty", scheduleSave);
 
   window.addEventListener("beforeunload", () => {
     if (saveTimeout) forceSave();
   });
+}
+
+export async function resetAllState() {
+  clearTimeout(saveTimeout);
+  localStorage.removeItem("cardDesignerAutosave");
+  await deleteImageDatabase();
+  resetSettingsToDefaults();
+  resetDeckState();
+  requestAnimationFrame(() =>
+    window.dispatchEvent(new CustomEvent("forceSyncAndRender"))
+  );
+  setStatusSaved();
 }

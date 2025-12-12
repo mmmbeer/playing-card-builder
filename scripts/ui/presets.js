@@ -70,7 +70,7 @@ export function initIconPresets(dom, settings, render) {
     // Built-in preset selected
     if (val !== "custom") {
       settings.iconPresetId = val;
-      settings.customIconDataURL = null;
+      settings.customIconImageId = null;
 
       const img = await loadPreset(val);
       if (img) {
@@ -92,9 +92,9 @@ export function initIconPresets(dom, settings, render) {
      ---------------------------- */
 
   // 1) Custom upload restored
-  if (settings.customIconDataURL) {
+  if (settings.customIconImageId) {
     dom.iconPresetSelect.value = "custom";
-    // Icon sheet restored elsewhere (initUI -> restoreIconSheet)
+    // Icon sheet restored elsewhere (initAutosave or initUI)
     return;
   }
 

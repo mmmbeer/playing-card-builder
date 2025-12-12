@@ -56,6 +56,9 @@ async function fetchGames(designerId) {
 
 async function loadGamesUI(dom, state, designerId) {
   const { gameSelect, gameSearch } = dom;
+  const loader = dom.gameLoading;
+  if (loader) loader.classList.remove("hidden");
+
   const games = await fetchGames(designerId);
   state.games = games;
 
@@ -76,6 +79,8 @@ async function loadGamesUI(dom, state, designerId) {
     api.setGID(games[0].id);
     gameSelect.value = games[0].id;
   }
+
+  if (loader) loader.classList.add("hidden");
 }
 
 async function createGame(name) {

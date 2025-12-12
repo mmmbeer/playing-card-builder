@@ -15,6 +15,9 @@ async function fetchDecks(gameId) {
 
 async function loadDecksUI(dom, state, gameId) {
   const { deckSelect } = dom;
+  const loader = dom.deckLoading;
+  if (loader) loader.classList.remove("hidden");
+
   const decks = await fetchDecks(gameId);
   state.decks = decks;
 
@@ -27,6 +30,8 @@ async function loadDecksUI(dom, state, gameId) {
   });
 
   if (decks.length) deckSelect.value = decks[0].id;
+
+  if (loader) loader.classList.add("hidden");
 }
 
 async function createDeck(name) {

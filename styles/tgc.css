@@ -131,3 +131,27 @@
 #tgcPhase1 .field-row {
   align-items: flex-start;
 }
+
+/* Inline loading indicator (designers/games/decks/previews) */
+.tgc-inline-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 4px 8px;
+}
+
+.tgc-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  display: inline-block;
+  animation: tgc-spin 0.8s linear infinite;
+}
+
+@keyframes tgc-spin {
+  to { transform: rotate(360deg); }
+}

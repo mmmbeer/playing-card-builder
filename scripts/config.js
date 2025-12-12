@@ -3,6 +3,7 @@ export const CARD_HEIGHT = 1125
 export const BLEED = 80
 export const SAFE_WIDTH = CARD_WIDTH - BLEED * 2
 export const SAFE_HEIGHT = CARD_HEIGHT - BLEED * 2
+export const CARD_IDENTITY = 'PokerDeck'
 
 export const DEFAULT_PIP_VERTICALS = Object.freeze({
   top: 0.30,

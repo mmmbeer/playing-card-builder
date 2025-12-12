@@ -1,4 +1,4 @@
-import { SAFE_HEIGHT } from "../../config.js";
+import { getSafeHeight, getSafeWidth } from "../../cardGeometry.js";
 import { saveImageFromSource } from "../../indexedDB.js";
 
 export function initFaceControls(dom, settings, getCard, sync, render) {
@@ -39,7 +39,10 @@ export function initFaceControls(dom, settings, getCard, sync, render) {
       card.flipH = false;
       card.flipV = false;
 
-      card.scale = SAFE_HEIGHT / img.height;
+      const safeHeight = getSafeHeight();
+      const safeWidth = getSafeWidth();
+      const baseScale = Math.min(safeWidth / img.width, safeHeight / img.height) || 1;
+      card.scale = (safeHeight / img.height) / baseScale;
 
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent("appDirty"));

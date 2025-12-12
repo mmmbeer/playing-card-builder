@@ -1,6 +1,7 @@
 // scripts/tgc/preview.js
 import { activeRanks, settings, JOKER_SUIT_ID } from "../state.js";
-import { CARD_WIDTH, CARD_HEIGHT, SUITS } from "../config.js";
+import { SUITS } from "../config.js";
+import { getCardMetrics } from "../cardGeometry.js";
 import { renderCardForPreview, renderJokerCard } from "../drawing.js";
 import { enumerateRankSlots } from "../ui/navigation.js";
 
@@ -109,16 +110,17 @@ export default {
 
     const canvas = document.createElement("canvas");
 
+    const { cardWidth, cardHeight } = getCardMetrics();
     const gridWidth = this.dom.previewPanel.clientWidth / 3 - 16;
     const width = Math.max(50, gridWidth);
-    const height = width * (CARD_HEIGHT / CARD_WIDTH);
+    const height = width * (cardHeight / cardWidth);
 
     canvas.width = width;
     canvas.height = height;
 
     const ctx = canvas.getContext("2d");
 
-    const scale = width / CARD_WIDTH;
+    const scale = width / cardWidth;
     ctx.scale(scale, scale);
 
     if (isJoker) {

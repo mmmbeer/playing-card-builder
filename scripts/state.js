@@ -1,4 +1,12 @@
-import { SUITS, BASE_RANKS, DEFAULT_PIP_VERTICALS } from './config.js'
+import {
+  CARD_HEIGHT,
+  CARD_IDENTITY,
+  CARD_WIDTH,
+  BLEED,
+  SUITS,
+  BASE_RANKS,
+  DEFAULT_PIP_VERTICALS
+} from './config.js'
 import { markDirty } from "./autosave.js";
 
 
@@ -12,6 +20,10 @@ export const deck = {}
 export let activeRanks = BASE_RANKS.slice()
 
 export const DEFAULT_SETTINGS = Object.freeze({
+  cardWidth: CARD_WIDTH,
+  cardHeight: CARD_HEIGHT,
+  bleed: BLEED,
+
   fontFamily: 'Roboto',
   fontWeight: '700',
   fontSize: 72,
@@ -77,7 +89,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   showGuidelines: true,
   safeZoneInset: 80,
 
-  deckIdentity: 'PokerDeck',
+  deckIdentity: CARD_IDENTITY,
 
   abilityPlacement: 'bottom',
   abilityMirror: false,

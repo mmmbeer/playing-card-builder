@@ -99,28 +99,39 @@ export function initResetControls(dom, settings, { render, sync, refreshRanks })
   const safeRefreshRanks = typeof refreshRanks === "function" ? refreshRanks : () => {};
   const refreshUI = () => window.dispatchEvent(new CustomEvent("refreshUIFromSettings"));
 
-  dom.resetFontsButton?.addEventListener("click", () => {
+  const safeShowFullResetModal = () => dom.fullResetModal?.classList.remove("hidden");
+  const safeHideFullResetModal = () => dom.fullResetModal?.classList.add("hidden");
+
+  const bindReset = (button, handler) => {
+    if (!button) return;
+    button.addEventListener("click", event => {
+      event.stopPropagation();
+      handler();
+    });
+  };
+
+  bindReset(dom.resetFontsButton, () => {
     resetSettingsToDefaults(FONT_KEYS);
     safeSync();
     safeRender();
     refreshUI();
   });
 
-  dom.resetPipsButton?.addEventListener("click", () => {
+  bindReset(dom.resetPipsButton, () => {
     resetSettingsToDefaults(PIP_KEYS);
     safeSync();
     safeRender();
     refreshUI();
   });
 
-  dom.resetCornersButton?.addEventListener("click", () => {
+  bindReset(dom.resetCornersButton, () => {
     resetSettingsToDefaults(CORNER_KEYS);
     safeSync();
     safeRender();
     refreshUI();
   });
 
-  dom.resetIconsButton?.addEventListener("click", async () => {
+  bindReset(dom.resetIconsButton, async () => {
     resetSettingsToDefaults(ICON_KEYS);
     await applyDefaultIconPreset(settings);
     safeSync();
@@ -128,24 +139,40 @@ export function initResetControls(dom, settings, { render, sync, refreshRanks })
     refreshUI();
   });
 
-  dom.resetAbilityButton?.addEventListener("click", () => {
+  bindReset(dom.resetAbilityButton, () => {
     resetSettingsToDefaults(ABILITY_KEYS);
     safeSync();
     safeRender();
     refreshUI();
   });
 
-  dom.fullResetButton?.addEventListener("click", async () => {
-    const confirmed = window.confirm(
-      "Factory reset will clear autosaves and uploaded images. Continue?"
-    );
-    if (!confirmed) return;
+  dom.fullResetButton?.addEventListener("click", event => {
+    event.stopPropagation();
+    safeShowFullResetModal();
+  });
 
-    await resetAllState();
-    await applyDefaultIconPreset(settings);
-    safeRefreshRanks(false);
-    safeSync();
-    safeRender();
-    refreshUI();
+  dom.cancelFullResetButton?.addEventListener("click", event => {
+    event.stopPropagation();
+    safeHideFullResetModal();
+  });
+
+  dom.fullResetModal?.addEventListener("click", event => {
+    if (event.target === dom.fullResetModal) {
+      safeHideFullResetModal();
+    }
+  });
+
+  dom.confirmFullResetButton?.addEventListener("click", async event => {
+    event.stopPropagation();
+    try {
+      await resetAllState();
+      await applyDefaultIconPreset(settings);
+      safeRefreshRanks(false);
+      safeSync();
+      safeRender();
+      refreshUI();
+    } finally {
+      safeHideFullResetModal();
+    }
   });
 }

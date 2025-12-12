@@ -42,6 +42,13 @@
 
 .modal h3 { margin: 0; margin-bottom: .75em; }
 
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
 .modal--wide .modal-content {
   width: 750px;
 }

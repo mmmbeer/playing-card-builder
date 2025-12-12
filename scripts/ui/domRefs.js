@@ -109,6 +109,9 @@ export const dom = {
   resetCornersButton: document.getElementById('resetCornersButton'),
   resetAbilityButton: document.getElementById('resetAbilityButton'),
   fullResetButton: document.getElementById('fullResetButton'),
+  confirmFullResetButton: document.getElementById('confirmFullResetButton'),
+  cancelFullResetButton: document.getElementById('cancelFullResetButton'),
+  fullResetModal: document.getElementById('fullResetModal'),
 
   abilityMarkdownInput: document.getElementById('abilityMarkdownInput'),
   abilityPlacementSelect: document.getElementById('abilityPlacementSelect'),

@@ -69,11 +69,12 @@ export function initIconControls(dom, settings, render) {
      ICON COLOR
      ================================================================ */
   const syncColorGroups = () => {
-    const mode = settings.iconColorMode || "single";
+    const mode = settings.iconColorMode || "standard";
     if (dom.iconColorModeSelect) dom.iconColorModeSelect.value = mode;
-    if (dom.iconSingleGroup) dom.iconSingleGroup.classList.toggle("hidden", mode !== "single");
-    if (dom.iconBiColorGroup) dom.iconBiColorGroup.classList.toggle("hidden", mode !== "bi");
-    if (dom.iconPerSuitGroup) dom.iconPerSuitGroup.classList.toggle("hidden", mode !== "perSuit");
+    const hideColors = mode === "standard";
+    if (dom.iconSingleGroup) dom.iconSingleGroup.classList.toggle("hidden", hideColors || mode !== "single");
+    if (dom.iconBiColorGroup) dom.iconBiColorGroup.classList.toggle("hidden", hideColors || mode !== "bi");
+    if (dom.iconPerSuitGroup) dom.iconPerSuitGroup.classList.toggle("hidden", hideColors || mode !== "perSuit");
   };
 
   if (dom.iconColorModeSelect) {

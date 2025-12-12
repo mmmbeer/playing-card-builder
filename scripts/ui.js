@@ -373,7 +373,7 @@ nextCardBtn.addEventListener('click', () => goToCard(1))
     renderCurrentCard()
   })
 
-  mirrorDefaultCheckbox.addEventListener('change', () => {
+  mirrorDefaultCheckbox?.addEventListener('change', () => {
     settings.mirrorDefault = mirrorDefaultCheckbox.checked
     renderCurrentCard()
   })
@@ -681,7 +681,7 @@ export function initUI() {
   iconScaleInput.value = settings.iconScale
 
   showPipsCheckbox.checked = settings.showPips
-  mirrorDefaultCheckbox.checked = settings.mirrorDefault
+  if (mirrorDefaultCheckbox) mirrorDefaultCheckbox.checked = settings.mirrorDefault
   showGuidelinesCheckbox.checked = settings.showGuidelines    // NEW
 
   rankOffsetXInput.value = settings.cornerRankOffsetX

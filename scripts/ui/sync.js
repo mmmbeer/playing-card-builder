@@ -11,7 +11,7 @@ export function syncControls(card, settings, dom) {
   dom.mirrorCardCheckbox.checked =
     typeof card.mirrorCorners === "boolean"
       ? card.mirrorCorners
-      : settings.mirrorDefault;
+      : true;
 
   if (card.faceImageId || card.faceImageUrl) {
     dom.faceImageLabel.textContent = "(image loaded)";

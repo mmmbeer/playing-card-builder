@@ -47,10 +47,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
 
   layout: 'rankAboveSuit',
   showPips: true,
-  mirrorDefault: true,
 
   iconSheet: null,
-  iconColorMode: 'single',
+  iconColorMode: 'standard',
   iconColor: '#000000',
   iconColorRed: '#d12d2d',
   iconColorBlack: '#000000',

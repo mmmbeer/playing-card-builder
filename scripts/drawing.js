@@ -95,6 +95,8 @@ function getRankColor(suitId) {
 }
 
 function getIconColor(suitId) {
+  if (settings.iconColorMode === 'standard') return null;
+
   if (settings.iconColorMode === 'bi') {
     const isBlackSuit = suitId === 'spades' || suitId === 'clubs';
     const isRedSuit = suitId === 'hearts' || suitId === 'diamonds';
@@ -184,8 +186,11 @@ function drawSuitIcon(ctx, suitId, x, y, size, rotationRad = 0) {
   const dw = size * settings.iconScale;
   const dh = size * settings.iconScale;
 
-  const { r, g, b } = hexToRgb(getIconColor(suitId));
-  const hasTint = r !== 0 || g !== 0 || b !== 0;
+  const iconColor = getIconColor(suitId);
+  const hasTint = !!iconColor && (() => {
+    const { r, g, b } = hexToRgb(iconColor);
+    return r !== 0 || g !== 0 || b !== 0;
+  })();
 
   // Fast path: no tint
   if (!hasTint) {
@@ -206,6 +211,8 @@ function drawSuitIcon(ctx, suitId, x, y, size, rotationRad = 0) {
   }
 
   // Tint path
+  const { r, g, b } = hexToRgb(iconColor || '#000000');
+
   iconWorkCanvas.width = sw;
   iconWorkCanvas.height = sh;
   iconWorkCtx.clearRect(0, 0, sw, sh);
@@ -745,7 +752,7 @@ function renderCardSurface(ctx, { card, suitId, rankLabel, pipRank, cornerOption
   const mirror =
     typeof card.mirrorCorners === 'boolean'
       ? card.mirrorCorners
-      : settings.mirrorDefault;
+      : true;
 
   drawCorners(ctx, suitId, rankLabel, mirror, cornerOptions);
 }

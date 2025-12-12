@@ -18,14 +18,6 @@ export function initDeckSettingsControls(dom, settings, refreshRanks, render) {
   });
 
   //
-  // Default mirror toggle
-  //
-  dom.mirrorDefaultCheckbox.addEventListener("change", () => {
-    settings.mirrorDefault = dom.mirrorDefaultCheckbox.checked;
-    render();
-  });
-
-  //
   // Joker toggles
   //
   dom.includeJokersCheckbox.addEventListener("change", () => {

@@ -14,6 +14,18 @@ const SHIFT_KEYS = ["pipTop", "pipInnerTop", "pipInnerBottom", "pipBottom"];
 const clampPercent = value => Math.max(0, Math.min(100, Math.round(value)));
 
 export function initPipControls(dom, settings, render) {
+  const syncVisibility = () => {
+    const isVisible = !!settings.showPips;
+    if (dom.showPipsCheckbox) dom.showPipsCheckbox.checked = isVisible;
+    dom.pipControlsGroup?.classList.toggle("hidden", !isVisible);
+  };
+
+  dom.showPipsCheckbox?.addEventListener("change", () => {
+    settings.showPips = dom.showPipsCheckbox.checked;
+    syncVisibility();
+    render();
+  });
+
   const pipState = {
     pipTop: clampPercent(settings.pipTop * 100),
     pipInnerTop: clampPercent(settings.pipInnerTop * 100),
@@ -145,8 +157,10 @@ export function initPipControls(dom, settings, render) {
     pipState.pipBottom = clampPercent(settings.pipBottom * 100);
     applyMirrors();
     syncUI(false);
+    syncVisibility();
   });
 
+  syncVisibility();
   applyMirrors();
   syncUI();
 }

@@ -59,15 +59,22 @@ export const dom = {
 
   resetFontsButton: document.getElementById('resetFontsButton'),
   resetIconsButton: document.getElementById('resetIconsButton'),
-  resetPipsButton: document.getElementById('resetPipsButton'),
+  resetBackgroundButton: document.getElementById('resetBackgroundButton'),
+  resetLayoutButton: document.getElementById('resetLayoutButton'),
+  resetPipPositionsButton: document.getElementById('resetPipPositionsButton'),
   resetCornersButton: document.getElementById('resetCornersButton'),
   resetAbilityButton: document.getElementById('resetAbilityButton'),
+  resetDeckButton: document.getElementById('resetDeckButton'),
   fullResetButton: document.getElementById('fullResetButton'),
 
   prevCardBtn: document.getElementById('prevCardBtn'),
   nextCardBtn: document.getElementById('nextCardBtn'),
 
   exportDeckButton: document.getElementById('exportDeckButton'),
-  bulkUploadBadge: document.getElementById('bulkUploadBadge')
+  bulkUploadBadge: document.getElementById('bulkUploadBadge'),
+
+  linkPipOuterButton: document.getElementById('linkPipOuterButton'),
+  linkPipInnerButton: document.getElementById('linkPipInnerButton'),
+  linkPipCenterButton: document.getElementById('linkPipCenterButton')
 };
 

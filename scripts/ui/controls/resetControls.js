@@ -1,4 +1,4 @@
-import { ICON_PRESETS } from "../../config.js";
+import { ICON_PRESETS, DEFAULT_PIP_VERTICALS } from "../../config.js";
 import { resetAllState } from "../../autosave.js";
 import { resetSettingsToDefaults } from "../../state.js";
 import { loadPreset } from "../presets.js";
@@ -24,19 +24,24 @@ const FONT_KEYS = [
   "abilityTextOpacity"
 ];
 
-const PIP_KEYS = [
+const BACKGROUND_KEYS = [
+  "backgroundStyle",
+  "backgroundColorPrimary",
+  "backgroundColorSecondary"
+];
+
+const LAYOUT_KEYS = [
+  "layout",
+  "showPips",
+  "mirrorDefault"
+];
+
+const PIP_VERTICAL_KEYS = [
   "pipTop",
   "pipInnerTop",
   "pipCenter",
   "pipInnerBottom",
-  "pipBottom",
-  "pipLeft",
-  "pipRight",
-  "pipCenterX",
-  "showPips",
-  "safeZoneInset",
-  "layout",
-  "mirrorDefault"
+  "pipBottom"
 ];
 
 const CORNER_KEYS = [
@@ -44,6 +49,18 @@ const CORNER_KEYS = [
   "cornerRankOffsetY",
   "cornerSuitOffsetX",
   "cornerSuitOffsetY"
+];
+
+const DECK_KEYS = [
+  "customRanksString",
+  "includeJokers",
+  "jokerCount",
+  "jokerLabel",
+  "jokerWild",
+  "jokerLabelOrientation",
+  "jokerFontSize",
+  "jokerSuitStyle",
+  "deckIdentity"
 ];
 
 const ICON_KEYS = [
@@ -117,8 +134,27 @@ export function initResetControls(dom, settings, { render, sync, refreshRanks })
     refreshUI();
   });
 
-  bindReset(dom.resetPipsButton, () => {
-    resetSettingsToDefaults(PIP_KEYS);
+  bindReset(dom.resetBackgroundButton, () => {
+    resetSettingsToDefaults(BACKGROUND_KEYS);
+    safeSync();
+    safeRender();
+    refreshUI();
+  });
+
+  bindReset(dom.resetLayoutButton, () => {
+    resetSettingsToDefaults(LAYOUT_KEYS);
+    safeSync();
+    safeRender();
+    refreshUI();
+  });
+
+  bindReset(dom.resetPipPositionsButton, () => {
+    resetSettingsToDefaults(PIP_VERTICAL_KEYS);
+    settings.pipTop = DEFAULT_PIP_VERTICALS.top;
+    settings.pipInnerTop = DEFAULT_PIP_VERTICALS.innerTop;
+    settings.pipCenter = DEFAULT_PIP_VERTICALS.center;
+    settings.pipInnerBottom = DEFAULT_PIP_VERTICALS.innerBottom;
+    settings.pipBottom = DEFAULT_PIP_VERTICALS.bottom;
     safeSync();
     safeRender();
     refreshUI();
@@ -126,6 +162,16 @@ export function initResetControls(dom, settings, { render, sync, refreshRanks })
 
   bindReset(dom.resetCornersButton, () => {
     resetSettingsToDefaults(CORNER_KEYS);
+    safeSync();
+    safeRender();
+    refreshUI();
+  });
+
+  bindReset(dom.resetDeckButton, () => {
+    const confirmed = window.confirm("Reset deck & rank options to defaults? This will remove custom ranks and joker tweaks.");
+    if (!confirmed) return;
+    resetSettingsToDefaults(DECK_KEYS);
+    safeRefreshRanks(true);
     safeSync();
     safeRender();
     refreshUI();

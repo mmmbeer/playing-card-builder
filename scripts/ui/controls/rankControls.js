@@ -1,10 +1,18 @@
 import { initDeck, updateActiveRanksFromSettings, settings } from "../../state.js";
+import { JOKER_SUIT_ID, decodeRankValue } from "../navigation.js";
 
 export function initRankControls(dom, ctx, refreshRanks, sync, render) {
 
   // 1. Handle dropdown rank change
   dom.rankSelect.addEventListener("change", () => {
-    ctx.currentRank = dom.rankSelect.value;
+    if (dom.suitSelect.value === JOKER_SUIT_ID) {
+      ctx.currentRank = null;
+      ctx.currentCopyIndex = 1;
+    } else {
+      const { rank, copyIndex } = decodeRankValue(dom.rankSelect.value);
+      ctx.currentRank = rank;
+      ctx.currentCopyIndex = copyIndex;
+    }
     sync();
     render();
   });

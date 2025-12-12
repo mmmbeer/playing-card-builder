@@ -3,6 +3,9 @@ import { markDirty } from "./autosave.js";
 
 
 
+export const JOKER_SUIT_ID = "joker";
+
+
 export const deck = {}
 
 // Live list of ranks used in the deck (can differ from BASE_RANKS)
@@ -133,27 +136,70 @@ export function initDeck() {
     deck[suit.id] = deck[suit.id] || {}
   })
   ensureDeckForActiveRanks()
+  ensureJokerCards()
+}
+
+function ensureRankCopies(container, rank, desired) {
+  const existing = container[rank]
+
+  const cards = Array.isArray(existing)
+    ? existing
+    : existing
+    ? [existing]
+    : []
+
+  while (cards.length < desired) {
+    cards.push(createCard())
+  }
+
+  if (cards.length > desired) {
+    cards.length = desired
+  }
+
+  container[rank] = cards.map(wrapCard)
 }
 
 export function ensureDeckForActiveRanks() {
+  const counts = activeRanks.reduce((map, rank) => {
+    map[rank] = (map[rank] || 0) + 1
+    return map
+  }, {})
+
   SUITS.forEach(suit => {
     if (!deck[suit.id]) deck[suit.id] = {}
-    activeRanks.forEach(rank => {
-      if (!deck[suit.id][rank]) {
-        deck[suit.id][rank] = wrapCard({
-                  faceImage: null,
-                  faceImageUrl: null,
-                  offsetX: 0,
-                  offsetY: 0,
-                  scale: 1,
-                  rotation: 0,
-                  flipH: false,
-                  flipV: false,
-                  mirrorCorners: true,
-                  abilityMarkdown: ''
-                });
-      }
+
+    Object.entries(counts).forEach(([rank, total]) => {
+      ensureRankCopies(deck[suit.id], rank, total)
     })
+  })
+}
+
+function jokerKey(index) {
+  return `JOKER_${index}`
+}
+
+export function ensureJokerCards() {
+  const shouldInclude = settings.includeJokers && settings.jokerCount > 0
+
+  if (!shouldInclude) {
+    delete deck[JOKER_SUIT_ID]
+    return
+  }
+
+  const count = Math.min(Math.max(settings.jokerCount, 1), 8)
+  if (!deck[JOKER_SUIT_ID]) deck[JOKER_SUIT_ID] = {}
+
+  for (let i = 1; i <= count; i++) {
+    const key = jokerKey(i)
+    const existing = deck[JOKER_SUIT_ID][key]
+    deck[JOKER_SUIT_ID][key] = existing ? wrapCard(existing) : createCard()
+  }
+
+  Object.keys(deck[JOKER_SUIT_ID]).forEach(key => {
+    const idx = Number((key || '').split('_')[1])
+    if (!Number.isFinite(idx) || idx < 1 || idx > count) {
+      delete deck[JOKER_SUIT_ID][key]
+    }
   })
 }
 
@@ -178,8 +224,17 @@ export function updateActiveRanksFromSettings() {
   ensureDeckForActiveRanks()
 }
 
-export function getCurrentCard(suitId, rank) {
-  return deck[suitId]?.[rank]
+export function getCurrentCard(suitId, rank, copyIndex = 1) {
+  const entry = deck[suitId]?.[rank]
+  if (Array.isArray(entry)) {
+    return entry[copyIndex - 1]
+  }
+  return entry
+}
+
+export function getJokerCard(index) {
+  const key = jokerKey(index)
+  return deck[JOKER_SUIT_ID]?.[key]
 }
 
 function wrapCard(card) {
@@ -193,4 +248,19 @@ function wrapCard(card) {
       return true;
     }
   });
+}
+
+function createCard() {
+  return wrapCard({
+    faceImage: null,
+    faceImageUrl: null,
+    offsetX: 0,
+    offsetY: 0,
+    scale: 1,
+    rotation: 0,
+    flipH: false,
+    flipV: false,
+    mirrorCorners: true,
+    abilityMarkdown: ''
+  })
 }

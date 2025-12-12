@@ -21,26 +21,53 @@ import {
   renderCardForExport,
   renderJokerCard
 } from "./drawing.js";
+import { JOKER_SUIT_ID } from "./ui/navigation.js";
 
 
 // -------------------------------------------------------
 // Download ONE card (clean, no overlays)
 // -------------------------------------------------------
-export async function downloadSingleCard(suitId, rank) {
+export async function downloadSingleCard(selectionOrSuit, rankMaybe, copyIndexMaybe = 1) {
+  const selection = typeof selectionOrSuit === "object" && selectionOrSuit !== null
+    ? selectionOrSuit
+    : { suitId: selectionOrSuit, rank: rankMaybe, copyIndex: copyIndexMaybe };
+
   const canvas = document.createElement("canvas");
   canvas.width = CARD_WIDTH;
   canvas.height = CARD_HEIGHT;
   const ctx = canvas.getContext("2d");
 
-  renderCardForExport(ctx, suitId, rank);
+  if (selection.suitId === JOKER_SUIT_ID) {
+    const jokerIndex = selection.jokerIndex || 1;
+    renderJokerCard(ctx, jokerIndex, { preview: false });
 
+    canvas.toBlob(blob => {
+      if (!blob) return;
+
+      const baseLabel = (settings.jokerLabel || "JOKER").replace(/\s+/g, "");
+      const suffix = (settings.jokerCount || 1) > 1 ? `_${jokerIndex}` : "";
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${baseLabel}${suffix}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, "image/png");
+
+    return;
+  }
+
+  renderCardForExport(ctx, selection.suitId, selection.rank, copyIndex);
+
+  const copyIndex = selection.copyIndex || 1;
   canvas.toBlob(blob => {
     if (!blob) return;
 
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${rank}_${suitId}.png`;
+    const suffix = copyIndex > 1 ? `_${copyIndex}` : "";
+    a.download = `${selection.rank}_${selection.suitId}${suffix}.png`;
     a.click();
     URL.revokeObjectURL(url);
   }, "image/png");
@@ -59,15 +86,25 @@ export async function exportFullDeck() {
   const tmpCtx = tmpCanvas.getContext("2d");
 
   // Standard cards
+  const totalsByRank = activeRanks.reduce((map, rank) => {
+    map[rank] = (map[rank] || 0) + 1;
+    return map;
+  }, {});
+
   for (const suit of SUITS) {
+    const seen = {};
     for (const rank of activeRanks) {
-      renderCardForExport(tmpCtx, suit.id, rank);
+      const copyIndex = (seen[rank] || 0) + 1;
+      seen[rank] = copyIndex;
+
+      renderCardForExport(tmpCtx, suit.id, rank, copyIndex);
       const blob = await new Promise(resolve =>
         tmpCanvas.toBlob(resolve, "image/png")
       );
       if (!blob) continue;
 
-      const filename = `${rank}${suit.symbol}.png`;
+      const suffix = totalsByRank[rank] > 1 ? `_${copyIndex}` : "";
+      const filename = `${rank}${suit.symbol}${suffix}.png`;
       zip.file(filename, blob);
     }
   }

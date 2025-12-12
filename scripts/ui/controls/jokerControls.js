@@ -1,7 +1,12 @@
 // ui/controls/jokerControls.js
-export function initJokerControls(dom, settings) {
+export function initJokerControls(dom, settings, onChange) {
+  function notify() {
+    onChange?.();
+  }
+
   dom.includeJokersCheckbox.addEventListener("change", () => {
     settings.includeJokers = dom.includeJokersCheckbox.checked;
+    notify();
   });
 
   dom.jokerCountInput.addEventListener("input", () => {
@@ -11,13 +16,16 @@ export function initJokerControls(dom, settings) {
 
     dom.jokerCountInput.value = n;
     settings.jokerCount = n;
+    notify();
   });
 
   dom.jokerLabelInput.addEventListener("input", () => {
     settings.jokerLabel = dom.jokerLabelInput.value || "JOKER";
+    notify();
   });
 
   dom.jokerWildCheckbox.addEventListener("change", () => {
     settings.jokerWild = dom.jokerWildCheckbox.checked;
+    notify();
   });
 }

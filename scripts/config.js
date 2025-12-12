@@ -44,7 +44,15 @@ export const ICON_PRESETS = [
 
   { id: 'engraved',           label: 'Engraved',                  file: 'suits/engraved.png' },
 
-  
+  { id: 'metallic',           label: 'Metallic',                  file: 'suits/metallic.png' },
+  { id: 'metallic-br',        label: 'Metallic (Black & Red)',    file: 'suits/metallic-br.png' },
+
+  { id: 'stone',              label: 'Stone',                     file: 'suits/stone.png' },
+  { id: 'stone-br',           label: 'Stone (Black & Red)',       file: 'suits/stone-br.png' },
+
+  { id: 'constellations',     label: 'Constellations',            file: 'suits/constellations.png' },
+  { id: 'constellations-br',  label: 'Constellations (Black & Red)', file: 'suits/constellations-br.png' },
+
   { id: 'neon',               label: 'Neon',                      file: 'suits/neon.png' },
   { id: 'neon-br',            label: 'Neon (Black & Red)',        file: 'suits/neon-br.png' },
   { id: 'neon-futuristic',    label: 'Futuristic Neon',           file: 'suits/neon-futuristic.png' },
@@ -58,4 +66,5 @@ export const ICON_PRESETS = [
   { id: 'watercolors',        label: 'Watercolors',               file: 'suits/watercolors.png' },
   { id: 'watercolors-br',     label: 'Watercolors (Black & Red)', file: 'suits/watercolors-br.png' },
 ];
+
 

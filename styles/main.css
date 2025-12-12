@@ -304,6 +304,22 @@ input[type="file"] {
   gap: 6px;
 }
 
+.inline-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inline-field .inline-label {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.inline-field input[type="range"] {
+  flex: 1;
+}
+
 .hint {
   font-size: 11px;
   color: var(--muted);

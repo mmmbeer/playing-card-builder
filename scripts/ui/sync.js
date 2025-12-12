@@ -52,6 +52,9 @@ export function syncControls(card, settings, dom) {
     dom.abilityOverflowSelect.value = settings.abilityOverflow;
     dom.abilityOverflowSelect.disabled = settings.abilityHeightMode !== 'fixed';
   }
+  if (dom.abilityFixedControls) {
+    dom.abilityFixedControls.classList.toggle('hidden', settings.abilityHeightMode !== 'fixed');
+  }
   if (dom.abilityBackgroundInput) {
     dom.abilityBackgroundInput.value = settings.abilityBackground;
   }

@@ -17,6 +17,9 @@ function updateHeightVisibility(dom, settings) {
   if (dom.abilityOverflowSelect) {
     dom.abilityOverflowSelect.disabled = !fixed;
   }
+  if (dom.abilityFixedControls) {
+    dom.abilityFixedControls.classList.toggle('hidden', !fixed);
+  }
 }
 
 export function initAbilityControls(dom, settings, getCard, render) {

@@ -49,6 +49,20 @@ function dataURLToImage(url) {
   });
 }
 
+function applyNewSettingDefaults(target) {
+  if (!target) return;
+  target.fontColorMode = target.fontColorMode || "single";
+  target.fontColorBlack = target.fontColorBlack || "#000000";
+  target.fontColorRed = target.fontColorRed || "#d12d2d";
+  target.fontColorSpades = target.fontColorSpades || "#000000";
+  target.fontColorHearts = target.fontColorHearts || "#d12d2d";
+  target.fontColorClubs = target.fontColorClubs || "#000000";
+  target.fontColorDiamonds = target.fontColorDiamonds || "#d12d2d";
+  target.backgroundStyle = target.backgroundStyle || "solid";
+  target.backgroundColorPrimary = target.backgroundColorPrimary || "#ffffff";
+  target.backgroundColorSecondary = target.backgroundColorSecondary || target.backgroundColorPrimary;
+}
+
 async function serializeDeck() {
   const out = {};
 
@@ -220,6 +234,7 @@ export async function importSave(file) {
     const restoredSheet = await rebuildIconSheetFromSettings(data.settings);
     const currentSheet = settings.iconSheet;
     Object.assign(settings, data.settings);
+    applyNewSettingDefaults(settings);
     settings.iconSheet = restoredSheet || currentSheet;
     await restoreDeck(data.deck);
     requestAnimationFrame(() => {
@@ -244,6 +259,7 @@ export async function initAutosave() {
       // Restore settings immediately so UI hydration uses saved values
       const currentSheet = settings.iconSheet;
       Object.assign(settings, data.settings);
+      applyNewSettingDefaults(settings);
       settings.customIconDataURL = data.settings.customIconDataURL || null;
       settings.iconPresetId = data.settings.iconPresetId || null;
 

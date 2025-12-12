@@ -1,21 +1,25 @@
 // ui/controls/pipControls.js
 export function initPipControls(dom, settings, render) {
-  function bindPercent(input, key) {
-    input.addEventListener("input", () => {
-      let v = Number(input.value);
+  function bindPercent(input, valueEl, key) {
+    const update = raw => {
+      let v = Number(raw);
       if (isNaN(v)) v = 0;
-      v = Math.max(0, Math.min(100, v));
+      v = Math.max(0, Math.min(100, Math.round(v)));
 
       settings[key] = v / 100;
       input.value = v;
+      if (valueEl) valueEl.textContent = v;
 
       render();
-    });
+    };
+
+    input.addEventListener("input", () => update(input.value));
+    update(input.value);
   }
 
-  bindPercent(dom.pipTopInput, "pipTop");
-  bindPercent(dom.pipInnerTopInput, "pipInnerTop");
-  bindPercent(dom.pipCenterInput, "pipCenter");
-  bindPercent(dom.pipInnerBottomInput, "pipInnerBottom");
-  bindPercent(dom.pipBottomInput, "pipBottom");
+  bindPercent(dom.pipTopInput, dom.pipTopValue, "pipTop");
+  bindPercent(dom.pipInnerTopInput, dom.pipInnerTopValue, "pipInnerTop");
+  bindPercent(dom.pipCenterInput, dom.pipCenterValue, "pipCenter");
+  bindPercent(dom.pipInnerBottomInput, dom.pipInnerBottomValue, "pipInnerBottom");
+  bindPercent(dom.pipBottomInput, dom.pipBottomValue, "pipBottom");
 }

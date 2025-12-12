@@ -105,13 +105,20 @@ export const dom = {
 
   resetFontsButton: document.getElementById('resetFontsButton'),
   resetIconsButton: document.getElementById('resetIconsButton'),
-  resetPipsButton: document.getElementById('resetPipsButton'),
+  resetBackgroundButton: document.getElementById('resetBackgroundButton'),
+  resetLayoutButton: document.getElementById('resetLayoutButton'),
+  resetPipPositionsButton: document.getElementById('resetPipPositionsButton'),
   resetCornersButton: document.getElementById('resetCornersButton'),
   resetAbilityButton: document.getElementById('resetAbilityButton'),
+  resetDeckButton: document.getElementById('resetDeckButton'),
   fullResetButton: document.getElementById('fullResetButton'),
   confirmFullResetButton: document.getElementById('confirmFullResetButton'),
   cancelFullResetButton: document.getElementById('cancelFullResetButton'),
   fullResetModal: document.getElementById('fullResetModal'),
+
+  linkPipOuterButton: document.getElementById('linkPipOuterButton'),
+  linkPipInnerButton: document.getElementById('linkPipInnerButton'),
+  linkPipCenterButton: document.getElementById('linkPipCenterButton'),
 
   abilityMarkdownInput: document.getElementById('abilityMarkdownInput'),
   abilityPlacementSelect: document.getElementById('abilityPlacementSelect'),

@@ -13,7 +13,9 @@ import {
   iconWorkCanvas,
   iconWorkCtx,
   computePipGuidelines,
-  getCurrentCard
+  getCurrentCard,
+  getJokerCard,
+  JOKER_SUIT_ID
 } from './state.js';
 
 import { getPipLayout } from './pips.js'; // NEW
@@ -339,28 +341,12 @@ export function renderCard(ctx, suitId, rank, copyIndex = 1) {
   const card = getCurrentCard(suitId, rank, copyIndex);
   if (!card) return;
 
-  ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-  ctx.restore();
-
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
-
-  const safeTopY = BLEED;
-  const safeBottomY = BLEED + SAFE_HEIGHT;
-  computePipGuidelines(CARD_HEIGHT, safeTopY, safeBottomY);
-
-  drawFaceImage(ctx, card);
-  drawPips(ctx, suitId, rank);
-  renderAbilityText(ctx, suitId, rank, card, drawSuitIcon);
-
-  const mirror =
-    typeof card.mirrorCorners === 'boolean'
-      ? card.mirrorCorners
-      : settings.mirrorDefault;
-
-  drawCorners(ctx, suitId, rank, mirror);
+  renderCardSurface(ctx, {
+    card,
+    suitId,
+    rankLabel: rank,
+    pipRank: rank
+  });
 }
 
 /* ------------------------------------------------------------
@@ -403,8 +389,25 @@ export function renderCardForExport(ctx, suitId, rank, copyIndex = 1) {
 ------------------------------------------------------------- */
 
 export function renderJokerCard(ctx, index, { preview = false } = {}) {
+  const card = getJokerCard(index);
+  if (!card) return;
+
   const baseLabel = settings.jokerLabel || 'JOKER';
-  const text = settings.jokerWild ? `${baseLabel} (WILD)` : baseLabel;
+
+  renderCardSurface(ctx, {
+    card,
+    suitId: JOKER_SUIT_ID,
+    rankLabel: baseLabel,
+    pipRank: null
+  });
+
+  if (preview) {
+    renderOverlays(ctx, CARD_WIDTH, CARD_HEIGHT);
+  }
+}
+
+function renderCardSurface(ctx, { card, suitId, rankLabel, pipRank }) {
+  if (!card) return;
 
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -414,15 +417,22 @@ export function renderJokerCard(ctx, index, { preview = false } = {}) {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
-  ctx.save();
-  ctx.font = `${settings.fontWeight} ${Math.round(settings.fontSize * 1.4)}px "${settings.fontFamily}"`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = hexToRgba(settings.fontColor, settings.fontOpacity);
-  ctx.fillText(text, CARD_WIDTH / 2, CARD_HEIGHT / 2);
-  ctx.restore();
+  const safeTopY = BLEED;
+  const safeBottomY = BLEED + SAFE_HEIGHT;
+  computePipGuidelines(CARD_HEIGHT, safeTopY, safeBottomY);
 
-  if (preview) {
-    renderOverlays(ctx, CARD_WIDTH, CARD_HEIGHT);
+  drawFaceImage(ctx, card);
+
+  if (pipRank) {
+    drawPips(ctx, suitId, pipRank);
   }
+
+  renderAbilityText(ctx, suitId, rankLabel, card, drawSuitIcon);
+
+  const mirror =
+    typeof card.mirrorCorners === 'boolean'
+      ? card.mirrorCorners
+      : settings.mirrorDefault;
+
+  drawCorners(ctx, suitId, rankLabel, mirror);
 }

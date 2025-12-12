@@ -57,7 +57,7 @@ export async function downloadSingleCard(selectionOrSuit, rankMaybe, copyIndexMa
     return;
   }
 
-  renderCardForExport(ctx, selection.suitId, selection.rank);
+  renderCardForExport(ctx, selection.suitId, selection.rank, copyIndex);
 
   const copyIndex = selection.copyIndex || 1;
   canvas.toBlob(blob => {
@@ -97,7 +97,7 @@ export async function exportFullDeck() {
       const copyIndex = (seen[rank] || 0) + 1;
       seen[rank] = copyIndex;
 
-      renderCardForExport(tmpCtx, suit.id, rank);
+      renderCardForExport(tmpCtx, suit.id, rank, copyIndex);
       const blob = await new Promise(resolve =>
         tmpCanvas.toBlob(resolve, "image/png")
       );

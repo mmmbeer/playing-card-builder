@@ -51,28 +51,44 @@ function dataURLToImage(url) {
 
 async function serializeDeck() {
   const out = {};
+
   for (const suitId in deck) {
     out[suitId] = {};
+
     for (const rank in deck[suitId]) {
-      const card = deck[suitId][rank];
-      const storedDataUrl =
-        (await ensureDataURL(card.faceImageUrl)) ||
-        (await ensureDataURL(card.faceImage)) ||
-        null;
-      out[suitId][rank] = {
-        offsetX: card.offsetX,
-        offsetY: card.offsetY,
-        scale: card.scale,
-        rotation: card.rotation,
-        flipH: card.flipH,
-        flipV: card.flipV,
-        mirrorCorners: card.mirrorCorners ?? null,
-        faceImageUrl: storedDataUrl,
-        abilityMarkdown: card.abilityMarkdown || ''
-      };
+      const entry = deck[suitId][rank];
+
+      if (Array.isArray(entry)) {
+        out[suitId][rank] = [];
+        for (const card of entry) {
+          out[suitId][rank].push(await serializeCard(card));
+        }
+      } else {
+        out[suitId][rank] = await serializeCard(entry);
+      }
     }
   }
+
   return out;
+}
+
+async function serializeCard(card) {
+  const storedDataUrl =
+    (await ensureDataURL(card?.faceImageUrl)) ||
+    (await ensureDataURL(card?.faceImage)) ||
+    null;
+
+  return {
+    offsetX: card?.offsetX,
+    offsetY: card?.offsetY,
+    scale: card?.scale,
+    rotation: card?.rotation,
+    flipH: card?.flipH,
+    flipV: card?.flipV,
+    mirrorCorners: card?.mirrorCorners ?? null,
+    faceImageUrl: storedDataUrl,
+    abilityMarkdown: card?.abilityMarkdown || ''
+  };
 }
 
 async function buildSettingsPayload() {
@@ -107,31 +123,47 @@ async function restoreDeck(serial) {
     if (!deck[suitId]) continue;
 
     for (const rank in serial[suitId]) {
-      const saved = serial[suitId][rank];
-      const card = deck[suitId][rank];
-      if (!card) continue;
+      const savedEntry = serial[suitId][rank];
+      const target = deck[suitId][rank];
+      if (!target) continue;
 
-      card.offsetX = saved.offsetX ?? 0;
-      card.offsetY = saved.offsetY ?? 0;
-      card.scale = saved.scale ?? 1;
-      card.rotation = saved.rotation ?? 0;
-      card.flipH = saved.flipH ?? false;
-      card.flipV = saved.flipV ?? false;
-      card.mirrorCorners = saved.mirrorCorners ?? null;
-      card.abilityMarkdown = saved.abilityMarkdown ?? '';
-
-      if (saved.faceImageUrl) {
-        const img = await dataURLToImage(saved.faceImageUrl);
-        if (img.decode) {
-          try { await img.decode(); } catch (_) {}
+      if (Array.isArray(savedEntry)) {
+        const targets = Array.isArray(target) ? target : [target];
+        const limit = Math.min(savedEntry.length, targets.length);
+        for (let i = 0; i < limit; i++) {
+          await applySavedCard(targets[i], savedEntry[i]);
         }
-        card.faceImage = img;
-        card.faceImageUrl = saved.faceImageUrl;
+      } else if (Array.isArray(target)) {
+        if (target[0]) await applySavedCard(target[0], savedEntry);
       } else {
-        card.faceImage = null;
-        card.faceImageUrl = null;
+        await applySavedCard(target, savedEntry);
       }
     }
+  }
+}
+
+async function applySavedCard(card, saved) {
+  if (!card || !saved) return;
+
+  card.offsetX = saved.offsetX ?? 0;
+  card.offsetY = saved.offsetY ?? 0;
+  card.scale = saved.scale ?? 1;
+  card.rotation = saved.rotation ?? 0;
+  card.flipH = saved.flipH ?? false;
+  card.flipV = saved.flipV ?? false;
+  card.mirrorCorners = saved.mirrorCorners ?? null;
+  card.abilityMarkdown = saved.abilityMarkdown ?? '';
+
+  if (saved.faceImageUrl) {
+    const img = await dataURLToImage(saved.faceImageUrl);
+    if (img.decode) {
+      try { await img.decode(); } catch (_) {}
+    }
+    card.faceImage = img;
+    card.faceImageUrl = saved.faceImageUrl;
+  } else {
+    card.faceImage = null;
+    card.faceImageUrl = null;
   }
 }
 

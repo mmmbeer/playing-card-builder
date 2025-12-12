@@ -49,9 +49,18 @@ export default {
     const suits = ["spades", "hearts", "clubs", "diamonds"];
     const out = [];
 
+    const totalsByRank = activeRanks.reduce((map, rank) => {
+      map[rank] = (map[rank] || 0) + 1;
+      return map;
+    }, {});
+
     suits.forEach(s => {
+      const seen = {};
       activeRanks.forEach(r => {
-        out.push({ suit: s, rank: r });
+        const copyIndex = (seen[r] || 0) + 1;
+        seen[r] = copyIndex;
+
+        out.push({ suit: s, rank: r, copyIndex, total: totalsByRank[r] || 1 });
       });
     });
 
@@ -78,8 +87,8 @@ export default {
     this.state.loading = false;
   },
 
-  async renderThumbnail({ suit, rank }) {
-  const key = `${suit}-${rank}`;
+  async renderThumbnail({ suit, rank, copyIndex = 1, total = 1 }) {
+  const key = `${suit}-${rank}-${copyIndex}`;
   if (this.state.rendered.has(key)) return;
 
   const canvas = document.createElement("canvas");
@@ -98,14 +107,17 @@ export default {
   ctx.scale(scale, scale);
 
   // render WITHOUT overlays
-  renderCardForPreview(ctx, suit, rank, false);
+  renderCardForPreview(ctx, suit, rank, copyIndex, false);
 
   const wrapper = document.createElement("div");
   wrapper.className = "tgc-thumb-wrapper";
 
   const label = document.createElement("div");
   label.className = "tgc-thumb-label";
-  label.textContent = `${rank} / ${suit}`;
+  label.textContent =
+    total > 1
+      ? `${rank} / ${suit} (${copyIndex}/${total})`
+      : `${rank} / ${suit}`;
 
   wrapper.appendChild(canvas);
   wrapper.appendChild(label);

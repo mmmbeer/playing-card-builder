@@ -10,10 +10,10 @@ import {
 
 import {
   settings,
-  deck,
   iconWorkCanvas,
   iconWorkCtx,
-  computePipGuidelines
+  computePipGuidelines,
+  getCurrentCard
 } from './state.js';
 
 import { getPipLayout } from './pips.js'; // NEW
@@ -335,13 +335,9 @@ function drawPips(ctx, suitId, rank) {
    FULL CARD RENDER
 ------------------------------------------------------------- */
 
-export function renderCard(ctx, suitId, rank) {
-	
-	
-	// console.log( `renderCard: suitId: ${suitId}; rank: ${rank}`);
-	
-	
-  const card = deck[suitId][rank];
+export function renderCard(ctx, suitId, rank, copyIndex = 1) {
+  const card = getCurrentCard(suitId, rank, copyIndex);
+  if (!card) return;
 
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -371,7 +367,7 @@ export function renderCard(ctx, suitId, rank) {
    PREVIEW VERSION (with overlays)
 ------------------------------------------------------------- */
 
-export function renderCardForPreview(ctx, suitId, rank, showOverlays = true) {
+export function renderCardForPreview(ctx, suitId, rank, copyIndex = 1, showOverlays = true) {
   if (!ctx) {
     const canvas = document.getElementById("cardCanvas");
     ctx = canvas.getContext("2d");
@@ -380,12 +376,14 @@ export function renderCardForPreview(ctx, suitId, rank, showOverlays = true) {
   if (!suitId || !rank) {
     suitId = suitId || document.getElementById("suitSelect")?.value;
     const rawRank = rank || document.getElementById("rankSelect")?.value;
-    rank = rawRank?.split("__")[0];
+    const parts = (rawRank || "").split("__");
+    rank = parts[0];
+    copyIndex = Number(parts[1]) || 1;
   }
 
   if (!suitId || !rank) return;
 
-  renderCard(ctx, suitId, rank);
+  renderCard(ctx, suitId, rank, copyIndex);
 
   if (showOverlays) {
     renderOverlays(ctx, CARD_WIDTH, CARD_HEIGHT);
@@ -396,8 +394,8 @@ export function renderCardForPreview(ctx, suitId, rank, showOverlays = true) {
    EXPORT VERSION (clean)
 ------------------------------------------------------------- */
 
-export function renderCardForExport(ctx, suitId, rank) {
-  renderCard(ctx, suitId, rank);
+export function renderCardForExport(ctx, suitId, rank, copyIndex = 1) {
+  renderCard(ctx, suitId, rank, copyIndex);
 }
 
 /* ------------------------------------------------------------

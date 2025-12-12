@@ -326,7 +326,7 @@ export async function initUI() {
   function getCurrent() {
     const selection = getSelection();
     if (selection.isJoker) return getJokerCard(selection.jokerIndex);
-    return getCurrentCard(selection.suitId, selection.rank);
+    return getCurrentCard(selection.suitId, selection.rank, selection.copyIndex);
   }
 
 
@@ -477,7 +477,7 @@ export async function initUI() {
 
     if (!selection.rank) return;
 
-    renderCardForPreview(ctx, selection.suitId, selection.rank, true);
+    renderCardForPreview(ctx, selection.suitId, selection.rank, selection.copyIndex, true);
   }
 
 

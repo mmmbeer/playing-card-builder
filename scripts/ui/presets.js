@@ -47,13 +47,17 @@ export function initIconPresets(dom, settings, render) {
      ---------------------------- */
   function safeRender() {
     const suit = dom.suitSelect?.value;
-    const rank = dom.rankSelect?.value;
+    const rawRank = dom.rankSelect?.value;
+    const [rank, copyString] = (rawRank || "").split("__");
+    const copyIndex = Number(copyString) || 1;
 
     if (!suit || !rank) return;
-    if (!deck[suit] || !deck[suit][rank]) return;
+    const entry = deck[suit]?.[rank];
+    const card = Array.isArray(entry) ? entry[copyIndex - 1] : entry;
+    if (!card) return;
 
     const ctx = dom.canvas.getContext("2d");
-    render(ctx, suit, rank);
+    render(ctx, suit, rank, copyIndex);
   }
 
 

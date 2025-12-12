@@ -139,24 +139,37 @@ export function initDeck() {
   ensureJokerCards()
 }
 
+function ensureRankCopies(container, rank, desired) {
+  const existing = container[rank]
+
+  const cards = Array.isArray(existing)
+    ? existing
+    : existing
+    ? [existing]
+    : []
+
+  while (cards.length < desired) {
+    cards.push(createCard())
+  }
+
+  if (cards.length > desired) {
+    cards.length = desired
+  }
+
+  container[rank] = cards.map(wrapCard)
+}
+
 export function ensureDeckForActiveRanks() {
+  const counts = activeRanks.reduce((map, rank) => {
+    map[rank] = (map[rank] || 0) + 1
+    return map
+  }, {})
+
   SUITS.forEach(suit => {
     if (!deck[suit.id]) deck[suit.id] = {}
-    activeRanks.forEach(rank => {
-      if (!deck[suit.id][rank]) {
-        deck[suit.id][rank] = wrapCard({
-                  faceImage: null,
-                  faceImageUrl: null,
-                  offsetX: 0,
-                  offsetY: 0,
-                  scale: 1,
-                  rotation: 0,
-                  flipH: false,
-                  flipV: false,
-                  mirrorCorners: true,
-                  abilityMarkdown: ''
-                });
-      }
+
+    Object.entries(counts).forEach(([rank, total]) => {
+      ensureRankCopies(deck[suit.id], rank, total)
     })
   })
 }
@@ -178,20 +191,8 @@ export function ensureJokerCards() {
 
   for (let i = 1; i <= count; i++) {
     const key = jokerKey(i)
-    if (!deck[JOKER_SUIT_ID][key]) {
-      deck[JOKER_SUIT_ID][key] = wrapCard({
-        faceImage: null,
-        faceImageUrl: null,
-        offsetX: 0,
-        offsetY: 0,
-        scale: 1,
-        rotation: 0,
-        flipH: false,
-        flipV: false,
-        mirrorCorners: true,
-        abilityMarkdown: ''
-      })
-    }
+    const existing = deck[JOKER_SUIT_ID][key]
+    deck[JOKER_SUIT_ID][key] = existing ? wrapCard(existing) : createCard()
   }
 
   Object.keys(deck[JOKER_SUIT_ID]).forEach(key => {
@@ -223,8 +224,12 @@ export function updateActiveRanksFromSettings() {
   ensureDeckForActiveRanks()
 }
 
-export function getCurrentCard(suitId, rank) {
-  return deck[suitId]?.[rank]
+export function getCurrentCard(suitId, rank, copyIndex = 1) {
+  const entry = deck[suitId]?.[rank]
+  if (Array.isArray(entry)) {
+    return entry[copyIndex - 1]
+  }
+  return entry
 }
 
 export function getJokerCard(index) {
@@ -243,4 +248,19 @@ function wrapCard(card) {
       return true;
     }
   });
+}
+
+function createCard() {
+  return wrapCard({
+    faceImage: null,
+    faceImageUrl: null,
+    offsetX: 0,
+    offsetY: 0,
+    scale: 1,
+    rotation: 0,
+    flipH: false,
+    flipV: false,
+    mirrorCorners: true,
+    abilityMarkdown: ''
+  })
 }

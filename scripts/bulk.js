@@ -108,7 +108,8 @@ async function applyMappings() {
 
     if (!rank || !suit) continue;
 
-    const card = deck[suit]?.[rank];
+    const entry = deck[suit]?.[rank];
+    const card = Array.isArray(entry) ? entry[0] : entry;
     if (!card) continue;
 
     const url = URL.createObjectURL(file);

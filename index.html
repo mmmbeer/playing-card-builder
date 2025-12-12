@@ -24,7 +24,7 @@
     <!-- Card selection -->
     <div class="panel">
       <div class="panel-header">
-        <span>Card selection</span>
+        <span>Card navigation</span>
       </div>
       <div class="field-row">
         <div class="field" style="flex:1">
@@ -42,14 +42,8 @@
         </div>
       </div>
 
-      <div class="checkbox-row">
-        <input type="checkbox" id="mirrorCardCheckbox">
-        <label for="mirrorCardCheckbox">Mirror corners for this card</label>
-      </div>
 
-      <div class="hint">
-        This selection controls the card shown in the preview and the image you assign as its face.
-      </div>
+
     </div>
 	
 	<!-- Face image for current card -->
@@ -100,13 +94,9 @@
 		<button type="button" class="secondary" id="resetFaceTransformButton">Reset transform</button>
 	  </div>
 
-      <div class="hint">
-        Drag the face image on the preview to adjust its position.
-        Zoom, rotate and flip controls are per card.
-      </div>
     </div>
 
-      <div class="panel">
+      <div class="panel collapsed">
         <div class="panel-header collapsible">
           <span>Ability text</span>
           <div class="header-actions">
@@ -630,20 +620,16 @@
           <button type="button" data-layout="sideBySide">Side by side</button>
         </div>
       </div>
-
+	  
       <div class="field-row">
-        <div class="checkbox-row">
-          <input type="checkbox" id="showPipsCheckbox" checked>
-          <label for="showPipsCheckbox">Show standard pip pattern on body</label>
-        </div>
+		  <div class="checkbox-row">
+			<input type="checkbox" id="mirrorCardCheckbox">
+			<label for="mirrorCardCheckbox">Mirror corners for this card</label>
+		  </div>
+	  
       </div>
 
-      <div class="field-row">
-        <div class="checkbox-row">
-          <input type="checkbox" id="mirrorDefaultCheckbox" checked>
-          <label for="mirrorDefaultCheckbox">Mirror rank/suit to bottom on new cards</label>
-        </div>
-      </div>
+
 
       <div class="divider"></div>
 
@@ -679,6 +665,28 @@
       <div class="divider"></div>
 
       <div class="field">
+	  
+        <div class="field-header">
+          <label>Pips and Placement</label>
+        </div>	  
+
+	  
+	  <div class="field-row">
+        <div class="checkbox-row">
+          <input type="checkbox" id="showPipsCheckbox" checked>
+          <label for="showPipsCheckbox">Show standard pip pattern on body</label>
+        </div>
+      </div>
+
+
+      <div class="field-row">
+        <div class="checkbox-row">
+          <input type="checkbox" id="mirrorDefaultCheckbox" checked>
+          <label for="mirrorDefaultCheckbox">Mirror rank/suit to bottom on new cards</label>
+        </div>
+      </div>
+	  
+	  
         <div class="field-header">
           <label>Pip vertical positions (safe-area %)</label>
           <div class="header-actions"><button type="button" id="resetPipPositionsButton" class="reset-icon-button" title="Reset pip vertical positions">↻</button></div>

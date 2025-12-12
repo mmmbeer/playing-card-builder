@@ -39,8 +39,13 @@ async function fetchDesigners() {
 
 async function loadDesignersUI(dom, state) {
   const { designerSelect, phase1, phase2 } = dom;
+  const loader = dom.designerLoading;
+  if (loader) loader.classList.remove("hidden");
+
   const designers = await fetchDesigners();
   state.designers = designers;
+
+  if (loader) loader.classList.add("hidden");
 
   phase1.classList.remove("hidden");
   phase2.classList.add("hidden");

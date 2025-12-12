@@ -708,6 +708,11 @@
             class="tgc-input"
             style="max-width: 10em;"></select>
 
+    <div id="tgcDesignerLoading" class="tgc-inline-loading hidden">
+      <span class="tgc-spinner" aria-hidden="true"></span>
+      <span>Loading designers…</span>
+    </div>
+
     <!-- SEARCH + GAME LIST STACK -->
     <div class="tgc-game-stack">
       <input id="tgcGameSearch"
@@ -721,6 +726,11 @@
     <button id="tgcCreateGameButton"
             class="secondary small tgc-plus-btn"
             title="Create new game">+</button>
+
+    <div id="tgcGameLoading" class="tgc-inline-loading hidden">
+      <span class="tgc-spinner" aria-hidden="true"></span>
+      <span>Loading games…</span>
+    </div>
   </div>
 
   <!-- Create new game panel -->
@@ -768,6 +778,11 @@
           <button id="tgcCreateDeckButton"
                   class="secondary small tgc-plus-btn"
                   title="Create new deck">+</button>
+
+          <div id="tgcDeckLoading" class="tgc-inline-loading hidden">
+            <span class="tgc-spinner" aria-hidden="true"></span>
+            <span>Loading decks…</span>
+          </div>
         </div>
 
         <!-- Create new deck panel -->
@@ -791,6 +806,11 @@
               style="margin:10px 0 4px 0;">
         ↻ Refresh Previews
       </button>
+
+      <div id="tgcPreviewLoading" class="tgc-inline-loading hidden">
+        <span class="tgc-spinner" aria-hidden="true"></span>
+        <span>Loading previews…</span>
+      </div>
 
       <div id="tgcPreviewPanel"
            class="tgc-preview-grid"

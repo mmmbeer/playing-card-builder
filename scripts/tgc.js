@@ -17,8 +17,10 @@ export function initTgcExport() {
     phase2: document.getElementById("tgcPhase2"),
 
     designerSelect: document.getElementById("tgcDesignerSelect"),
+    designerLoading: document.getElementById("tgcDesignerLoading"),
     gameSearch: document.getElementById("tgcGameSearch"),
     gameSelect: document.getElementById("tgcGameSelect"),
+    gameLoading: document.getElementById("tgcGameLoading"),
     createGameBtn: document.getElementById("tgcCreateGameButton"),
     newGameRow: document.getElementById("tgcNewGameRow"),
     newGameName: document.getElementById("tgcNewGameName"),
@@ -28,11 +30,13 @@ export function initTgcExport() {
     restartBtn: document.getElementById("tgcRestartButton"),
 
     deckSelect: document.getElementById("tgcDeckSelect"),
+    deckLoading: document.getElementById("tgcDeckLoading"),
     createDeckBtn: document.getElementById("tgcCreateDeckButton"),
     newDeckRow: document.getElementById("tgcNewDeckRow"),
     newDeckName: document.getElementById("tgcNewDeckName"),
     confirmCreateDeck: document.getElementById("tgcConfirmCreateDeck"),
 
+    previewLoading: document.getElementById("tgcPreviewLoading"),
     previewPanel: document.getElementById("tgcPreviewPanel"),
     exportBtn: document.getElementById("tgcExportButton")
   };

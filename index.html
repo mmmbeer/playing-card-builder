@@ -11,9 +11,13 @@
 
   <!-- JSZip for exporting all cards as a single ZIP file -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+  <!-- Marked for rendering help markdown content -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 
 <body>
+<button type="button" id="helpLauncher" class="help-fab" title="Open help">?</button>
 <div class="app">
   <div class="sidebar">
     <div class="title-row">
@@ -888,6 +892,20 @@
         <canvas id="cardCanvas" width="825" height="1125"></canvas>
 
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- HELP MODAL -->
+<div id="helpModal" class="modal modal--wide hidden" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+  <div class="modal-content help-modal">
+    <button id="closeHelpModal" class="modal-close" aria-label="Close help">×</button>
+    <div class="help-modal-header">
+      <h3 id="helpModalTitle">Help</h3>
+    </div>
+    <div class="help-modal-body">
+      <div class="help-topic-list" id="helpTopicList"></div>
+      <div class="help-content" id="helpContent" tabindex="0"></div>
     </div>
   </div>
 </div>

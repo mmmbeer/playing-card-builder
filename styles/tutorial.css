@@ -109,22 +109,27 @@
 .tutorial-footer {
   margin-top: 12px;
   display: flex;
-  gap: 12px;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
 }
 
 .tutorial-skip {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  color: #0f172a;
+  font-size: 11px;
+  color: #94a3b8;
+  align-self: flex-end;
+}
+
+.tutorial-skip input {
+  transform: scale(0.9);
 }
 
 .tutorial-actions {
   display: flex;
+  justify-content: flex-end;
   gap: 8px;
 }
 

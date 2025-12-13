@@ -75,6 +75,58 @@ export class TutorialController {
     this.overlay.setBoxProvider(() => this.computeBox());
   }
 
+  getPages(step) {
+    if (!step) return [];
+    const rawPages = Array.isArray(step.pages) && step.pages.length ? step.pages : (step.content ? [step.content] : []);
+    if (!rawPages.length) {
+      return [{ content: '' }];
+    }
+
+    return rawPages.map(page => {
+      if (typeof page === 'string') {
+        return { content: page };
+      }
+      return {
+        content: page?.content ?? '',
+        targets: Array.isArray(page?.targets) ? page.targets : undefined
+      };
+    });
+  }
+
+  getCurrentContext() {
+    const step = this.config?.steps?.[this.stepIndex];
+    if (!step) return { step: null, pages: [], page: null };
+
+    const pages = this.getPages(step);
+    const safeIndex = Math.min(this.pageIndex, Math.max(pages.length - 1, 0));
+    if (safeIndex !== this.pageIndex) {
+      this.pageIndex = safeIndex;
+    }
+
+    const page = pages[safeIndex] || pages[0] || { content: '' };
+    return { step, pages, page };
+  }
+
+  getCurrentTargets() {
+    const { step, page } = this.getCurrentContext();
+    if (!step) return [];
+    if (page?.targets?.length) {
+      return page.targets;
+    }
+    return step.targets || [];
+  }
+
+  ensureTargetVisibility(selectors) {
+    const [primary] = selectTargets(selectors);
+    if (!primary) return;
+
+    const rect = primary.getBoundingClientRect();
+    const fullyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight && rect.left >= 0 && rect.right <= window.innerWidth;
+    if (!fullyVisible) {
+      primary.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    }
+  }
+
   async init() {
     this.config = await loadTutorialConfig(this.configPath);
     if (!this.config || !Array.isArray(this.config.steps) || !this.config.steps.length) {
@@ -120,17 +172,20 @@ export class TutorialController {
   }
 
   computeBox() {
-    const step = this.config?.steps?.[this.stepIndex];
-    if (!step) return null;
-    return buildBox(step.targets) || null;
+    const targets = this.getCurrentTargets();
+    if (!targets?.length) return null;
+    return buildBox(targets) || null;
   }
 
   showCurrent() {
     if (!this.overlay || !this.config) return;
-    const step = this.config.steps[this.stepIndex];
-    const pages = Array.isArray(step.pages) && step.pages.length ? step.pages : [step.content || ''];
-    const content = pages[this.pageIndex] || pages[pages.length - 1] || '';
-    const box = this.computeBox();
+    const { step, pages, page } = this.getCurrentContext();
+    if (!step) return;
+
+    const content = page?.content || '';
+    const targets = this.getCurrentTargets();
+    this.ensureTargetVisibility(targets);
+    const box = buildBox(targets);
 
     this.overlay.showStep({
       title: step.title,
@@ -148,8 +203,7 @@ export class TutorialController {
 
   next() {
     if (!this.config) return;
-    const step = this.config.steps[this.stepIndex];
-    const pages = Array.isArray(step.pages) && step.pages.length ? step.pages : [step.content || ''];
+    const { pages } = this.getCurrentContext();
     if (this.pageIndex < pages.length - 1) {
       this.pageIndex += 1;
     } else if (this.stepIndex < this.config.steps.length - 1) {
@@ -168,8 +222,7 @@ export class TutorialController {
       this.pageIndex -= 1;
     } else if (this.stepIndex > 0) {
       this.stepIndex -= 1;
-      const prevStep = this.config.steps[this.stepIndex];
-      const pages = Array.isArray(prevStep.pages) && prevStep.pages.length ? prevStep.pages : [prevStep.content || ''];
+      const { pages } = this.getCurrentContext();
       this.pageIndex = Math.max(pages.length - 1, 0);
     } else {
       return;

@@ -24,13 +24,15 @@
     {
       "id": "face-uploads",
       "title": "Face images",
-      "targets": [
-        "[data-tutorial-target=\"face-upload-panel\"]",
-        "[data-tutorial-target=\"bulk-upload-trigger\"]"
-      ],
       "pages": [
-        "Click the face image area to add art to the selected card.",
-        "Use **Bulk upload** to map many files at once; the tool sorts files by rank and suit for you."
+        {
+          "content": "Click the face image area to add art to the selected card.",
+          "targets": ["[data-tutorial-target=\"face-upload-panel\"]"]
+        },
+        {
+          "content": "Use **Bulk upload** to map many files at once; the tool sorts files by rank and suit for you.",
+          "targets": ["[data-tutorial-target=\"bulk-upload-trigger\"]"]
+        }
       ],
       "placement": "right"
     },

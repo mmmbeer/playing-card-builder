@@ -74,15 +74,6 @@ export class TutorialOverlay {
 
     const footer = document.createElement('div');
     footer.className = 'tutorial-footer';
-    const checkboxLabel = document.createElement('label');
-    checkboxLabel.className = 'tutorial-skip';
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkboxLabel.appendChild(checkbox);
-    const text = document.createElement('span');
-    text.textContent = "[ ✔️ ] Don't show this next time";
-    checkboxLabel.appendChild(text);
-    footer.appendChild(checkboxLabel);
 
     const actionRow = document.createElement('div');
     actionRow.className = 'tutorial-actions';
@@ -96,6 +87,16 @@ export class TutorialOverlay {
     actionRow.appendChild(prevBtn);
     actionRow.appendChild(nextBtn);
     footer.appendChild(actionRow);
+
+    const checkboxLabel = document.createElement('label');
+    checkboxLabel.className = 'tutorial-skip';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkboxLabel.appendChild(checkbox);
+    const text = document.createElement('span');
+    text.textContent = "[ ✔️ ] Don't show this next time";
+    checkboxLabel.appendChild(text);
+    footer.appendChild(checkboxLabel);
 
     callout.appendChild(footer);
 

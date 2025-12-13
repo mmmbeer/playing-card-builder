@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "id": "card-navigation-panel",
+      "title": "Navigate cards",
+      "targets": ["[data-tutorial-target=\"card-navigation-panel\"]"],
+      "pages": [
+        "Pick a **Suit** and **Rank** to jump straight to any card in your deck.",
+        "Use the selectors or keyboard shortcuts to hop around while you edit."
+      ],
+      "placement": "right"
+    },
+    {
+      "id": "preview-navigation",
+      "title": "Preview bar",
+      "targets": ["[data-tutorial-target=\"preview-navigation\"]"],
+      "pages": [
+        "Tap the ⟨ and ⟩ buttons beside the preview to skim through neighboring cards.",
+        "Download the current card anytime with the ⬇️ button."
+      ],
+      "placement": "bottom"
+    },
+    {
+      "id": "face-uploads",
+      "title": "Face images",
+      "pages": [
+        {
+          "content": "Click the face image area to add art to the selected card.",
+          "targets": ["[data-tutorial-target=\"face-upload-panel\"]"]
+        },
+        {
+          "content": "Use **Bulk upload** to map many files at once; the tool sorts files by rank and suit for you.",
+          "targets": ["[data-tutorial-target=\"bulk-upload-trigger\"]"]
+        }
+      ],
+      "placement": "right"
+    },
+    {
+      "id": "fonts",
+      "title": "Ranks and fonts",
+      "targets": ["[data-tutorial-target=\"font-panel\"]"],
+      "pages": [
+        "Choose a Google Font for ranks and indexes, then set **Size** and **Weight** to match your style.",
+        "Switch color modes to keep ::hearts:: red and ::spades:: black automatically."
+      ],
+      "placement": "right"
+    },
+    {
+      "id": "icons",
+      "title": "Suit icons",
+      "targets": ["[data-tutorial-target=\"icon-panel\"]"],
+      "pages": [
+        "Pick a built-in suit sheet or upload your own sprite grid.",
+        "Adjust **Icon scale**, opacity, overlays, and outlines to dial in the right look for ::suit::."
+      ],
+      "placement": "right"
+    },
+    {
+      "id": "export",
+      "title": "Export",
+      "targets": ["[data-tutorial-target=\"export-panel\"]"],
+      "pages": [
+        "Export the whole deck as a ZIP, send it to **The Game Crafter** if you have an account, or save one card at a time.",
+        "Need to resume later? Use **Save Progress** and **Import** to keep working across sessions."
+      ],
+      "placement": "right"
+    }
+  ]
+}

@@ -11,5 +11,6 @@ Use these topics to learn each part of the card builder. Links open inside the h
 - [Exporting cards](help:export-options)
 - [Publish with The Game Crafter](help:game-crafter)
 - [Glossary](help:glossary)
+- [Start the guided tour](tutorial:start)
 
 If a term shows a dotted underline, hover to read a quick definition. Open the [Glossary](help:glossary) for the full list.

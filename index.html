@@ -5,6 +5,8 @@
   <title>Poker Card Designer</title>
   <meta name="app-version" content="1.0.0" />
   <link rel="stylesheet" href="styles/main.css" />
+  <link rel="stylesheet" href="styles/scrollbar.css" />
+  <link rel="stylesheet" href="styles/tutorial.css" />
   <link rel="icon" type="image/png" href="./favicon.png" />
 
   <!-- Google WebFont Loader (for any Google Fonts family name) -->
@@ -28,7 +30,7 @@
     </div>
 
     <!-- Card selection -->
-    <div class="panel">
+    <div class="panel" data-tutorial-target="card-navigation-panel">
       <div class="panel-header">
         <span>Card navigation</span>
       </div>
@@ -53,10 +55,10 @@
     </div>
 	
 	<!-- Face image for current card -->
-	<div class="panel">
+        <div class="panel" data-tutorial-target="face-upload-panel">
 	  <div class="panel-header">
 		  <span>Face image (current card)</span>
-		  <span id="bulkUploadBadge" class="badge clickable">⬆️ bulk</span>
+                  <span id="bulkUploadBadge" class="badge clickable" data-tutorial-target="bulk-upload-trigger">⬆️ bulk</span>
 		</div>
 
 
@@ -245,7 +247,7 @@
       </div>
 
     <!-- Font settings -->
-    <div class="panel">
+    <div class="panel" data-tutorial-target="font-panel">
       <div class="panel-header collapsible">
         <span>Rank/Index font</span>
         <div class="header-actions">
@@ -414,7 +416,7 @@
     </div>
 
     <!-- Suit icon settings -->
-    <div class="panel">
+    <div class="panel" data-tutorial-target="icon-panel">
       <div class="panel-header collapsible">
         <span>Suit icons </span>
         <div class="header-actions">
@@ -817,7 +819,7 @@
     
 
     <!-- Export -->
-    <div class="panel">
+    <div class="panel" data-tutorial-target="export-panel">
       <div class="panel-header">
         <span>Export</span>
         <span id="saveProgressBadge" class="badge clickable">💾 Save Progress</span>
@@ -857,7 +859,7 @@
   <div class="main">
     <div class="preview-wrapper">
       <div class="preview-card">
-        <div class="preview-info">
+        <div class="preview-info" data-tutorial-target="preview-navigation">
 		
 		  <button type="button" id="prevCardBtn" class="icon-button">⟨</button>
 		  <div class="badge">

@@ -885,6 +885,15 @@ body.dark-mode .font-item:hover {
   min-height: 140px;
 }
 
+.bug-modal__state-row {
+  justify-content: flex-end;
+}
+
+.bug-modal__state-row .checkbox-row {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .bug-modal__footer {
   display: flex;
   flex-direction: column;

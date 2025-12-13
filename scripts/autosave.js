@@ -5,13 +5,24 @@ import {
   initDeck,
   resetSettingsToDefaults,
   resetDeckState,
-  DEFAULT_SETTINGS
+  DEFAULT_SETTINGS,
+  JOKER_SUIT_ID
 } from "./state.js";
 import {
   saveImageFromSource,
   getImageRecord,
   deleteImageDatabase
 } from "./indexedDB.js";
+import { SUITS } from "./config.js";
+import {
+  finishProgressError,
+  finishProgressSuccess,
+  isProgressCancelled,
+  onProgressCancel,
+  setProgressOperation,
+  showProgress,
+  updateProgress
+} from "./ui/controls/progressOverlay.js";
 
 let badge;
 function getBadge() {
@@ -108,6 +119,34 @@ async function ensureIconImageId() {
   return id;
 }
 
+function countSerializedCards(serial = {}) {
+  let total = 0;
+
+  Object.values(serial).forEach(ranks => {
+    Object.values(ranks || {}).forEach(entry => {
+      if (Array.isArray(entry)) {
+        total += entry.length;
+      } else if (entry) {
+        total += 1;
+      }
+    });
+  });
+
+  return total;
+}
+
+function describeCardLabel(suitId, rank, copyIndex = 1, totalCopies = 1) {
+  if (suitId === JOKER_SUIT_ID) {
+    const jokerIndex = Number((rank || "").split("_")[1]) || copyIndex;
+    const suffix = totalCopies > 1 ? ` ${jokerIndex} of ${totalCopies}` : "";
+    return `Restoring Joker${suffix}`;
+  }
+
+  const suitLabel = SUITS.find(s => s.id === suitId)?.label || suitId;
+  const copySuffix = totalCopies > 1 ? ` (copy ${copyIndex} of ${totalCopies})` : "";
+  return `Restoring ${rank} of ${suitLabel}${copySuffix}`;
+}
+
 async function serializeDeck() {
   const out = {};
 
@@ -152,30 +191,54 @@ function buildSettingsPayload() {
   return { ...settingsWithoutImage };
 }
 
-async function restoreDeck(serial) {
-  if (!serial) return;
+async function restoreDeck(serial, progress = null) {
+  if (!serial) return 0;
+
+  let processed = 0;
 
   for (const suitId in serial) {
     if (!deck[suitId]) continue;
 
     for (const rank in serial[suitId]) {
+      if (progress?.shouldAbort?.()) return processed;
+
       const savedEntry = serial[suitId][rank];
       const target = deck[suitId][rank];
-      if (!target) continue;
+      if (!target || !savedEntry) continue;
 
       if (Array.isArray(savedEntry)) {
         const targets = Array.isArray(target) ? target : [target];
         const limit = Math.min(savedEntry.length, targets.length);
         for (let i = 0; i < limit; i++) {
+          if (progress?.shouldAbort?.()) return processed;
+
+          const label = describeCardLabel(suitId, rank, i + 1, savedEntry.length);
+          progress?.onCard?.(label, processed + 1);
+
           await applySavedCard(targets[i], savedEntry[i]);
+
+          processed += 1;
+          progress?.onCardComplete?.(processed);
         }
       } else if (Array.isArray(target)) {
-        if (target[0]) await applySavedCard(target[0], savedEntry);
+        if (target[0]) {
+          const label = describeCardLabel(suitId, rank, 1, target.length);
+          progress?.onCard?.(label, processed + 1);
+          await applySavedCard(target[0], savedEntry);
+          processed += 1;
+          progress?.onCardComplete?.(processed);
+        }
       } else {
+        const label = describeCardLabel(suitId, rank, 1, 1);
+        progress?.onCard?.(label, processed + 1);
         await applySavedCard(target, savedEntry);
+        processed += 1;
+        progress?.onCardComplete?.(processed);
       }
     }
   }
+
+  return processed;
 }
 
 async function applySavedCard(card, saved) {
@@ -274,7 +337,9 @@ export async function importSave(file) {
   }
 }
 
-async function applyRestorePayload(data) {
+async function applyRestorePayload(data, options = {}) {
+  const { progress = null } = options;
+
   const restoredSettings = data.settings || {};
 
   let legacyIconImage = null;
@@ -303,7 +368,19 @@ async function applyRestorePayload(data) {
     legacyIconImage
   );
 
-  await restoreDeck(data.deck);
+  if (progress?.shouldAbort?.()) return { cancelled: true };
+
+  const progressHooks = progress
+    ? {
+        onCard: progress.onCard,
+        onCardComplete: progress.onCardComplete,
+        shouldAbort: progress.shouldAbort
+      }
+    : null;
+
+  await restoreDeck(data.deck, progressHooks);
+
+  if (progress?.shouldAbort?.()) return { cancelled: true };
 
   settings.iconSheet = (await iconSheetPromise) || settings.iconSheet;
 
@@ -312,6 +389,8 @@ async function applyRestorePayload(data) {
   );
 
   setStatusSaved();
+
+  return { cancelled: false };
 }
 
 async function restoreIconSheet(imageId, presetId, fallbackImage = null) {
@@ -329,13 +408,7 @@ async function restoreIconSheet(imageId, presetId, fallbackImage = null) {
 export async function initAutosave() {
   const raw = localStorage.getItem("cardDesignerAutosave");
   if (raw) {
-    try {
-      const data = JSON.parse(raw);
-      await applyRestorePayload(data);
-    } catch (err) {
-      console.warn("Autosave load failed:", err);
-      setStatusError();
-    }
+    await restoreFromAutosave(raw);
   }
 
   window.addEventListener("appDirty", scheduleSave);
@@ -343,6 +416,65 @@ export async function initAutosave() {
   window.addEventListener("beforeunload", () => {
     if (saveTimeout) forceSave();
   });
+}
+
+function createRestoreProgress(totalCards) {
+  const total = Math.max(1, totalCards || 0);
+  let current = 0;
+
+  return {
+    start(title = "Restoring your last session…") {
+      showProgress({ total, title });
+      updateProgress(0);
+    },
+    onCard(label) {
+      setProgressOperation(label);
+    },
+    onCardComplete(count) {
+      current = Number(count) || 0;
+      updateProgress(current);
+    },
+    shouldAbort() {
+      return isProgressCancelled();
+    }
+  };
+}
+
+function createRestoreCancelHandler() {
+  return async () => {
+    const confirmed = confirm(
+      "Cancel restoring your autosave and reset everything to defaults?"
+    );
+
+    if (!confirmed) return false;
+
+    setProgressOperation("Resetting deck to factory defaults…");
+    await resetAllState();
+    finishProgressSuccess("Autosave cleared. Starting fresh.");
+    return true;
+  };
+}
+
+async function restoreFromAutosave(raw) {
+  try {
+    const data = JSON.parse(raw);
+    const totalCards = countSerializedCards(data.deck);
+    const progress = createRestoreProgress(totalCards);
+
+    progress.start();
+    setProgressOperation("Preparing saved settings…");
+    onProgressCancel(createRestoreCancelHandler());
+
+    const result = await applyRestorePayload(data, { progress });
+
+    if (!result?.cancelled && !progress.shouldAbort()) {
+      finishProgressSuccess("Restored your last session.");
+    }
+  } catch (err) {
+    console.warn("Autosave load failed:", err);
+    finishProgressError("Autosave restore failed. Starting with defaults.");
+    setStatusError();
+  }
 }
 
 export async function resetAllState() {

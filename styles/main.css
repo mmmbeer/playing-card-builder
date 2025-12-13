@@ -690,6 +690,54 @@ body.dark-mode .font-item:hover {
   padding-top: 18px;
 }
 
+.site-footer {
+  position: fixed;
+  left: 14px;
+  bottom: 10px;
+  color: #d1d5db;
+  opacity: 0.65;
+  font-size: 12px;
+  z-index: 4100;
+}
+
+.policies-link {
+  background: none;
+  border: none;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px 6px;
+  font: inherit;
+}
+
+.policies-link:hover {
+  opacity: 0.95;
+}
+
+.policies-modal {
+  width: 520px;
+  max-width: 90vw;
+}
+
+.policies-lede {
+  color: #d1d5db;
+  opacity: 0.95;
+  margin-top: 6px;
+}
+
+.policies-list {
+  color: #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.policies-list strong {
+  color: #c7d2fe;
+}
+
 .help-modal-header {
   margin-bottom: 12px;
 }

@@ -7,7 +7,7 @@ function startLogin() {
   const top = (screen.height - h) / 2;
 
   window.open(
-    "/playing-cards/api/tgc.php?action=sso_start",
+    "./api/tgc.php?action=sso_start",
     "tgcLogin",
     `width=${w},height=${h},left=${left},top=${top}`
   );

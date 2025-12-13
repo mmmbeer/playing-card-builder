@@ -94,7 +94,7 @@ export class TutorialOverlay {
     checkbox.type = 'checkbox';
     checkboxLabel.appendChild(checkbox);
     const text = document.createElement('span');
-    text.textContent = "[ ✔️ ] Don't show this next time";
+    text.textContent = "Don't show this next time";
     checkboxLabel.appendChild(text);
     footer.appendChild(checkboxLabel);
 

@@ -28,6 +28,13 @@ body {
   min-height: 100vh;
 }
 
+#app-logo {
+    border-radius: 50%;
+    width: 55px;
+    margin-right: 5px;
+	vertical-align: middle;
+}
+
 .app {
   display: flex;
   flex-direction: row;

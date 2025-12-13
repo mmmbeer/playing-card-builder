@@ -12,7 +12,7 @@ async function tgcApi(path, method = "GET", options = {}) {
   if (options.query) payload.query = options.query;
   if (options.data) payload.data = options.data;
 
-  const res = await fetch("/playing-cards/api/tgc.php", {
+  const res = await fetch("./api/tgc.php", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)

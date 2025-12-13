@@ -125,6 +125,10 @@ function handleLinkClicks(event) {
     event.preventDefault();
     const targetId = href.replace("help:", "");
     loadTopic(targetId);
+  } else if (href.startsWith("tutorial:")) {
+    event.preventDefault();
+    window.dispatchEvent(new CustomEvent("tutorial:start", { detail: { manual: true } }));
+    closeHelp();
   }
 }
 

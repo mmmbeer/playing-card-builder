@@ -7,6 +7,7 @@ import { renderCardForPreview } from './drawing.js';
 import { initHelp } from "./help.js";
 import { initErrorReporting } from "./errors.js";
 import { initProgressOverlay } from "./ui/controls/progressOverlay.js";
+import { initTutorial } from "./tutorial.js";
 
 window.addEventListener('DOMContentLoaded', () => {
     // DO NOT async/await this
@@ -17,6 +18,7 @@ window.addEventListener('DOMContentLoaded', () => {
     initUI();
     initTgcExport();
     initHelp();
+    initTutorial();
     initErrorReporting();
 
     window.deck = deck;

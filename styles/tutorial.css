@@ -1,0 +1,162 @@
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: #0f172a;
+}
+
+.tutorial-overlay.visible {
+  pointer-events: auto;
+}
+
+.tutorial-highlight {
+  position: absolute;
+  border-radius: 10px;
+  border: 2px solid #fbbf24;
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.55);
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.tutorial-callout {
+  position: absolute;
+  max-width: 360px;
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  padding: 16px;
+  pointer-events: auto;
+  border: 1px solid #e2e8f0;
+}
+
+.tutorial-callout::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border-left: 1px solid #e2e8f0;
+  border-top: 1px solid #e2e8f0;
+  transform: rotate(45deg);
+}
+
+.tutorial-callout[data-placement='bottom']::after {
+  top: -7px;
+  left: 32px;
+}
+
+.tutorial-callout[data-placement='top']::after {
+  bottom: -7px;
+  left: 32px;
+  transform: rotate(225deg);
+}
+
+.tutorial-callout[data-placement='left']::after {
+  right: -7px;
+  top: 24px;
+  transform: rotate(135deg);
+}
+
+.tutorial-callout[data-placement='right']::after {
+  left: -7px;
+  top: 24px;
+  transform: rotate(-45deg);
+}
+
+.tutorial-callout__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tutorial-title {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.tutorial-close {
+  border: none;
+  background: none;
+  color: #0f172a;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.tutorial-progress {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.tutorial-body {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.tutorial-body p {
+  margin: 0 0 6px 0;
+}
+
+.tutorial-body a {
+  color: #2563eb;
+}
+
+.tutorial-footer {
+  margin-top: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.tutorial-skip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #0f172a;
+}
+
+.tutorial-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tutorial-actions button {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.tutorial-actions button.primary {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #1d4ed8;
+}
+
+.tutorial-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tutorial-pip {
+  display: inline-block;
+  font-weight: 700;
+  padding: 0 2px;
+  color: #0f172a;
+}
+
+.tutorial-pip[data-suit*='heart'],
+.tutorial-pip[data-suit*='diamond'] {
+  color: #dc2626;
+}

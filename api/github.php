@@ -13,8 +13,14 @@ declare(strict_types=1);
 const ALLOWED_HOST        = 'fairway3games.com';
 const ALLOWED_PATH_PREFIX = '/playing-cards/';
 
+define(
+    'HOME_DIR',
+    $_SERVER['HOME'] ?? '/home/fairwayg/'
+);
+
+
 // Secrets
-const SECRETS_SUBPATH = '/.secrets/github.ini';
+const SECRETS_SUBPATH = HOME_DIR. '.secrets/github.ini';
 const TOKEN_KEY_NAME  = 'GITHUB_TOKEN';
 
 // GitHub
@@ -88,10 +94,8 @@ if (
    LOAD SECRETS
 ------------------------------------------------------------ */
 
-$home = $_SERVER['HOME'] ?? '';
-if (!$home) server_error('HOME_NOT_SET');
 
-$configPath = $home . SECRETS_SUBPATH;
+$configPath = SECRETS_SUBPATH;
 
 if (!file_exists($configPath)) server_error('CONFIG_NOT_FOUND', $configPath);
 if (!is_readable($configPath)) server_error('CONFIG_NOT_READABLE', $configPath);

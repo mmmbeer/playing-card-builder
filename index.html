@@ -971,6 +971,23 @@
   </div>
 </div>
 
+<!-- POLICIES MODAL -->
+<div id="policiesModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="policiesModalTitle">
+  <div class="modal-content policies-modal" tabindex="-1">
+    <button id="closePoliciesModal" class="modal-close" aria-label="Close terms">×</button>
+    <h3 id="policiesModalTitle">Table Rules: Terms & Privacy</h3>
+    <p class="policies-lede">Keep play simple, fair, and friendly while you build.</p>
+    <ol class="policies-list">
+      <li><strong>Setup:</strong> The app runs on your table (a.k.a. your device). It only sends files when you hit the TGC export or when you file an issue.</li>
+      <li><strong>Ownership:</strong> You own every card you craft. DeckForged gives you permission to print, publish, and share your creations however you like.</li>
+      <li><strong>Login phase:</strong> No sign-in needed. If you export to TGC, they handle that login and nothing sticks around here.</li>
+      <li><strong>Data tokens:</strong> We track nothing. No cookies, no sneaky stats, no personal info.</li>
+      <li><strong>Risk roll:</strong> Use at your own adventure. No warranties, no guarantees, no liability claims.</li>
+      <li><strong>Judge call:</strong> Need to raise an issue? Use the <a href="#" id="issueReportLink">issue reporting feature</a> to open the report form.</li>
+    </ol>
+  </div>
+</div>
+
 <!-- BULK FACE IMAGE LOADER MODAL -->
 <div id="bulkFaceModal" class="modal hidden">
   <div class="modal-content">
@@ -1301,6 +1318,10 @@
     </div>
   </div>
 </div>
+
+<footer class="site-footer">
+  <button type="button" id="policiesLauncher" class="policies-link">Terms of Use & Privacy</button>
+</footer>
 
 
 <!-- Main module -->

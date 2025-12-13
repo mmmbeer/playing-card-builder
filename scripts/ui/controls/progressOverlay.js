@@ -12,6 +12,8 @@ let state = {
 };
 
 export function initProgressOverlay() {
+  if (dom?.overlay) return;
+
   dom = {
     overlay: document.getElementById("progressOverlay"),
     title: document.getElementById("progressOverlayTitle"),

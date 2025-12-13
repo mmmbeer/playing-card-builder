@@ -58,11 +58,14 @@ export function reportError(error, context = {}) {
 }
 
 export function openManualReport() {
-  return buildBasePayload("manual");
+  return buildBasePayload("manual", {
+    title: "User-reported issue"
+  });
 }
 
+
 export async function submitReport(payload) {
-  const response = await fetch("/api/github.php", {
+  const response = await fetch("/playing-cards/api/github.php", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
@@ -76,5 +79,6 @@ export async function submitReport(payload) {
   if (!data.ok) {
     throw new Error(data.error || "Unknown error");
   }
+
   return data;
 }

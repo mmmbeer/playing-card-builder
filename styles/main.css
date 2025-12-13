@@ -660,8 +660,9 @@ body.dark-mode .font-item:hover {
 
 .bug-fab {
   right: 62px;
-  background: #b91c1c;
+  background: rgba(185, 28, 28, .6);
   color: #fff;
+  padding: 7px
 }
 
 .help-fab:hover {

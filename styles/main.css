@@ -670,7 +670,7 @@ body.dark-mode .font-item:hover {
 }
 
 .bug-fab {
-  bottom: 14px; 
+  bottom: 24px; 
   right: 14px;
   
   background: rgba(185, 28, 28, .6);
@@ -701,6 +701,9 @@ body.dark-mode .font-item:hover {
 }
 
 .policies-link {
+  position: fixed;
+  bottom: 0;
+  right: 0;
   background: none;
   border: none;
   color: inherit;

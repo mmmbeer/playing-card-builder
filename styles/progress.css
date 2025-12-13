@@ -87,3 +87,14 @@
   color: #fecaca;
   border: 1px solid #ef4444;
 }
+
+.progress-fact {
+  font-size: 12px;
+  color: #c7d2fe;
+  background: rgba(59, 7, 100, 0.35);
+  border: 1px solid rgba(192, 132, 252, 0.6);
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.4;
+  min-height: 36px;
+}

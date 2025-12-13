@@ -5,7 +5,10 @@ let state = {
   current: 0,
   cancelled: false,
   onCancel: null,
-  autoCloseTimer: null
+  autoCloseTimer: null,
+  factTimer: null,
+  facts: [],
+  lastFactId: null
 };
 
 export function initProgressOverlay() {
@@ -25,11 +28,19 @@ export function initProgressOverlay() {
     return;
   }
 
-  dom.cancel?.addEventListener("click", () => {
-    state.cancelled = true;
+  dom.cancel?.addEventListener("click", async () => {
+    let shouldCancel = true;
+
     if (typeof state.onCancel === "function") {
-      state.onCancel();
+      try {
+        const result = await state.onCancel();
+        shouldCancel = result !== false;
+      } catch (err) {
+        console.error("Progress cancel handler failed:", err);
+      }
     }
+
+    state.cancelled = shouldCancel;
   });
 
   hide();
@@ -54,6 +65,8 @@ export function showProgress({ total, title = "Processing…" }) {
   dom.result.textContent = "";
 
   dom.overlay.classList.remove("hidden");
+
+  startFacts();
 }
 
 export function updateProgress(count) {
@@ -130,4 +143,65 @@ function hide() {
   if (!dom) return;
   dom.overlay.classList.add("hidden");
   state.cancelled = false;
+  stopFacts();
+}
+
+async function startFacts() {
+  if (!dom?.fact) {
+    dom.fact = document.getElementById("progressFact");
+  }
+
+  await ensureFactsLoaded();
+  renderNextFact();
+
+  clearFactTimer();
+  state.factTimer = setInterval(renderNextFact, 6000);
+}
+
+function stopFacts() {
+  clearFactTimer();
+}
+
+function clearFactTimer() {
+  if (state.factTimer) {
+    clearInterval(state.factTimer);
+    state.factTimer = null;
+  }
+}
+
+async function ensureFactsLoaded() {
+  if (state.facts.length > 0) return;
+
+  try {
+    const res = await fetch("docs/card-game-facts.json");
+    if (!res.ok) throw new Error("Failed to load facts");
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      state.facts = data.filter(item => typeof item?.fact === "string");
+    }
+  } catch (err) {
+    console.warn("Could not load card facts:", err);
+  }
+}
+
+function renderNextFact() {
+  if (!dom?.fact) return;
+
+  if (!state.facts.length) {
+    dom.fact.textContent = "Did you know? Playing cards have been around for more than 1,000 years.";
+    return;
+  }
+
+  const next = pickFact();
+  dom.fact.textContent = next ? `Did you know? ${next.fact}` : "";
+}
+
+function pickFact() {
+  if (!state.facts.length) return null;
+
+  const options = state.facts.filter(item => item.id !== state.lastFactId);
+  const pool = options.length > 0 ? options : state.facts;
+  const choice = pool[Math.floor(Math.random() * pool.length)];
+  state.lastFactId = choice?.id ?? null;
+  return choice;
 }

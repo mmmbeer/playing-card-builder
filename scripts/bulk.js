@@ -44,8 +44,9 @@ function createRow(file, parsed) {
   // Thumbnail
   const imgTd = document.createElement("td");
   const img = document.createElement("img");
+  const previewUrl = URL.createObjectURL(file);
   img.className = "bulk-thumb";
-  img.src = URL.createObjectURL(file);
+  img.src = previewUrl;
   imgTd.appendChild(img);
 
   // Rank selector
@@ -94,7 +95,8 @@ function createRow(file, parsed) {
     tr,
     img,
     rankSelect,
-    suitSelect
+    suitSelect,
+    previewUrl
   };
 }
 
@@ -119,6 +121,10 @@ async function applyMappings() {
     const img = await loadImageAsync(url);
 
     const imageId = await saveImageFromSource(img, "face", card.faceImageId || null);
+
+    if (card.faceImageUrl && card.faceImageUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(card.faceImageUrl);
+    }
 
     card.faceImage = img;
     card.faceImageUrl = url;
@@ -158,8 +164,7 @@ export function openBulkModal(renderCurrentCardFn) {
   renderFn = renderCurrentCardFn;
 
   bulkModal.classList.remove("hidden");
-  bulkTable.innerHTML = "";
-  pendingFiles = [];
+  clearPendingFiles();
 }
 
 // ------------------------------------------------
@@ -168,6 +173,13 @@ export function openBulkModal(renderCurrentCardFn) {
 function closeBulkModal() {
   bulkModal.classList.add("hidden");
   bulkInput.value = "";
+  clearPendingFiles();
+}
+
+function clearPendingFiles() {
+  pendingFiles.forEach(mapping => {
+    if (mapping.previewUrl) URL.revokeObjectURL(mapping.previewUrl);
+  });
   bulkTable.innerHTML = "";
   pendingFiles = [];
 }
@@ -176,7 +188,9 @@ function closeBulkModal() {
 // Handle file selection
 // ------------------------------------------------
 function handleFiles(fileList) {
-  pendingFiles = [];
+  clearPendingFiles();
+
+  const fragment = document.createDocumentFragment();
 
   for (const file of fileList) {
     const parsed = parseFilename(file.name);
@@ -187,8 +201,10 @@ function handleFiles(fileList) {
       ...row
     });
 
-    bulkTable.appendChild(row.tr);
+    fragment.appendChild(row.tr);
   }
+
+  bulkTable.appendChild(fragment);
 }
 
 // ------------------------------------------------

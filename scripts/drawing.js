@@ -4,8 +4,6 @@ import { getCardMetrics } from './cardGeometry.js';
 
 import {
   settings,
-  iconWorkCanvas,
-  iconWorkCtx,
   computePipGuidelines,
   getCurrentCard,
   getJokerCard,
@@ -19,6 +17,22 @@ import { renderOverlays } from './overlays.js';
 import { renderAbilityText } from './abilityText.js';
 
 const measureCtx = document.createElement('canvas').getContext('2d');
+const iconRenderCache = new Map();
+const iconSheetIds = new WeakMap();
+let iconSheetIdSeq = 0;
+
+function getIconSheetCacheId(sheet) {
+  if (!sheet || (typeof sheet !== 'object' && typeof sheet !== 'function')) return 'none';
+  if (!iconSheetIds.has(sheet)) {
+    iconSheetIdSeq += 1;
+    iconSheetIds.set(sheet, iconSheetIdSeq);
+  }
+  return iconSheetIds.get(sheet);
+}
+
+function makeIconCacheKey({ sheet, suitId, sw, sh, color, opacity }) {
+  return [getIconSheetCacheId(sheet), suitId, sw, sh, color || 'standard', opacity].join('|');
+}
 
 function getGeometry() {
   const { cardWidth, cardHeight, bleed, safeWidth, safeHeight } = getCardMetrics();
@@ -134,8 +148,8 @@ function getIconColor(suitId) {
   return settings.iconColor;
 }
 
-function fillBackground(ctx) {
-  const { CARD_WIDTH, CARD_HEIGHT } = getGeometry();
+function fillBackground(ctx, geometry = getGeometry()) {
+  const { CARD_WIDTH, CARD_HEIGHT } = geometry;
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
@@ -185,30 +199,45 @@ function fillBackground(ctx) {
    SUIT ICON RENDERING
 ------------------------------------------------------------- */
 
-function tintIconToCanvas(baseData, sw, sh, color, opacity = 1) {
-  const tintedData = new ImageData(new Uint8ClampedArray(baseData.data), sw, sh);
-  const { r, g, b } = color ? hexToRgb(color) : { r: 255, g: 255, b: 255 };
-  const hasTint = !!color;
+function renderTintedIconCanvas({ sheet, suitId, sx, sy, sw, sh, color, opacity = 1 }) {
+  const key = makeIconCacheKey({ sheet, suitId, sw, sh, color, opacity });
+  const cached = iconRenderCache.get(key);
+  if (cached) return cached;
 
-  const data = tintedData.data;
-  const rFactor = r / 255;
-  const gFactor = g / 255;
-  const bFactor = b / 255;
+  const canvas = document.createElement('canvas');
+  canvas.width = sw;
+  canvas.height = sh;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(sheet, sx, sy, sw, sh, 0, 0, sw, sh);
 
-  for (let i = 0; i < data.length; i += 4) {
-    const alpha = data[i + 3];
-    if (alpha === 0) continue;
+  if (color || opacity !== 1) {
+    const tintedData = ctx.getImageData(0, 0, sw, sh);
+    const { r, g, b } = color ? hexToRgb(color) : { r: 255, g: 255, b: 255 };
+    const hasTint = !!color;
+    const data = tintedData.data;
+    const rFactor = r / 255;
+    const gFactor = g / 255;
+    const bFactor = b / 255;
 
-    if (hasTint) {
-      data[i]     = Math.round(data[i] * rFactor);
-      data[i + 1] = Math.round(data[i + 1] * gFactor);
-      data[i + 2] = Math.round(data[i + 2] * bFactor);
+    for (let i = 0; i < data.length; i += 4) {
+      const alpha = data[i + 3];
+      if (alpha === 0) continue;
+
+      if (hasTint) {
+        data[i] = Math.round(data[i] * rFactor);
+        data[i + 1] = Math.round(data[i + 1] * gFactor);
+        data[i + 2] = Math.round(data[i + 2] * bFactor);
+      }
+
+      data[i + 3] = Math.round(alpha * opacity);
     }
 
-    data[i + 3] = alpha * opacity;
+    ctx.putImageData(tintedData, 0, 0);
   }
 
-  iconWorkCtx.putImageData(tintedData, 0, 0);
+  if (iconRenderCache.size > 160) iconRenderCache.clear();
+  iconRenderCache.set(key, canvas);
+  return canvas;
 }
 
 function drawSuitIcon(ctx, suitId, x, y, size, rotationRad = 0) {
@@ -244,12 +273,6 @@ function drawSuitIcon(ctx, suitId, x, y, size, rotationRad = 0) {
   const dx = -dw / 2;
   const dy = -dh / 2;
 
-  iconWorkCanvas.width = sw;
-  iconWorkCanvas.height = sh;
-  iconWorkCtx.clearRect(0, 0, sw, sh);
-  iconWorkCtx.drawImage(sheet, sx, sy, sw, sh, 0, 0, sw, sh);
-  const baseData = iconWorkCtx.getImageData(0, 0, sw, sh);
-
   ctx.save();
   ctx.translate(x, y);
   if (rotationRad) ctx.rotate(rotationRad);
@@ -259,13 +282,13 @@ function drawSuitIcon(ctx, suitId, x, y, size, rotationRad = 0) {
     const steps = Math.max(8, Math.ceil(radius * 4));
     const angleStep = (Math.PI * 2) / steps;
 
-    tintIconToCanvas(baseData, sw, sh, outlineColor, 1);
+    const outlineCanvas = renderTintedIconCanvas({ sheet, suitId, sx, sy, sw, sh, color: outlineColor, opacity: 1 });
 
     for (let i = 0; i < steps; i++) {
       const angle = i * angleStep;
       const ox = Math.cos(angle) * radius;
       const oy = Math.sin(angle) * radius;
-      ctx.drawImage(iconWorkCanvas, 0, 0, sw, sh, dx + ox, dy + oy, dw, dh);
+      ctx.drawImage(outlineCanvas, 0, 0, sw, sh, dx + ox, dy + oy, dw, dh);
     }
   }
 
@@ -279,8 +302,17 @@ function drawSuitIcon(ctx, suitId, x, y, size, rotationRad = 0) {
     shadowOffsetY
   );
 
-  tintIconToCanvas(baseData, sw, sh, iconColor, settings.iconOpacity);
-  ctx.drawImage(iconWorkCanvas, 0, 0, sw, sh, dx, dy, dw, dh);
+  const iconCanvas = renderTintedIconCanvas({
+    sheet,
+    suitId,
+    sx,
+    sy,
+    sw,
+    sh,
+    color: iconColor,
+    opacity: settings.iconOpacity
+  });
+  ctx.drawImage(iconCanvas, 0, 0, sw, sh, dx, dy, dw, dh);
 
   ctx.restore();
 }
@@ -346,8 +378,8 @@ function drawRankText(ctx, text, x, y, align = 'left', baseline = 'top', options
   ctx.restore();
 }
 
-function getAdjustedCornerFontSize(rank, requestedSize, rankOrientation) {
-  const { BLEED, SAFE_HEIGHT } = getGeometry();
+function getAdjustedCornerFontSize(rank, requestedSize, rankOrientation, geometry = getGeometry()) {
+  const { BLEED, SAFE_HEIGHT } = geometry;
   if (rankOrientation !== 'vertical') return requestedSize;
 
   let fontSize = requestedSize;
@@ -371,10 +403,10 @@ function getAdjustedCornerFontSize(rank, requestedSize, rankOrientation) {
    CORNER RENDERING (unchanged)
 ------------------------------------------------------------- */
 
-function drawCorners(ctx, suitId, rank, mirror, options = {}) {
-  const { BLEED, CARD_WIDTH, CARD_HEIGHT, SAFE_WIDTH, SAFE_HEIGHT } = getGeometry();
+function drawCorners(ctx, suitId, rank, mirror, options = {}, geometry = getGeometry()) {
+  const { BLEED, CARD_WIDTH, CARD_HEIGHT, SAFE_WIDTH, SAFE_HEIGHT } = geometry;
   const rankOrientation = options.rankOrientation || 'horizontal';
-  let fontSize = getAdjustedCornerFontSize(rank, options.fontSize ?? settings.fontSize, rankOrientation);
+  let fontSize = getAdjustedCornerFontSize(rank, options.fontSize ?? settings.fontSize, rankOrientation, geometry);
   const layout = options.layout ?? settings.layout;
   const rankColor = getRankColor(suitId);
 
@@ -500,8 +532,8 @@ function drawCorners(ctx, suitId, rank, mirror, options = {}) {
    FACE IMAGE (unchanged)
 ------------------------------------------------------------- */
 
-function drawFaceImage(ctx, card) {
-  const { CARD_WIDTH, CARD_HEIGHT, SAFE_WIDTH, SAFE_HEIGHT } = getGeometry();
+function drawFaceImage(ctx, card, geometry = getGeometry()) {
+  const { CARD_WIDTH, CARD_HEIGHT, SAFE_WIDTH, SAFE_HEIGHT } = geometry;
   const img = card.faceImage;
   if (!img || !img.complete) return;
 
@@ -533,8 +565,8 @@ function getPipIconSize() {
   return settings.fontSize * 1.4;
 }
 
-function drawPips(ctx, suitId, rank) {
-  const { BLEED, SAFE_WIDTH, SAFE_HEIGHT } = getGeometry();
+function drawPips(ctx, suitId, rank, geometry = getGeometry()) {
+  const { BLEED, SAFE_WIDTH, SAFE_HEIGHT } = geometry;
   if (!settings.showPips) return;
 
   const layout = getPipLayout(rank);
@@ -624,15 +656,15 @@ export function renderJokerCard(ctx, index, { preview = false } = {}) {
     cornerOptions
   });
 
-  drawJokerSuits(ctx, settings.jokerSuitStyle);
+  drawJokerSuits(ctx, settings.jokerSuitStyle, getGeometry());
 
   if (preview) {
     renderOverlays(ctx, getGeometry());
   }
 }
 
-function getPipGuidelinesWithFallback() {
-  const { BLEED, SAFE_HEIGHT } = getGeometry();
+function getPipGuidelinesWithFallback(geometry = getGeometry()) {
+  const { BLEED, SAFE_HEIGHT } = geometry;
   if (pipGuidelineYs.length === 5) return pipGuidelineYs;
 
   const safeTopY = BLEED;
@@ -648,11 +680,11 @@ function getPipGuidelinesWithFallback() {
   ];
 }
 
-function getJokerLabelMetrics() {
-  const { BLEED } = getGeometry();
+function getJokerLabelMetrics(geometry = getGeometry()) {
+  const { BLEED } = geometry;
   const text = settings.jokerLabel || 'JOKER';
   const rankOrientation = settings.jokerLabelOrientation || 'horizontal';
-  const fontSize = getAdjustedCornerFontSize(text, settings.jokerFontSize || settings.fontSize, rankOrientation);
+  const fontSize = getAdjustedCornerFontSize(text, settings.jokerFontSize || settings.fontSize, rankOrientation, geometry);
 
   measureCtx.font = `${settings.fontWeight} ${fontSize}px "${settings.fontFamily}"`;
 
@@ -674,8 +706,8 @@ function getJokerLabelMetrics() {
   };
 }
 
-function mirrorPlacementsVertically(placements) {
-  const { CARD_HEIGHT } = getGeometry();
+function mirrorPlacementsVertically(placements, geometry = getGeometry()) {
+  const { CARD_HEIGHT } = geometry;
   return placements.map(pos => ({
     ...pos,
     y: CARD_HEIGHT - pos.y,
@@ -683,9 +715,9 @@ function mirrorPlacementsVertically(placements) {
   }));
 }
 
-function getJokerSuitPlacements(mode) {
-  const { BLEED, SAFE_WIDTH, SAFE_HEIGHT, CARD_HEIGHT } = getGeometry();
-  const [topY, innerTopY, centerY, innerBottomY, bottomY] = getPipGuidelinesWithFallback();
+function getJokerSuitPlacements(mode, geometry = getGeometry()) {
+  const { BLEED, SAFE_WIDTH, SAFE_HEIGHT, CARD_HEIGHT } = geometry;
+  const [topY, innerTopY, centerY, innerBottomY, bottomY] = getPipGuidelinesWithFallback(geometry);
   const centerX = BLEED + settings.pipCenterX * SAFE_WIDTH;
   const leftX = BLEED + settings.pipLeft * SAFE_WIDTH;
   const rightX = BLEED + settings.pipRight * SAFE_WIDTH;
@@ -694,7 +726,7 @@ function getJokerSuitPlacements(mode) {
   const verticalSpan = innerBottomY - innerTopY;
   const radius = Math.max(Math.min(innerSpanX, verticalSpan) / 2, Math.min(SAFE_WIDTH, SAFE_HEIGHT) * 0.08);
   const rowSpacing = innerSpanX / 3 || SAFE_WIDTH * 0.12;
-  const labelMetrics = getJokerLabelMetrics();
+  const labelMetrics = getJokerLabelMetrics(geometry);
   const belowLabelY = Math.min(
     labelMetrics.labelBottomY + labelMetrics.fontSize * 0.4,
     BLEED + SAFE_HEIGHT - labelMetrics.fontSize * 0.6
@@ -728,7 +760,7 @@ function getJokerSuitPlacements(mode) {
         y: belowLabelY,
         scale: 0.7
       }));
-      const mirrored = mirrorPlacementsVertically(row);
+      const mirrored = mirrorPlacementsVertically(row, geometry);
       return [...row, ...mirrored];
     }
     case 'centerRowSplit':
@@ -763,10 +795,10 @@ function getJokerSuitPlacements(mode) {
   }
 }
 
-function drawJokerSuits(ctx, mode) {
+function drawJokerSuits(ctx, mode, geometry = getGeometry()) {
   if (!mode || mode === 'none') return;
 
-  const placements = getJokerSuitPlacements(mode);
+  const placements = getJokerSuitPlacements(mode, geometry);
   if (!placements.length) return;
 
   const baseSize = getPipIconSize();
@@ -780,19 +812,20 @@ function drawJokerSuits(ctx, mode) {
 }
 
 function renderCardSurface(ctx, { card, suitId, rankLabel, pipRank, cornerOptions }) {
-  const { CARD_WIDTH, CARD_HEIGHT, BLEED, SAFE_HEIGHT, SAFE_WIDTH } = getGeometry();
+  const geometry = getGeometry();
+  const { CARD_WIDTH, CARD_HEIGHT, BLEED, SAFE_HEIGHT } = geometry;
   if (!card) return;
 
-  fillBackground(ctx);
+  fillBackground(ctx, geometry);
 
   const safeTopY = BLEED;
   const safeBottomY = BLEED + SAFE_HEIGHT;
   computePipGuidelines(CARD_HEIGHT, safeTopY, safeBottomY);
 
-  drawFaceImage(ctx, card);
+  drawFaceImage(ctx, card, geometry);
 
   if (pipRank) {
-    drawPips(ctx, suitId, pipRank);
+    drawPips(ctx, suitId, pipRank, geometry);
   }
 
   renderAbilityText(ctx, suitId, rankLabel, card, drawSuitIcon);
@@ -802,5 +835,5 @@ function renderCardSurface(ctx, { card, suitId, rankLabel, pipRank, cornerOption
       ? card.mirrorCorners
       : true;
 
-  drawCorners(ctx, suitId, rankLabel, mirror, cornerOptions);
+  drawCorners(ctx, suitId, rankLabel, mirror, cornerOptions, geometry);
 }

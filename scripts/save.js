@@ -24,6 +24,23 @@ export function isExporting() {
   return exportInProgress;
 }
 
+function canvasToPngBlob(canvas) {
+  return new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+}
+
+function yieldToBrowser() {
+  return new Promise(resolve => requestAnimationFrame(resolve));
+}
+
+function addDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 
 // -------------------------------------------------------
 // Download ONE card (clean, no overlays)
@@ -102,14 +119,13 @@ export async function exportFullDeck() {
         seen[rank] = copyIndex;
 
         renderCardForExport(tmpCtx, suit.id, rank, copyIndex);
-        const blob = await new Promise(resolve =>
-          tmpCanvas.toBlob(resolve, "image/png")
-        );
+        const blob = await canvasToPngBlob(tmpCanvas);
         if (!blob) continue;
 
         const suffix = totalsByRank[rank] > 1 ? `_${copyIndex}` : "";
         const filename = `${rank}${suit.symbol}${suffix}.png`;
         zip.file(filename, blob);
+        await yieldToBrowser();
       }
     }
 
@@ -119,9 +135,7 @@ export async function exportFullDeck() {
 
       for (let i = 1; i <= count; i++) {
         renderJokerCard(tmpCtx, i, { preview: false });
-        const blob = await new Promise(resolve =>
-          tmpCanvas.toBlob(resolve, "image/png")
-        );
+        const blob = await canvasToPngBlob(tmpCanvas);
         if (!blob) continue;
 
         const baseLabel = (settings.jokerLabel || "JOKER").replace(/\s+/g, "");
@@ -129,19 +143,14 @@ export async function exportFullDeck() {
         const filename = `${baseLabel}${suffix}.png`;
 
         zip.file(filename, blob);
+        await yieldToBrowser();
       }
     }
 
     // Download ZIP
+    await yieldToBrowser();
     const zipBlob = await zip.generateAsync({ type: "blob" });
-    const url = URL.createObjectURL(zipBlob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "custom-playing-cards.zip";
-    a.click();
-
-    URL.revokeObjectURL(url);
+    addDownload(zipBlob, "custom-playing-cards.zip");
   } finally {
     exportInProgress = false;
   }

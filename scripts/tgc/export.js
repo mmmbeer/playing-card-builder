@@ -16,6 +16,19 @@ import {
 } from "../ui/controls/progressOverlay.js";
 
 let cancelExport = false;
+const UPLOAD_CONCURRENCY = 3;
+
+function createRenderTarget() {
+  const { cardWidth, cardHeight } = getCardMetrics();
+  const canvas = document.createElement("canvas");
+  canvas.width = cardWidth;
+  canvas.height = cardHeight;
+  return { canvas, ctx: canvas.getContext("2d") };
+}
+
+function canvasToPngBlob(canvas) {
+  return new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+}
 
 export default {
 
@@ -40,6 +53,7 @@ export default {
 
     const total = items.length;
     let index = 0;
+    let nextItemIndex = 0;
     const failures = [];
 
     showProgress({
@@ -51,24 +65,36 @@ export default {
       cancelExport = true;
     });
 
-    for (const item of items) {
-      if (isProgressCancelled()) break;
+    const worker = async () => {
+      const { canvas, ctx } = createRenderTarget();
 
-      setProgressOperation(item.progressLabel);
+      while (!cancelExport && !isProgressCancelled()) {
+        const itemIndex = nextItemIndex;
+        nextItemIndex += 1;
+        const item = items[itemIndex];
+        if (!item) return;
 
-      const ok = await this.uploadCard(
-        item,
-        deckId,
-        state.collisionMode
-      );
+        setProgressOperation(item.progressLabel);
 
-      if (!ok) {
-        failures.push(item.failureLabel);
+        const ok = await this.uploadCard(
+          item,
+          deckId,
+          state.collisionMode,
+          canvas,
+          ctx
+        );
+
+        if (!ok) {
+          failures.push(item.failureLabel);
+        }
+
+        index++;
+        updateProgress(index);
       }
+    };
 
-      index++;
-      updateProgress(index);
-    }
+    const workerCount = Math.min(UPLOAD_CONCURRENCY, total);
+    await Promise.all(Array.from({ length: workerCount }, () => worker()));
 
     if (cancelExport || isProgressCancelled()) {
       finishProgressError("Upload cancelled.");
@@ -90,14 +116,9 @@ export default {
   /* ------------------------------------------------------------
      UPLOAD ONE CARD
   ------------------------------------------------------------ */
-  async uploadCard(item, deckId, decision) {
+  async uploadCard(item, deckId, decision, canvas, ctx) {
     try {
-      const { cardWidth, cardHeight } = getCardMetrics();
-      const canvas = document.createElement("canvas");
-      canvas.width = cardWidth;
-      canvas.height = cardHeight;
-
-      const ctx = canvas.getContext("2d");
+      if (!canvas || !ctx) return false;
       if (item.isJoker) {
         renderJokerCard(ctx, item.jokerIndex, { preview: false });
       } else {
@@ -107,9 +128,7 @@ export default {
       const suffix = item.total > 1 ? `_${item.copyIndex}` : "";
       const uploadRank = `${normalizeRank(item.rank)}${suffix}`;
 
-      const blob = await new Promise(resolve =>
-        canvas.toBlob(resolve, "image/png")
-      );
+      const blob = await canvasToPngBlob(canvas);
 
       if (!blob) return false;
 

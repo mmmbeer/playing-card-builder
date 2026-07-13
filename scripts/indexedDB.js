@@ -2,8 +2,12 @@ const DB_NAME = 'card-designer';
 const DB_VERSION = 1;
 const IMAGE_STORE = 'images';
 
+let databasePromise = null;
+
 function openDatabase() {
-  return new Promise((resolve, reject) => {
+  if (databasePromise) return databasePromise;
+
+  databasePromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onupgradeneeded = () => {
@@ -13,9 +17,25 @@ function openDatabase() {
       }
     };
 
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error || new Error('Failed to open IndexedDB'));
+    request.onsuccess = () => {
+      const db = request.result;
+      db.onversionchange = () => {
+        db.close();
+        databasePromise = null;
+      };
+      resolve(db);
+    };
+    request.onerror = () => {
+      databasePromise = null;
+      reject(request.error || new Error('Failed to open IndexedDB'));
+    };
+    request.onblocked = () => {
+      databasePromise = null;
+      reject(new Error('IndexedDB open blocked'));
+    };
   });
+
+  return databasePromise;
 }
 
 function createId() {
@@ -135,7 +155,13 @@ export async function clearImageStore() {
   });
 }
 
-export function deleteImageDatabase() {
+export async function deleteImageDatabase() {
+  if (databasePromise) {
+    const db = await databasePromise.catch(() => null);
+    if (db) db.close();
+    databasePromise = null;
+  }
+
   return new Promise((resolve, reject) => {
     const req = indexedDB.deleteDatabase(DB_NAME);
     req.onsuccess = () => resolve();

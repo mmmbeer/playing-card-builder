@@ -125,10 +125,6 @@ export const DEFAULT_SETTINGS = Object.freeze({
 
 export const settings = wrapSettings(cloneDefaults(DEFAULT_SETTINGS));
 
-// Offscreen canvas used to tint suit icons
-export const iconWorkCanvas = document.createElement('canvas')
-export const iconWorkCtx = iconWorkCanvas.getContext('2d')
-
 /* --------------------------------------------------------------------------
    GUIDELINE COMPUTATION
    Converts the fractional pip vertical positions into actual pixel values
@@ -161,7 +157,7 @@ function wrapSettings(obj) {
   return new Proxy(obj, {
     set(target, prop, value) {
       target[prop] = value;
-      markDirty();
+      markDirty('settings');
       return true;
     }
   });
@@ -277,6 +273,7 @@ export function updateActiveRanksFromSettings() {
 
   activeRanks = nextRanks
   ensureDeckForActiveRanks()
+  markDirty('deck')
 }
 
 export function resetDeckState() {
@@ -306,7 +303,7 @@ function wrapCard(card) {
   return new Proxy(card, {
     set(target, prop, value) {
       target[prop] = value;
-      markDirty();
+      markDirty('deck');
       return true;
     }
   });

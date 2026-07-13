@@ -1,6 +1,7 @@
 import { getSafeHeight, getSafeWidth } from "../../cardGeometry.js";
 import { computeScaleToSafeHeight } from "../../faceImageScale.js";
 import { saveImageFromSource } from "../../indexedDB.js";
+import { markDirty } from "../../autosave.js";
 
 export function initFaceControls(dom, settings, getCard, sync, render) {
   dom.faceImageLabel.addEventListener("click", () => {
@@ -45,7 +46,7 @@ export function initFaceControls(dom, settings, getCard, sync, render) {
       card.scale = computeScaleToSafeHeight(img, safeWidth, safeHeight);
 
       setTimeout(() => {
-        window.dispatchEvent(new CustomEvent("appDirty"));
+        markDirty("deck");
       });
 
       sync();
@@ -59,7 +60,7 @@ export function initFaceControls(dom, settings, getCard, sync, render) {
     const card = getCard();
     if (!card) return;
     card.scale = Number(dom.faceScaleInput.value);
-    window.dispatchEvent(new CustomEvent("appDirty"));
+    markDirty("deck");
     render();
   });
 
@@ -67,7 +68,7 @@ export function initFaceControls(dom, settings, getCard, sync, render) {
     const card = getCard();
     if (!card) return;
     card.rotation = Number(dom.faceRotationInput.value);
-    window.dispatchEvent(new CustomEvent("appDirty"));
+    markDirty("deck");
     render();
   });
 
@@ -75,7 +76,7 @@ export function initFaceControls(dom, settings, getCard, sync, render) {
     const card = getCard();
     if (!card) return;
     card.flipH = dom.faceFlipHCheckbox.checked;
-    window.dispatchEvent(new CustomEvent("appDirty"));
+    markDirty("deck");
     render();
   });
 
@@ -83,7 +84,7 @@ export function initFaceControls(dom, settings, getCard, sync, render) {
     const card = getCard();
     if (!card) return;
     card.flipV = dom.faceFlipVCheckbox.checked;
-    window.dispatchEvent(new CustomEvent("appDirty"));
+    markDirty("deck");
     render();
   });
 
@@ -96,7 +97,7 @@ export function initFaceControls(dom, settings, getCard, sync, render) {
     card.rotation = 0;
     card.flipH = false;
     card.flipV = false;
-    window.dispatchEvent(new CustomEvent("appDirty"));
+    markDirty("deck");
     sync();
     render();
   });

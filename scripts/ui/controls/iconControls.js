@@ -21,7 +21,7 @@ export function initIconControls(dom, settings, render) {
       const sheet = await loadPreset(presetId);
       settings.iconSheet = sheet;
 
-      markDirty();
+      markDirty('settings');
       render();
       return;
     }
@@ -30,7 +30,7 @@ export function initIconControls(dom, settings, render) {
     if (presetId === "custom") {
       settings.iconPresetId = null;
       // Wait for upload event to provide custom sheet
-      markDirty();
+      markDirty('settings');
     }
   });
 
@@ -57,7 +57,7 @@ export function initIconControls(dom, settings, render) {
       const imageId = await saveImageFromSource(img, "suit", settings.customIconImageId || null);
       settings.customIconImageId = imageId;
       
-      markDirty();
+      markDirty('images');
       render();
     };
 
@@ -164,7 +164,7 @@ export function initIconControls(dom, settings, render) {
      ================================================================ */
   dom.iconOpacityInput.addEventListener("input", () => {
     settings.iconOpacity = Number(dom.iconOpacityInput.value);
-    markDirty();
+    markDirty('settings');
     render();
   });
 
@@ -173,61 +173,61 @@ export function initIconControls(dom, settings, render) {
      ================================================================ */
   dom.iconScaleInput.addEventListener("input", () => {
     settings.iconScale = Number(dom.iconScaleInput.value);
-    markDirty();
+    markDirty('settings');
     render();
   });
 
   dom.iconOverlayTypeSelect.addEventListener("change", () => {
     settings.iconOverlayType = dom.iconOverlayTypeSelect.value;
-    markDirty();
+    markDirty('settings');
     render();
   });
 
   dom.iconOverlayOpacityInput.addEventListener("input", () => {
     settings.iconOverlayOpacity = Number(dom.iconOverlayOpacityInput.value);
-    markDirty();
+    markDirty('settings');
     render();
   });
 
   dom.iconOverlayBlurInput.addEventListener("input", () => {
     settings.iconOverlayBlur = Number(dom.iconOverlayBlurInput.value);
-    markDirty();
+    markDirty('settings');
     render();
   });
 
   dom.iconShadowOffsetXInput.addEventListener("input", () => {
     settings.iconShadowOffsetX = Number(dom.iconShadowOffsetXInput.value);
-    markDirty();
+    markDirty('settings');
     render();
   });
 
   dom.iconShadowOffsetYInput.addEventListener("input", () => {
     settings.iconShadowOffsetY = Number(dom.iconShadowOffsetYInput.value);
-    markDirty();
+    markDirty('settings');
     render();
   });
 
   dom.iconOutlineCheckbox.addEventListener("change", () => {
     settings.iconOutline = dom.iconOutlineCheckbox.checked;
-    markDirty();
+    markDirty('settings');
     render();
   });
 
   dom.iconOutlineWidthInput.addEventListener("input", () => {
     settings.iconOutlineWidth = Number(dom.iconOutlineWidthInput.value);
-    markDirty();
+    markDirty('settings');
     render();
   });
 
   dom.iconOutlinePositionSelect.addEventListener("change", () => {
     settings.iconOutlinePosition = dom.iconOutlinePositionSelect.value;
-    markDirty();
+    markDirty('settings');
     render();
   });
 
   dom.iconOutlineColorInput.addEventListener("input", () => {
     settings.iconOutlineColor = dom.iconOutlineColorInput.value;
-    markDirty();
+    markDirty('settings');
     render();
   });
 }

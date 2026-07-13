@@ -40,6 +40,11 @@ export default {
 
     const total = items.length;
     let index = 0;
+    const { cardWidth, cardHeight } = getCardMetrics();
+    const canvas = document.createElement("canvas");
+    canvas.width = cardWidth;
+    canvas.height = cardHeight;
+    const ctx = canvas.getContext("2d");
     const failures = [];
 
     showProgress({
@@ -59,7 +64,9 @@ export default {
       const ok = await this.uploadCard(
         item,
         deckId,
-        state.collisionMode
+        state.collisionMode,
+        canvas,
+        ctx
       );
 
       if (!ok) {
@@ -90,14 +97,9 @@ export default {
   /* ------------------------------------------------------------
      UPLOAD ONE CARD
   ------------------------------------------------------------ */
-  async uploadCard(item, deckId, decision) {
+  async uploadCard(item, deckId, decision, canvas, ctx) {
     try {
-      const { cardWidth, cardHeight } = getCardMetrics();
-      const canvas = document.createElement("canvas");
-      canvas.width = cardWidth;
-      canvas.height = cardHeight;
-
-      const ctx = canvas.getContext("2d");
+      if (!canvas || !ctx) return false;
       if (item.isJoker) {
         renderJokerCard(ctx, item.jokerIndex, { preview: false });
       } else {

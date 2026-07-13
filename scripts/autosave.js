@@ -280,47 +280,85 @@ async function applySavedCard(card, saved) {
 }
 
 let saveTimeout = null;
-async function persistState() {
-  const deckSerialized = await serializeDeck();
-  const settingsPayload = buildSettingsPayload();
-  const suitIconImageId = (await ensureIconImageId()) || settings.customIconImageId || null;
+const dirtyState = { settings: false, deck: false, images: false, full: false };
+
+function mergeDirtyScope(scope = 'full') {
+  if (scope === 'settings' || scope === 'deck' || scope === 'images') {
+    dirtyState[scope] = true;
+    return;
+  }
+
+  dirtyState.full = true;
+}
+
+function resetDirtyState() {
+  dirtyState.settings = false;
+  dirtyState.deck = false;
+  dirtyState.images = false;
+  dirtyState.full = false;
+}
+
+function readExistingAutosave() {
+  try {
+    const raw = localStorage.getItem("cardDesignerAutosave");
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function persistState(scopes = dirtyState) {
+  const existing = scopes.full ? null : readExistingAutosave();
+  const shouldSaveDeck = scopes.full || scopes.deck || !existing?.deck;
+  const shouldSaveSettings = scopes.full || scopes.settings || !existing?.settings;
+  const needsInitialIconSave = !settings.iconPresetId && !!settings.iconSheet && !settings.customIconImageId;
+  const shouldSaveImages = scopes.full || scopes.images || needsInitialIconSave;
 
   const payload = {
-    settings: settingsPayload,
-    deck: deckSerialized,
-    activeRanks,
-    suitIconImageId,
+    settings: shouldSaveSettings ? buildSettingsPayload() : existing.settings,
+    deck: shouldSaveDeck ? await serializeDeck() : existing.deck,
+    activeRanks: shouldSaveDeck ? activeRanks : existing.activeRanks || activeRanks,
+    suitIconImageId: shouldSaveImages
+      ? ((await ensureIconImageId()) || settings.customIconImageId || null)
+      : existing.suitIconImageId || settings.customIconImageId || null,
     timestamp: Date.now()
   };
 
   localStorage.setItem("cardDesignerAutosave", JSON.stringify(payload));
 }
 
-function scheduleSave() {
+function scheduleSave(evt) {
+  mergeDirtyScope(evt?.detail?.scope);
   clearTimeout(saveTimeout);
   setStatusSaving();
   saveTimeout = setTimeout(async () => {
     try {
-      await persistState();
+      const scopes = { ...dirtyState };
+      resetDirtyState();
+      await persistState(scopes);
       setStatusSaved();
     } catch (err) {
       console.error("Autosave failed:", err);
+      mergeDirtyScope('full');
       setStatusError();
     }
   }, 500);
 }
 
-export function markDirty() {
-  window.dispatchEvent(new CustomEvent("appDirty"));
+export function markDirty(scope = 'full') {
+  window.dispatchEvent(new CustomEvent("appDirty", { detail: { scope } }));
 }
 
 export async function forceSave() {
   setStatusSaving();
   try {
-    await persistState();
+    const scopes = { ...dirtyState, full: dirtyState.full || !localStorage.getItem("cardDesignerAutosave") };
+    resetDirtyState();
+    await persistState(scopes);
     setStatusSaved();
   } catch (err) {
     console.error("Autosave failed:", err);
+    mergeDirtyScope('full');
     setStatusError();
   }
 }

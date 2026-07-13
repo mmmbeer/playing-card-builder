@@ -4,8 +4,6 @@ import { getCardMetrics } from './cardGeometry.js';
 
 import {
   settings,
-  iconWorkCanvas,
-  iconWorkCtx,
   computePipGuidelines,
   getCurrentCard,
   getJokerCard,
@@ -19,6 +17,22 @@ import { renderOverlays } from './overlays.js';
 import { renderAbilityText } from './abilityText.js';
 
 const measureCtx = document.createElement('canvas').getContext('2d');
+const iconRenderCache = new Map();
+const iconSheetIds = new WeakMap();
+let iconSheetIdSeq = 0;
+
+function getIconSheetCacheId(sheet) {
+  if (!sheet || (typeof sheet !== 'object' && typeof sheet !== 'function')) return 'none';
+  if (!iconSheetIds.has(sheet)) {
+    iconSheetIdSeq += 1;
+    iconSheetIds.set(sheet, iconSheetIdSeq);
+  }
+  return iconSheetIds.get(sheet);
+}
+
+function makeIconCacheKey({ sheet, suitId, sw, sh, color, opacity }) {
+  return [getIconSheetCacheId(sheet), suitId, sw, sh, color || 'standard', opacity].join('|');
+}
 
 function getGeometry() {
   const { cardWidth, cardHeight, bleed, safeWidth, safeHeight } = getCardMetrics();
@@ -185,30 +199,45 @@ function fillBackground(ctx) {
    SUIT ICON RENDERING
 ------------------------------------------------------------- */
 
-function tintIconToCanvas(baseData, sw, sh, color, opacity = 1) {
-  const tintedData = new ImageData(new Uint8ClampedArray(baseData.data), sw, sh);
-  const { r, g, b } = color ? hexToRgb(color) : { r: 255, g: 255, b: 255 };
-  const hasTint = !!color;
+function renderTintedIconCanvas({ sheet, suitId, sx, sy, sw, sh, color, opacity = 1 }) {
+  const key = makeIconCacheKey({ sheet, suitId, sw, sh, color, opacity });
+  const cached = iconRenderCache.get(key);
+  if (cached) return cached;
 
-  const data = tintedData.data;
-  const rFactor = r / 255;
-  const gFactor = g / 255;
-  const bFactor = b / 255;
+  const canvas = document.createElement('canvas');
+  canvas.width = sw;
+  canvas.height = sh;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(sheet, sx, sy, sw, sh, 0, 0, sw, sh);
 
-  for (let i = 0; i < data.length; i += 4) {
-    const alpha = data[i + 3];
-    if (alpha === 0) continue;
+  if (color || opacity !== 1) {
+    const tintedData = ctx.getImageData(0, 0, sw, sh);
+    const { r, g, b } = color ? hexToRgb(color) : { r: 255, g: 255, b: 255 };
+    const hasTint = !!color;
+    const data = tintedData.data;
+    const rFactor = r / 255;
+    const gFactor = g / 255;
+    const bFactor = b / 255;
 
-    if (hasTint) {
-      data[i]     = Math.round(data[i] * rFactor);
-      data[i + 1] = Math.round(data[i + 1] * gFactor);
-      data[i + 2] = Math.round(data[i + 2] * bFactor);
+    for (let i = 0; i < data.length; i += 4) {
+      const alpha = data[i + 3];
+      if (alpha === 0) continue;
+
+      if (hasTint) {
+        data[i] = Math.round(data[i] * rFactor);
+        data[i + 1] = Math.round(data[i + 1] * gFactor);
+        data[i + 2] = Math.round(data[i + 2] * bFactor);
+      }
+
+      data[i + 3] = Math.round(alpha * opacity);
     }
 
-    data[i + 3] = alpha * opacity;
+    ctx.putImageData(tintedData, 0, 0);
   }
 
-  iconWorkCtx.putImageData(tintedData, 0, 0);
+  if (iconRenderCache.size > 160) iconRenderCache.clear();
+  iconRenderCache.set(key, canvas);
+  return canvas;
 }
 
 function drawSuitIcon(ctx, suitId, x, y, size, rotationRad = 0) {
@@ -244,12 +273,6 @@ function drawSuitIcon(ctx, suitId, x, y, size, rotationRad = 0) {
   const dx = -dw / 2;
   const dy = -dh / 2;
 
-  iconWorkCanvas.width = sw;
-  iconWorkCanvas.height = sh;
-  iconWorkCtx.clearRect(0, 0, sw, sh);
-  iconWorkCtx.drawImage(sheet, sx, sy, sw, sh, 0, 0, sw, sh);
-  const baseData = iconWorkCtx.getImageData(0, 0, sw, sh);
-
   ctx.save();
   ctx.translate(x, y);
   if (rotationRad) ctx.rotate(rotationRad);
@@ -259,13 +282,13 @@ function drawSuitIcon(ctx, suitId, x, y, size, rotationRad = 0) {
     const steps = Math.max(8, Math.ceil(radius * 4));
     const angleStep = (Math.PI * 2) / steps;
 
-    tintIconToCanvas(baseData, sw, sh, outlineColor, 1);
+    const outlineCanvas = renderTintedIconCanvas({ sheet, suitId, sx, sy, sw, sh, color: outlineColor, opacity: 1 });
 
     for (let i = 0; i < steps; i++) {
       const angle = i * angleStep;
       const ox = Math.cos(angle) * radius;
       const oy = Math.sin(angle) * radius;
-      ctx.drawImage(iconWorkCanvas, 0, 0, sw, sh, dx + ox, dy + oy, dw, dh);
+      ctx.drawImage(outlineCanvas, 0, 0, sw, sh, dx + ox, dy + oy, dw, dh);
     }
   }
 
@@ -279,8 +302,17 @@ function drawSuitIcon(ctx, suitId, x, y, size, rotationRad = 0) {
     shadowOffsetY
   );
 
-  tintIconToCanvas(baseData, sw, sh, iconColor, settings.iconOpacity);
-  ctx.drawImage(iconWorkCanvas, 0, 0, sw, sh, dx, dy, dw, dh);
+  const iconCanvas = renderTintedIconCanvas({
+    sheet,
+    suitId,
+    sx,
+    sy,
+    sw,
+    sh,
+    color: iconColor,
+    opacity: settings.iconOpacity
+  });
+  ctx.drawImage(iconCanvas, 0, 0, sw, sh, dx, dy, dw, dh);
 
   ctx.restore();
 }

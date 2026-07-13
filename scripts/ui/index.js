@@ -82,6 +82,8 @@ export async function initUI() {
 
   if (!dom.suitSelect.value) dom.suitSelect.value = settings.lastSuitId ?? (SUITS[0]?.id || "");
 
+  const scheduleSelectedCardRender = createRenderScheduler(renderSelectedCard);
+
 
 
   //
@@ -110,25 +112,25 @@ export async function initUI() {
   // hydration + preset restoration has already populated UI
   //
 
-  initSuitControls(dom, stateCtx(), renderSelectedCard, doSync, () => refreshRankDropdown(false));
-  initRankControls(dom, stateCtx(), refreshRankDropdown, doSync, renderSelectedCard);
-  initLayoutControls(dom, settings, renderSelectedCard);
-  initBackgroundControls(dom, settings, renderSelectedCard);
+  initSuitControls(dom, stateCtx(), scheduleSelectedCardRender, doSync, () => refreshRankDropdown(false));
+  initRankControls(dom, stateCtx(), refreshRankDropdown, doSync, scheduleSelectedCardRender);
+  initLayoutControls(dom, settings, scheduleSelectedCardRender);
+  initBackgroundControls(dom, settings, scheduleSelectedCardRender);
 
   // Font controls MUST be initialized AFTER hydration
   dom.fontFamilyInput = document.getElementById("fontFamilyInput");
 
-  initFontControls(dom, settings, renderSelectedCard, openFontBrowser);
+  initFontControls(dom, settings, scheduleSelectedCardRender, openFontBrowser);
 
-    initIconControls(dom, settings, renderSelectedCard);
-  initPipControls(dom, settings, renderSelectedCard);
-  initGuidelineControls(dom, settings, renderSelectedCard);
+    initIconControls(dom, settings, scheduleSelectedCardRender);
+  initPipControls(dom, settings, scheduleSelectedCardRender);
+  initGuidelineControls(dom, settings, scheduleSelectedCardRender);
   initJokerControls(dom, settings, handleJokerSettingsChange);
-  initMirrorControls(dom, getCurrent, renderSelectedCard);
-  initCornerOffsetControls(dom, settings, renderSelectedCard);
-  initAbilityControls(dom, settings, getCurrent, renderSelectedCard);
+  initMirrorControls(dom, getCurrent, scheduleSelectedCardRender);
+  initCornerOffsetControls(dom, settings, scheduleSelectedCardRender);
+  initAbilityControls(dom, settings, getCurrent, scheduleSelectedCardRender);
   initResetControls(dom, settings, {
-    render: renderSelectedCard,
+    render: scheduleSelectedCardRender,
     sync: doSync,
     refreshRanks: refreshRankDropdown
   });
@@ -138,11 +140,11 @@ export async function initUI() {
   // Save/Import progress (ZIP wrapper around the autosave payload)
   initProgressControls();
 
-  initNavControls(dom, stateCtx, applyNewCard, doSync, renderSelectedCard);
+  initNavControls(dom, stateCtx, applyNewCard, doSync, scheduleSelectedCardRender);
   initCollapsibles();
 
-  
-  
+
+
   //
   // Initialize font browser (safe now)
   //
@@ -153,14 +155,14 @@ export async function initUI() {
   //
   // ---------- CANVAS INTERACTION ----------
   //
-  initCanvasDrag(dom, getCurrent, renderCurrentCard);
+  initCanvasDrag(dom, getCurrent, scheduleSelectedCardRender);
 
 
   //
   // ---------- BULK UPLOAD ----------
   //
   dom.bulkUploadBadge.addEventListener("click", () =>
-    openBulkModal(renderCurrentCard)
+    openBulkModal(scheduleSelectedCardRender)
   );
 
 
@@ -178,7 +180,7 @@ export async function initUI() {
   //
   // ---------- PRESETS + RANK DROPDOWN ----------
   //
-  initIconPresets(dom, settings, renderSelectedCard);
+  initIconPresets(dom, settings, scheduleSelectedCardRender);
   refreshRankDropdown();
 
 
@@ -191,9 +193,9 @@ export async function initUI() {
   if (!dom.rankSelect.value && activeRanks.length > 0) {
     refreshRankDropdown(false);
   }
-  
-  
-    initFaceControls(dom, settings, getCurrent, doSync, renderSelectedCard);
+
+
+    initFaceControls(dom, settings, getCurrent, doSync, scheduleSelectedCardRender);
 
 
 
@@ -205,7 +207,7 @@ export async function initUI() {
   // (set in hydrateUIFromSettings)
   // Do NOT render explicitly here
   // renderSelectedCard(...)
-  
+
 
 
   // -------------------------------------------------------------------
@@ -365,7 +367,7 @@ export async function initUI() {
     if (settings.fontFamily) {
       WebFont.load({
         google: { families: [settings.fontFamily] },
-        active: () => renderSelectedCard()
+        active: () => scheduleSelectedCardRender()
       });
 
       if (dom.fontFamilyInput) {
@@ -378,7 +380,7 @@ export async function initUI() {
     if (abilityFonts.length) {
       WebFont.load({
         google: { families: abilityFonts },
-        active: () => renderSelectedCard()
+        active: () => scheduleSelectedCardRender()
       });
     }
 
@@ -570,6 +572,20 @@ export async function initUI() {
     if (!selection.rank) return;
 
     renderCardForPreview(ctx, selection.suitId, selection.rank, selection.copyIndex, true);
+  }
+
+
+  function createRenderScheduler(renderFn) {
+    let frameId = null;
+
+    return () => {
+      if (frameId !== null) return;
+
+      frameId = requestAnimationFrame(() => {
+        frameId = null;
+        renderFn();
+      });
+    };
   }
 
 

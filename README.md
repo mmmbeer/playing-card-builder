@@ -1,40 +1,108 @@
-# Playing Card Builder
+# vinext-starter
 
-Design full card decks in the browser and export print-ready assets. The app ships as a static site with optional The Game Crafter export handled through the bundled PHP proxy.
+A clean full-stack starter running on
+[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
+Drizzle support.
 
-## Quick start
-- Serve the project root with any static server (for example `python -m http.server 8000`).
-- Open `http://localhost:8000` and start configuring cards.
-- PHP is only required for The Game Crafter export; other features run client side.
+## Prerequisites
 
-## Core features
-- Build standard or custom decks with per-card face art.
-- Drag a face image on the canvas, zoom, rotate, and flip it. Reset transforms per card when needed.
-- Mirror rank and suit corners per card or set a mirrored default for new cards.
-- Choose rank text: Google Font picker, weight, size, color, opacity, outline, glow, or shadow overlay.
-- Swap suit icons: pick from built-in 2×2 sprite sheets or upload your own sheet; recolor and scale icons.
-- Adjust corner layout (rank above suit, suit above rank, side by side) and nudge corner offsets.
-- Toggle pip patterns on card bodies and fine-tune pip row positions as percentages of the safe area.
-- Configure ranks with a custom comma-separated list. Include Jokers with label, count (up to 8), and wild tag.
-- Bulk import face images and map filenames to suits and ranks before applying.
-- Autosave to local storage with status indicator. Import or export progress as a ZIP snapshot.
+- Node.js `>=22.13.0`
+- Linux with `flock`, `curl`, and GNU `timeout`
 
-## User interface
-- **Card selection**: suit and rank pickers plus next/previous buttons to move through the deck. A checkbox mirrors corners for the active card. Autosave status and per-card download live near the canvas.
-- **Face image panel**: clickable drop zone for the current card, zoom and rotation sliders, horizontal and vertical flip, and a reset button. Drag on the canvas to reposition the face art. Badge opens the bulk loader modal for multi-file mapping.
-- **Rank/Index font**: collapsible section with font family picker tied to Google Fonts, weight and size inputs, color and opacity controls, overlay type, outline toggle with width and color.
-- **Suit icons**: choose a preset sprite sheet or upload a 2×2 grid image. Adjust icon color, opacity, and scale. Built-in presets live in `/suits`.
-- **Deck and ranks**: optional custom rank string, joker toggle with count, label, and wild flag. Hints explain expected formats.
-- **Layout and options**: pill buttons set corner arrangement. Toggles for pip visibility and default mirroring. Number inputs tweak rank and suit offsets. Sliders adjust pip row percentages with a guideline overlay toggle. Safe zone and canvas dimensions display above the preview.
-- **Export**: buttons for full deck ZIP export and The Game Crafter upload. Save/Import badges wrap autosave data into a ZIP for backup or transfer.
+## Sites Lifecycle
 
-## Exports
-- **Single card PNG**: download the active card from the preview toolbar.
-- **Deck ZIP**: export every configured suit and rank plus optional Jokers as individual 825×1125 PNG files with 80 px bleed. Filenames follow `{rank}{suitSymbol}.png` and `JOKER.png` (with suffix when multiple Jokers are present).
-- **The Game Crafter**: start SSO login, pick or create a designer, game, and deck, preview generated cards, then upload directly. The PHP proxy at `api/tgc.php` expects `DEVELOPER_ID` and `DEVELOPER_KEY` in `/home/fairwayg/.secrets/tgc.ini`.
-- **Progress ZIP**: save the current autosave payload to a ZIP for sharing, then import it later to restore all settings, icon choices, and face art.
+The Sites lifecycle CLI runs the locked dependency install before returning this checkout. Edit the source under `app/`, then checkpoint when a coherent milestone is ready to inspect or share. The remote Sites builder runs `npm run build` against the pushed commit. Do not repeat install or build as a normal pre-checkpoint step.
 
-## Tips
-- Face image auto-scale uses the safe area height as a baseline after bulk import; fine-tune position and scale per card as needed.
-- Sprite sheets list suits in order: top-left Spades, top-right Hearts, bottom-left Clubs, bottom-right Diamonds.
-- Keep the guideline overlay on while adjusting pip rows to match your print bleed preferences.
+This starter does not use `wrangler.jsonc`.
+
+`install:ci` is intentionally a single, non-retrying `npm ci`. It refuses a concurrent install for the same project, consumes a matching image-seeded npm cache with `--prefer-offline` while retaining registry fallback for a missing cache object, otherwise downloads and verifies the complete vinext tarball recorded in `package-lock.json`, limits npm to one socket, and terminates a stalled install. `build` applies a short timeout and then validates the Sites artifact. These helpers target Linux and use GNU `timeout`; they are not native macOS scripts.
+
+Scripts that need writable project-scoped home, npm, XDG, and temporary paths use `scripts/sites-env.sh`. The `dev` and `start` scripts honor the caller's runtime environment and keep Wrangler logs inside the checkout. The generated `.sites-runtime/` directory is disposable and ignored by Git.
+
+## Included Shape
+
+- edit site code under `app/`
+- `app/chatgpt-auth.ts` provides optional dispatch-owned ChatGPT sign-in helpers
+- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
+- `vite.config.ts` simulates declared bindings for local development
+- `db/index.ts` reads the D1 binding from the Cloudflare Worker environment
+- `db/schema.ts` starts intentionally empty
+- `examples/d1/` contains an optional D1 example surface
+- `drizzle.config.ts` supports local migration generation when needed
+
+## Workspace Auth Headers
+
+OpenAI workspace sites can read the current user's email from
+`oai-authenticated-user-email`.
+
+SIWC-authenticated workspace sites may also receive
+`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
+`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
+`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
+
+Treat the full name as optional and fall back to email when it is absent:
+
+```tsx
+import { headers } from "next/headers";
+
+export default async function Home() {
+  const requestHeaders = await headers();
+  const email = requestHeaders.get("oai-authenticated-user-email");
+  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
+  const fullName =
+    encodedFullName &&
+    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
+      "percent-encoded-utf-8"
+      ? decodeURIComponent(encodedFullName)
+      : null;
+
+  const displayName = fullName ?? email;
+  // ...
+}
+```
+
+## Optional Dispatch-Owned ChatGPT Sign-In
+
+Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
+optional or required ChatGPT sign-in:
+
+- Use `getChatGPTUser()` for optional signed-in UI.
+- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
+  anonymous visitors through Sign in with ChatGPT.
+- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
+  browser links or actions.
+- Pass a same-origin relative `returnTo` path for the destination after sign-in
+  or sign-out. The helper validates and safely encodes it.
+- Mark protected pages with `export const dynamic = "force-dynamic"` because
+  they depend on per-request identity headers.
+
+Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
+OAuth cookies, and identity header injection. Do not implement app routes for
+those reserved paths. Routes that do not import and call the helper remain
+anonymous-compatible.
+
+SIWC establishes identity only; it does not prove workspace membership. Use the
+Sites hosting platform's access policy controls for workspace-wide restrictions,
+or enforce explicit server-side membership or allowlist checks.
+
+Use SIWC for account pages, user-specific dashboards, saved records, and write
+actions tied to the current ChatGPT user. Leave public content anonymous.
+
+## Diagnostic Commands
+
+- `npm run install:ci`: perform the one bounded lockfile install
+- `npm run dev`: start the Vite/Vinext development server
+- `npm run build`: build and validate the deployable Sites artifact
+- `npm run start`: start the built Vinext application
+- `npm test`: build, validate, and verify the rendered development-preview metadata
+- `npm run validate:artifact`: recheck an existing artifact's manifest and ESM `default.fetch` export
+- `npm run db:generate`: generate Drizzle migrations after schema changes
+
+Use build and validation commands for targeted diagnosis after a remote failure, not as part of the normal checkpoint path.
+
+The timeout defaults can be overridden for a controlled canary with `SITES_INSTALL_TIMEOUT`, `SITES_INSTALL_KILL_AFTER`, `SITES_BUILD_TIMEOUT`, and `SITES_BUILD_KILL_AFTER`. A timeout fails the command; the helpers never retry an unchanged install or build.
+
+## Learn More
+
+- [vinext Documentation](https://github.com/cloudflare/vinext)
+- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)

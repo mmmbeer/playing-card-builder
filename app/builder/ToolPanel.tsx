@@ -26,6 +26,7 @@ type Props = {
   onCustomIcon: (file: File) => void;
   onRemoveCustomIcon: () => void;
   onSampleColor: () => Promise<string | null>;
+  onResetPanel: (panel: PanelId) => void;
 };
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
@@ -127,13 +128,13 @@ const titles: Record<PanelId, { title: string; copy: string }> = {
 };
 
 export default function ToolPanel(props: Props) {
-  const { panel, deck, suit, rank, copy, card, imageUrl, onClose, onDeck, onCard, onSelect, onImage, onRemoveImage, onRanks, onBulk, onCustomIcon, onRemoveCustomIcon, onSampleColor } = props;
+  const { panel, deck, suit, rank, copy, card, imageUrl, onClose, onDeck, onCard, onSelect, onImage, onRemoveImage, onRanks, onBulk, onCustomIcon, onRemoveCustomIcon, onSampleColor, onResetPanel } = props;
   const meta = titles[panel];
   const copies = rankCopyCount(deck, rank);
   const rankList = deck.ranks.flatMap((item) => Array.from({ length: rankCopyCount(deck, item) }, () => item)).join(", ");
 
   return <aside className="tool-popover" role="dialog" aria-modal="false" aria-labelledby="tool-panel-title">
-    <header><div><span className="panel-kicker">Editor</span><h2 id="tool-panel-title">{meta.title}</h2><p>{meta.copy}</p></div><button className="icon-control" onClick={onClose} aria-label="Close editor"><X /></button></header>
+    <header><div><span className="panel-kicker">Editor</span><h2 id="tool-panel-title">{meta.title}</h2><p>{meta.copy}</p></div><div className="panel-header-actions">{["type", "icons", "pips", "text", "layout"].includes(panel) && <button className="panel-reset-action" onClick={() => onResetPanel(panel)} title={`Reset ${meta.title.toLowerCase()} settings`}><RotateCcw /> Reset</button>}<button className="icon-control" onClick={onClose} aria-label="Close editor"><X /></button></div></header>
 
     {panel === "cards" && <div className="panel-body">
       <div className="suit-tabs" role="tablist" aria-label="Suits">{SUITS.map((item) => <button key={item.id} className={suit === item.id ? "active" : ""} onClick={() => onSelect(item.id, rank, copy)} role="tab" aria-selected={suit === item.id}><span className={item.red ? "red-suit" : ""}>{item.symbol}</span>{item.name}</button>)}</div>

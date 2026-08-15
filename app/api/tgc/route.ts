@@ -220,6 +220,11 @@ export async function POST(request: NextRequest) {
       const response = await tgcRequest("GET", `game/${gameId}/decks`, { session_id: sessionId, _items_per_page: 100 });
       return json({ items: resultItems(response).map((item) => ({ id: cleanId(item.id, "deck"), name: cleanName(item.name, "Deck name") })) });
     }
+    if (action === "existing_cards") {
+      const deckId = cleanId(body.deckId, "deck");
+      const response = await tgcRequest("GET", "card", { session_id: sessionId, deck_id: deckId, _items_per_page: 1000 });
+      return json({ items: resultItems(response).map((item) => ({ id: cleanId(item.id, "card"), name: cleanName(item.name, "Card name") })) });
+    }
     if (action === "create_deck") {
       const gameId = cleanId(body.gameId, "game");
       const name = cleanName(body.name, "Deck name");

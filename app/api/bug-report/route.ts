@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getDb } from "@/db";
 import { bugReports } from "@/db/schema";
+import { apiError, apiJson, assertSameOrigin, reasonMessage, reasonStatus, requestLength } from "../_shared/http";
 
 export const dynamic = "force-dynamic";
 
@@ -12,13 +13,11 @@ function clean(value: unknown, label: string, min: number, max: number) {
 
 export async function POST(request: NextRequest) {
   try {
-    const origin = request.headers.get("origin");
-    if (!origin || origin !== request.nextUrl.origin) return NextResponse.json({ error: "The request origin could not be verified." }, { status: 403 });
-    if (!(request.headers.get("content-type") || "").startsWith("application/json")) return NextResponse.json({ error: "Send the report as JSON." }, { status: 415 });
-    const length = Number(request.headers.get("content-length") || 0);
-    if (length > 64 * 1024) return NextResponse.json({ error: "The report is too large." }, { status: 413 });
+    assertSameOrigin(request);
+    if (!(request.headers.get("content-type") || "").startsWith("application/json")) return apiError("Send the report as JSON.", 415);
+    if (requestLength(request) > 64 * 1024) return apiError("The report is too large.", 413);
     const body = await request.json() as Record<string, unknown>;
-    if (body.website) return NextResponse.json({ ok: true });
+    if (body.website) return apiJson({ ok: true });
     const summary = clean(body.summary, "Summary", 6, 140);
     const happened = clean(body.happened, "What happened", 10, 3000);
     const steps = clean(body.steps, "Steps", 10, 3000);
@@ -29,8 +28,8 @@ export async function POST(request: NextRequest) {
       if (appState.length > 40_000) throw new Error("The deck configuration is too large to attach.");
     }
     await getDb().insert(bugReports).values({ id: crypto.randomUUID(), createdAt: new Date(), summary, happened, steps, details, appState });
-    return NextResponse.json({ ok: true }, { status: 201, headers: { "cache-control": "no-store" } });
+    return apiJson({ ok: true }, 201);
   } catch (reason) {
-    return NextResponse.json({ error: reason instanceof Error ? reason.message : "The report could not be saved." }, { status: 400, headers: { "cache-control": "no-store" } });
+    return apiError(reasonMessage(reason, "The report could not be saved."), reasonStatus(reason));
   }
 }

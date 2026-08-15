@@ -3,14 +3,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import JSZip from "jszip";
 import {
   ArrowLeft,
   Bug,
   ChevronLeft,
   ChevronRight,
   CircleHelp,
-  Download,
   FileDown,
   Image as ImageIcon,
   MessageSquareText,
@@ -27,18 +25,23 @@ import {
   Trash2,
   Type,
   Undo2,
-  Upload,
-  X,
 } from "lucide-react";
+import { NotificationRegion, useNotifications } from "@/app/components/ui/Notifications";
 import CardCanvas from "./CardCanvas";
 import BulkArtworkModal, { type BulkArtworkAssignment } from "./BulkArtworkModal";
+import ExportModal from "./ExportModal";
+import ResetDeckModal from "./ResetDeckModal";
 import { BugReportModal, HelpModal } from "./SupportModals";
 import ToolPanel, { type PanelId } from "./ToolPanel";
 import TgcModal from "./TgcModal";
 import { sampleCanvasColor } from "./color-sampler";
 import { canvasToBlob, CARD_HEIGHT, CARD_WIDTH, renderCard } from "./render-card";
-import { clearDraft, clearImages, getImage, loadDraft, putImage, saveDraft } from "./storage";
-import { blankCard, cardKey, createDefaultDeck, deckCardCount, migrateDeck, rankCopyCount, SUITS, type CardDesign, type DeckSettings, type ImageUrls, type SuitId } from "./types";
+import { clearDraft, clearImages, loadDraft, saveDraft } from "./storage";
+import { blankCard, cardKey, createDefaultDeck, rankCopyCount, SUITS, type CardDesign, type DeckSettings, type ImageUrls, type SuitId } from "./types";
+import { imageValidationError, loadImageUrls, revokeImageUrls, storeImage } from "./deck-assets";
+import { createPrintArchive, createProjectBackup, downloadBlob, importProjectBackup, safeFilename } from "./deck-files";
+import { useCanvasZoom } from "./use-canvas-zoom";
+import { useDeckHistory } from "./use-deck-history";
 
 const tools: Array<{ id: PanelId; label: string; icon: React.ReactNode }> = [
   { id: "cards", label: "Cards", icon: <Layers3 /> },
@@ -51,125 +54,61 @@ const tools: Array<{ id: PanelId; label: string; icon: React.ReactNode }> = [
   { id: "deck", label: "Deck", icon: <Save /> },
 ];
 
-function safeFilename(value: string) {
-  return value.trim().replace(/[^a-z0-9_-]+/gi, "-").replace(/^-+|-+$/g, "") || "card";
-}
-
-function download(blob: Blob, name: string) {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = name;
-  anchor.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function clampCanvasZoom(value: number) {
-  return Math.min(2.5, Math.max(.1, value));
-}
-
 export default function BuilderClient() {
-  const [deck, setDeck] = useState<DeckSettings>(() => createDefaultDeck());
+  const { beginContinuousEdit, canRedo, canUndo, commit, deck, endContinuousEdit, redo, replaceDeck, undo, updateLive } = useDeckHistory(createDefaultDeck());
   const [suit, setSuit] = useState<SuitId>("spades");
   const [rank, setRank] = useState("A");
   const [copy, setCopy] = useState(1);
   const [images, setImages] = useState<ImageUrls>({});
   const [panel, setPanel] = useState<PanelId | null>("cards");
   const [hydrated, setHydrated] = useState(false);
-  const [saveState, setSaveState] = useState<"saved" | "saving">("saved");
+  const [saveState, setSaveState] = useState<"error" | "saved" | "saving">("saved");
   const [exportOpen, setExportOpen] = useState(false);
   const [tgcOpen, setTgcOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [bugOpen, setBugOpen] = useState(false);
-  const [canvasZoom, setCanvasZoom] = useState(.5);
-  const [canvasZoomMode, setCanvasZoomMode] = useState<"fit" | "custom">("fit");
-  const [past, setPast] = useState<DeckSettings[]>([]);
-  const [future, setFuture] = useState<DeckSettings[]>([]);
+  const [resetBusy, setResetBusy] = useState(false);
   const [exportProgress, setExportProgress] = useState({ current: 0, total: 0 });
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const canvasViewportRef = useRef<HTMLDivElement | null>(null);
-  const importRef = useRef<HTMLInputElement | null>(null);
-  const continuousEdit = useRef(false);
   const cancelExport = useRef(false);
+  const saveFailureShown = useRef(false);
+  const renderFailureShown = useRef(false);
+  const { dismiss, notices, notify } = useNotifications();
+  const { change: changeCanvasZoom, fit: fitCanvas, mode: canvasZoomMode, printSize: showPrintSize, zoom: canvasZoom } = useCanvasZoom(canvasViewportRef);
   const currentKey = cardKey(suit, rank, copy);
   const card = deck.cards[currentKey] || blankCard();
 
-  function calculateFitZoom() {
-    const viewport = canvasViewportRef.current;
-    if (!viewport) return .5;
-    return clampCanvasZoom(Math.min((viewport.clientWidth - 56) / CARD_WIDTH, (viewport.clientHeight - 56) / CARD_HEIGHT));
-  }
-
-  function fitCanvas() {
-    setCanvasZoomMode("fit");
-    setCanvasZoom(calculateFitZoom());
-  }
-
-  function showPrintSize() {
-    setCanvasZoomMode("custom");
-    setCanvasZoom(1);
-  }
-
-  function changeCanvasZoom(value: number, anchor?: { clientX: number; clientY: number }) {
-    const next = clampCanvasZoom(value);
-    const viewport = canvasViewportRef.current;
-    const previous = canvasZoom;
-    const rect = viewport?.getBoundingClientRect();
-    const localX = rect && anchor ? anchor.clientX - rect.left : 0;
-    const localY = rect && anchor ? anchor.clientY - rect.top : 0;
-    const contentX = viewport ? viewport.scrollLeft + localX : 0;
-    const contentY = viewport ? viewport.scrollTop + localY : 0;
-    setCanvasZoomMode("custom");
-    setCanvasZoom(next);
-    if (viewport && anchor && previous > 0) {
-      window.requestAnimationFrame(() => {
-        const ratio = next / previous;
-        viewport.scrollLeft = contentX * ratio - localX;
-        viewport.scrollTop = contentY * ratio - localY;
-      });
-    }
-  }
-
   useEffect(() => {
     const stored = loadDraft();
-    setDeck(stored);
+    replaceDeck(stored);
     if (!stored.ranks.includes(rank)) setRank(stored.ranks[0] || "A");
-    const keys = [...new Set([...Object.values(stored.cards).map((item) => item.imageKey), stored.customIconKey].filter(Boolean) as string[])];
-    void Promise.all(keys.map(async (key) => {
-      const blob = await getImage(key);
-      return blob ? [key, URL.createObjectURL(blob)] as const : null;
-    })).then((entries) => setImages(Object.fromEntries(entries.filter(Boolean) as Array<readonly [string, string]>))).finally(() => setHydrated(true));
+    void loadImageUrls(stored).then(({ failed, images: storedImages }) => {
+      setImages(storedImages);
+      if (failed.length) notify("Some saved artwork could not be restored. The rest of the deck is still available.", "error");
+    }).finally(() => setHydrated(true));
     // The initial draft is intentionally read only after the browser mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    const viewport = canvasViewportRef.current;
-    if (!viewport) return;
-    const updateFit = () => {
-      if (canvasZoomMode === "fit") setCanvasZoom(calculateFitZoom());
-    };
-    updateFit();
-    const observer = new ResizeObserver(updateFit);
-    observer.observe(viewport);
-    return () => observer.disconnect();
-  }, [canvasZoomMode]);
-
-  useEffect(() => {
     if (!hydrated) return;
     setSaveState("saving");
-    const timeout = window.setTimeout(() => { saveDraft(deck); setSaveState("saved"); }, 350);
+    const timeout = window.setTimeout(() => {
+      const saved = saveDraft(deck);
+      setSaveState(saved ? "saved" : "error");
+      if (!saved && !saveFailureShown.current) {
+        saveFailureShown.current = true;
+        notify("This browser could not save the latest changes. Export a project backup before leaving.", "error");
+      }
+    }, 350);
     return () => window.clearTimeout(timeout);
-  }, [deck, hydrated]);
+  }, [deck, hydrated, notify]);
 
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        if (bugOpen) setBugOpen(false); else if (helpOpen) setHelpOpen(false); else if (bulkOpen) setBulkOpen(false); else if (resetOpen) setResetOpen(false); else if (tgcOpen) setTgcOpen(false); else if (exportOpen) { cancelExport.current = true; setExportProgress({ current: 0, total: 0 }); setExportOpen(false); } else setPanel(null);
-        return;
-      }
       if (event.defaultPrevented) return;
       const target = event.target as HTMLElement;
       if (target.matches("input, textarea, select") || exportOpen || tgcOpen || resetOpen || bulkOpen || helpOpen || bugOpen) return;
@@ -208,14 +147,9 @@ export default function BuilderClient() {
     if (next) { setSuit(next.suit); setRank(next.rank); setCopy(next.copy); }
   }
 
-  function commit(updater: (current: DeckSettings) => DeckSettings) { setDeck((current) => { setPast((items) => [...items, current].slice(-50)); setFuture([]); return updater(current); }); }
   function updateDeck(patch: Partial<DeckSettings>) { commit((current) => ({ ...current, ...patch })); }
   function updateCard(patch: Partial<CardDesign>) { commit((current) => ({ ...current, cards: { ...current.cards, [currentKey]: { ...(current.cards[currentKey] || blankCard()), ...patch } } })); }
-  function updateCardLive(patch: Partial<CardDesign>) { setDeck((current) => ({ ...current, cards: { ...current.cards, [currentKey]: { ...(current.cards[currentKey] || blankCard()), ...patch } } })); }
-  function beginContinuousEdit() { if (continuousEdit.current) return; continuousEdit.current = true; setDeck((current) => { setPast((items) => [...items, current].slice(-50)); setFuture([]); return current; }); }
-  function endContinuousEdit() { continuousEdit.current = false; }
-  function undo() { continuousEdit.current = false; if (!past.length) return; const previous = past[past.length - 1]; setPast((items) => items.slice(0, -1)); setFuture((items) => [deck, ...items].slice(0, 50)); setDeck(previous); }
-  function redo() { continuousEdit.current = false; if (!future.length) return; const next = future[0]; setFuture((items) => items.slice(1)); setPast((items) => [...items, deck].slice(-50)); setDeck(next); }
+  function updateCardLive(patch: Partial<CardDesign>) { updateLive((current) => ({ ...current, cards: { ...current.cards, [currentKey]: { ...(current.cards[currentKey] || blankCard()), ...patch } } })); }
 
   function updateRanks(value: string) {
     const entries = value.split(",").map((item) => item.trim()).filter(Boolean).slice(0, 120);
@@ -232,13 +166,10 @@ export default function BuilderClient() {
   }
 
   async function addImage(file: File) {
-    if (!/^image\/(png|jpeg|webp)$/.test(file.type) || file.size > 20 * 1024 * 1024) {
-      window.alert("Choose a PNG, JPG, or WebP file smaller than 20 MB.");
-      return;
-    }
-    const key = crypto.randomUUID();
-    await putImage(key, file);
-    const url = URL.createObjectURL(file);
+    const validationError = imageValidationError(file);
+    if (validationError) { notify(validationError, "error"); return; }
+    const { key, persisted, url } = await storeImage(file);
+    if (!persisted) notify("Artwork was added for this session but could not be saved on this device.", "error");
     setImages((current) => ({ ...current, [key]: url }));
     updateCard({ imageKey: key, imageScale: 1, imageRotation: 0, imageX: 0, imageY: 0, flipX: false, flipY: false });
   }
@@ -248,15 +179,13 @@ export default function BuilderClient() {
     updateCard({ imageKey: undefined, imageScale: 1, imageRotation: 0, imageX: 0, imageY: 0, flipX: false, flipY: false });
   }
 
-  async function addCustomIcon(file: File) { if (!/^image\/(png|jpeg|webp)$/.test(file.type) || file.size > 20*1024*1024) { window.alert("Choose a PNG, JPG, or WebP file smaller than 20 MB."); return; } const key=crypto.randomUUID(); await putImage(key,file); setImages((current)=>({...current,[key]:URL.createObjectURL(file)})); updateDeck({customIconKey:key,iconPreset:"custom"}); }
+  async function addCustomIcon(file: File) { const validationError = imageValidationError(file); if (validationError) { notify(validationError, "error"); return; } const { key, persisted, url } = await storeImage(file); if (!persisted) notify("The custom suit sheet is available now but could not be saved on this device.", "error"); setImages((current)=>({...current,[key]:url})); updateDeck({customIconKey:key,iconPreset:"custom"}); }
   function removeCustomIcon(){updateDeck({customIconKey:undefined,iconPreset:"unicode"})}
 
   async function applyBulk(assignments: BulkArtworkAssignment[]) {
-    const prepared = await Promise.all(assignments.map(async (assignment) => {
-      const key = crypto.randomUUID();
-      await putImage(key, assignment.file);
-      return { assignment, key, url: URL.createObjectURL(assignment.file) };
-    }));
+    const prepared = await Promise.all(assignments.map(async (assignment) => ({ assignment, ...await storeImage(assignment.file) })));
+    const unsaved = prepared.filter((item) => !item.persisted).length;
+    if (unsaved) notify(`${unsaved} artwork file${unsaved === 1 ? "" : "s"} could not be saved permanently but remain available in this session.`, "error");
     setImages((current) => ({ ...current, ...Object.fromEntries(prepared.map((item) => [item.key, item.url])) }));
     commit((current) => {
       const cards = { ...current.cards };
@@ -267,6 +196,7 @@ export default function BuilderClient() {
       return { ...current, cards };
     });
     setBulkOpen(false);
+    notify(`${prepared.length} artwork file${prepared.length === 1 ? "" : "s"} applied.`, "success");
   }
 
   function resetPanelSettings(panelId: PanelId) {
@@ -297,82 +227,68 @@ export default function BuilderClient() {
   }, [deck, images]);
 
   async function downloadCurrent() {
-    const blob = await renderBlob(suit, rank, copy);
-    download(blob, `${safeFilename(rank.startsWith("__JOKER_") ? `joker-${rank.match(/\d+/)?.[0] || 1}` : `${rank}-${suit}${copy > 1 ? `-copy-${copy}` : ""}`)}.png`);
+    try {
+      const blob = await renderBlob(suit, rank, copy);
+      downloadBlob(blob, `${safeFilename(rank.startsWith("__JOKER_") ? `joker-${rank.match(/\d+/)?.[0] || 1}` : `${rank}-${suit}${copy > 1 ? `-copy-${copy}` : ""}`)}.png`);
+    } catch {
+      notify("The current card could not be rendered. Your deck remains unchanged.", "error");
+    }
   }
 
   async function exportZip() {
-    const zip = new JSZip();
-    const total = sequence.length;
     cancelExport.current = false;
-    setExportProgress({ current: 0, total });
-    for (let current = 0; current < total; current += 1) {
-      if (cancelExport.current) { setExportProgress({ current: 0, total: 0 }); return; }
-      const item = sequence[current];
-      const blob = await renderBlob(item.suit, item.rank, item.copy);
-      zip.file(item.joker ? `joker-${item.rank.match(/\d+/)?.[0] || 1}.png` : `${safeFilename(item.rank)}-${item.suit}${item.copy > 1 ? `-copy-${item.copy}` : ""}.png`, blob);
-      setExportProgress({ current: current + 1, total });
+    setExportProgress({ current: 0, total: sequence.length });
+    try {
+      const archive = await createPrintArchive(sequence, renderBlob, (current, total) => setExportProgress({ current, total }), () => cancelExport.current);
+      if (archive) downloadBlob(archive, `${safeFilename(deck.title)}-print-files.zip`);
+    } catch {
+      notify("The print ZIP could not be completed. You can retry without losing any deck changes.", "error");
+    } finally {
+      setExportProgress({ current: 0, total: 0 });
     }
-    if (cancelExport.current) { setExportProgress({ current: 0, total: 0 }); return; }
-    const archive = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
-    download(archive, `${safeFilename(deck.title)}-print-files.zip`);
-    setExportProgress({ current: 0, total: 0 });
   }
 
   async function exportBackup() {
-    const zip = new JSZip();
-    zip.file("deck.json", JSON.stringify(deck, null, 2));
-    const keys = [...new Set([...Object.values(deck.cards).map((item) => item.imageKey), deck.customIconKey].filter(Boolean) as string[])];
-    await Promise.all(keys.map(async (key) => {
-      const blob = await getImage(key);
-      if (blob) zip.file(`assets/${key}`, blob);
-    }));
-    zip.file("README.txt", "Deck Forged project backup\n\nImport this ZIP from the editor to restore deck settings, card artwork, and a custom suit sheet.");
-    download(await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } }), `${safeFilename(deck.title)}-deckforged-project.zip`);
+    try {
+      const backup = await createProjectBackup(deck);
+      downloadBlob(backup.blob, `${safeFilename(deck.title)}-deckforged-project.zip`);
+      if (backup.missing) notify(`Backup created without ${backup.missing} unavailable artwork file${backup.missing === 1 ? "" : "s"}.`, "error");
+    } catch {
+      notify("The project backup could not include all saved assets. No deck data was changed.", "error");
+    }
   }
 
   async function importBackup(file: File) {
     try {
-      let parsed: DeckSettings;
-      const restoredUrls: ImageUrls = {};
-      if (file.name.toLowerCase().endsWith(".zip") || file.type.includes("zip")) {
-        const zip = await JSZip.loadAsync(file);
-        const deckFile = zip.file("deck.json");
-        if (!deckFile) throw new Error("Missing deck.json");
-        parsed = migrateDeck(JSON.parse(await deckFile.async("text")));
-        const keys = [...new Set([...Object.values(parsed.cards).map((item) => item.imageKey), parsed.customIconKey].filter(Boolean) as string[])];
-        await Promise.all(keys.map(async (key) => {
-          const asset = zip.file(`assets/${key}`);
-          if (!asset) return;
-          const blob = await asset.async("blob");
-          await putImage(key, blob);
-          restoredUrls[key] = URL.createObjectURL(blob);
-        }));
-      } else {
-        parsed = migrateDeck(JSON.parse(await file.text()));
-        const keys = [...new Set([...Object.values(parsed.cards).map((item) => item.imageKey), parsed.customIconKey].filter(Boolean) as string[])];
-        await Promise.all(keys.map(async (key) => {
-          const blob = await getImage(key);
-          if (blob) restoredUrls[key] = URL.createObjectURL(blob);
-        }));
-      }
-      Object.values(images).forEach((url) => URL.revokeObjectURL(url));
-      setImages(restoredUrls);
-      setDeck(parsed); setRank(parsed.ranks[0]); setCopy(1); setSuit("spades"); setPast([]); setFuture([]);
-    } catch { window.alert("That file is not a valid Deck Forged project backup."); }
+      const imported = await importProjectBackup(file);
+      revokeImageUrls(images);
+      setImages(imported.images);
+      replaceDeck(imported.deck); setRank(imported.deck.ranks[0]); setCopy(1); setSuit("spades");
+      if (imported.unsaved) notify(`Project imported, but ${imported.unsaved} artwork file${imported.unsaved === 1 ? " is" : "s are"} only available for this session.`, "error");
+      else notify("Project backup imported.", "success");
+    } catch { notify("That file is not a valid Deck Forged project backup.", "error"); }
   }
 
   async function resetDeck() {
-    Object.values(images).forEach((url) => URL.revokeObjectURL(url));
-    await clearImages(); clearDraft();
-    setImages({}); setDeck(createDefaultDeck()); setPast([]); setFuture([]); setSuit("spades"); setRank("A"); setCopy(1); setResetOpen(false);
+    setResetBusy(true);
+    revokeImageUrls(images);
+    let assetsCleared = true;
+    try { await clearImages(); } catch { assetsCleared = false; }
+    const draftCleared = clearDraft();
+    setImages({}); replaceDeck(createDefaultDeck()); setSuit("spades"); setRank("A"); setCopy(1); setResetOpen(false); setResetBusy(false);
+    if (!assetsCleared || !draftCleared) notify("The new deck is ready, but some older browser data could not be removed.", "error");
+    else notify("New deck started.", "success");
   }
+
+  const cardLabel = rank.startsWith("__JOKER_")
+    ? `Joker ${rank.match(/\d+/)?.[0] || 1}`
+    : `${rank} of ${suitMeta.name}${copy > 1 ? ` · copy ${copy}` : ""}`;
 
   return (
     <main className="builder-shell">
       <header className="builder-topbar">
         <div className="builder-brand-group"><Link href="/" className="builder-back" aria-label="Back to Deck Forged home"><ArrowLeft /></Link><Link href="/" className="builder-brand"><img src="/deckforged-mark.png" alt="" /><span className="brand-wordmark"><strong>Deck</strong><em>Forged</em></span></Link><span className="top-divider" /><input className="deck-title-input" aria-label="Deck name" value={deck.title} maxLength={80} onChange={(e) => updateDeck({ title: e.target.value })} /></div>
-        <div className="builder-top-actions"><span className={`save-indicator ${saveState}`}><span />{saveState === "saving" ? "Saving…" : "Saved on this device"}</span><button className="top-action compact" onClick={() => setHelpOpen(true)} aria-label="Editor help"><CircleHelp /></button><button className="top-action compact" disabled={!past.length} onClick={undo} aria-label="Undo"><Undo2 /></button><button className="top-action compact" disabled={!future.length} onClick={redo} aria-label="Redo"><Redo2 /></button><button className="top-action" onClick={() => setExportOpen(true)}><FileDown /> Export</button><button className="top-action primary" onClick={() => setTgcOpen(true)}><Printer /> Print deck</button></div>
+        <div className="builder-top-actions"><span className={`save-indicator ${saveState}`}><span />{saveState === "saving" ? "Saving…" : saveState === "error" ? "Not saved" : "Saved on this device"}</span><button className="top-action compact" onClick={() => setHelpOpen(true)} aria-label="Editor help"><CircleHelp /></button><button className="top-action compact" disabled={!canUndo} onClick={undo} aria-label="Undo"><Undo2 /></button><button className="top-action compact" disabled={!canRedo} onClick={redo} aria-label="Redo"><Redo2 /></button><button className="top-action" onClick={() => setExportOpen(true)}><FileDown /> Export</button><button className="top-action primary" onClick={() => setTgcOpen(true)}><Printer /> Print deck</button></div>
       </header>
 
       <div className="builder-workspace">
@@ -398,18 +314,19 @@ export default function BuilderClient() {
               changeCanvasZoom(canvasZoom * Math.exp(-event.deltaY * .0014), { clientX: event.clientX, clientY: event.clientY });
             }}
           >
-            <div className="canvas-frame"><CardCanvas deck={deck} suit={suit} rank={rank} card={card} imageUrl={card.imageKey ? images[card.imageKey] : undefined} iconUrl={deck.customIconKey ? images[deck.customIconKey] : undefined} onTransform={updateCardLive} onTransformStart={beginContinuousEdit} onTransformEnd={endContinuousEdit} onDelete={() => void removeImage()} viewZoom={canvasZoom} onViewZoom={changeCanvasZoom} onFitView={fitCanvas} onPrintView={showPrintSize} canvasRef={canvasRef} /></div>
+            <div className="canvas-frame"><CardCanvas deck={deck} suit={suit} rank={rank} card={card} imageUrl={card.imageKey ? images[card.imageKey] : undefined} iconUrl={deck.customIconKey ? images[deck.customIconKey] : undefined} onTransform={updateCardLive} onTransformStart={beginContinuousEdit} onTransformEnd={endContinuousEdit} onDelete={() => void removeImage()} viewZoom={canvasZoom} onViewZoom={changeCanvasZoom} onFitView={fitCanvas} onPrintView={showPrintSize} onRenderError={() => { if (!renderFailureShown.current) { renderFailureShown.current = true; notify("The card preview could not be fully rendered. Try another image or font before exporting.", "error"); } }} canvasRef={canvasRef} /></div>
           </div>
           <div className="card-navigator"><button onClick={() => navigate(-1)} aria-label="Previous card"><ChevronLeft /></button><div><span className={suitMeta.red && !rank.startsWith("__JOKER_") ? "red-suit" : ""}>{rank.startsWith("__JOKER_") ? "★" : suitMeta.symbol}</span><strong>{rank.startsWith("__JOKER_") ? `Joker ${rank.match(/\d+/)?.[0] || 1}` : `${rank} of ${suitMeta.name}${rankCopyCount(deck, rank) > 1 ? ` · copy ${copy}` : ""}`}</strong><small>{card.imageKey ? "Artwork placed" : "Uses deck style"}</small></div><button onClick={() => navigate(1)} aria-label="Next card"><ChevronRight /></button></div>
         </section>
       </div>
 
-      {exportOpen && <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) { cancelExport.current = true; setExportProgress({ current: 0, total: 0 }); setExportOpen(false); } }}><section className="builder-modal export-modal" role="dialog" aria-modal="true" aria-labelledby="export-title"><header><div><span className="panel-kicker">Files and backups</span><h2 id="export-title">Export {deck.title || "your deck"}</h2></div><button className="icon-control" onClick={() => { cancelExport.current = true; setExportProgress({ current: 0, total: 0 }); setExportOpen(false); }} aria-label="Close"><X /></button></header><div className="export-options"><button onClick={() => void downloadCurrent()}><div className="export-icon"><Download /></div><div><strong>Current card PNG</strong><span>{rank.startsWith("__JOKER_") ? `Joker ${rank.match(/\d+/)?.[0] || 1}` : `${rank} of ${suitMeta.name}${copy > 1 ? ` · copy ${copy}` : ""}`} · 825 × 1125 px</span></div><ChevronRight /></button><button onClick={() => void exportZip()} disabled={Boolean(exportProgress.total)}><div className="export-icon"><FileDown /></div><div><strong>Complete print ZIP</strong><span>{deckCardCount(deck)} named PNG files with bleed</span></div><ChevronRight /></button><button onClick={() => void exportBackup()}><div className="export-icon"><Save /></div><div><strong>Complete project backup</strong><span>ZIP with settings, card artwork, and custom suit sheets</span></div><ChevronRight /></button><button onClick={() => importRef.current?.click()}><div className="export-icon"><Upload /></div><div><strong>Import project backup</strong><span>Restore a Deck Forged project ZIP or legacy JSON file</span></div><ChevronRight /></button><input ref={importRef} type="file" hidden accept="application/zip,.zip,application/json,.json" onChange={(e) => { const file = e.target.files?.[0]; if (file) void importBackup(file); e.currentTarget.value = ""; }} /></div>{exportProgress.total > 0 && <div className="export-progress"><div><span style={{ width: `${Math.round((exportProgress.current / exportProgress.total) * 100)}%` }} /></div><p>Rendering card {Math.min(exportProgress.current + 1, exportProgress.total)} of {exportProgress.total}…</p><button className="panel-button" onClick={() => { cancelExport.current = true; setExportProgress({ current: 0, total: 0 }); }}>Cancel export</button></div>}<footer><p>Print guides are visible in the builder but are excluded from exported files.</p><button className="button button-primary" onClick={() => { setExportOpen(false); setTgcOpen(true); }}><Printer /> Send to The Game Crafter</button></footer></section></div>}
-      {bulkOpen && <BulkArtworkModal deck={deck} onApply={applyBulk} onClose={() => setBulkOpen(false)} />}
+      {exportOpen && <ExportModal cardLabel={cardLabel} deck={deck} progress={exportProgress} onClose={() => setExportOpen(false)} onCancelExport={() => { cancelExport.current = true; setExportProgress({ current: 0, total: 0 }); }} onDownloadCurrent={downloadCurrent} onExportZip={exportZip} onExportBackup={exportBackup} onImport={importBackup} onPrint={() => { setExportOpen(false); setTgcOpen(true); }} />}
+      {bulkOpen && <BulkArtworkModal deck={deck} onApply={applyBulk} onClose={() => setBulkOpen(false)} onNotice={(message) => notify(message, "error")} />}
       {tgcOpen && <TgcModal deck={deck} renderBlob={renderBlob} onClose={() => setTgcOpen(false)} />}
       {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} onReportBug={() => { setHelpOpen(false); setBugOpen(true); }} />}
       {bugOpen && <BugReportModal deck={deck} onClose={() => setBugOpen(false)} />}
-      {resetOpen && <div className="modal-backdrop"><section className="builder-modal confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="reset-title"><header><div><span className="panel-kicker">Permanent on this device</span><h2 id="reset-title">Start a new deck?</h2></div><button className="icon-control" onClick={() => setResetOpen(false)} aria-label="Close"><X /></button></header><p>This clears the saved deck, artwork, and settings from this browser. Export a backup first if you may need them again.</p><footer><button className="button button-quiet" onClick={() => setResetOpen(false)}>Keep this deck</button><button className="button danger-button" onClick={() => void resetDeck()}>Clear and start over</button></footer></section></div>}
+      {resetOpen && <ResetDeckModal busy={resetBusy} onClose={() => setResetOpen(false)} onReset={resetDeck} />}
+      <NotificationRegion notices={notices} onDismiss={dismiss} />
     </main>
   );
 }

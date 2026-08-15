@@ -19,13 +19,14 @@ type Props = {
   onViewZoom: (zoom: number) => void;
   onFitView: () => void;
   onPrintView: () => void;
+  onRenderError: () => void;
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
 };
 
 type Point = { x: number; y: number };
 type Gesture = { center: Point; distance: number; x: number; y: number; scale: number; viewZoom: number };
 
-export default function CardCanvas({ deck, suit, rank, card, imageUrl, iconUrl, onTransform, onTransformStart, onTransformEnd, onDelete, viewZoom, onViewZoom, onFitView, onPrintView, canvasRef }: Props) {
+export default function CardCanvas({ deck, suit, rank, card, imageUrl, iconUrl, onTransform, onTransformStart, onTransformEnd, onDelete, viewZoom, onViewZoom, onFitView, onPrintView, onRenderError, canvasRef }: Props) {
   const pointers = useRef(new Map<number, Point>());
   const gesture = useRef<Gesture | null>(null);
   const cardRef = useRef(card);
@@ -36,8 +37,10 @@ export default function CardCanvas({ deck, suit, rank, card, imageUrl, iconUrl, 
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
-    if (canvas && ctx) void renderCard(ctx, deck, suit, rank, card, imageUrl, deck.showGuides, iconUrl);
-  }, [deck, suit, rank, card, imageUrl, iconUrl, canvasRef]);
+    let active = true;
+    if (canvas && ctx) void renderCard(ctx, deck, suit, rank, card, imageUrl, deck.showGuides, iconUrl).catch(() => { if (active) onRenderError(); });
+    return () => { active = false; };
+  }, [deck, suit, rank, card, imageUrl, iconUrl, canvasRef, onRenderError]);
 
   function values() { return [...pointers.current.values()]; }
 

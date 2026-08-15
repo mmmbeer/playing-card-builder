@@ -1,27 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resultItems, tgcRequest, tgcSecrets, tgcUpload } from "./tgc-service";
+import { apiError as error, apiJson as json, assertSameOrigin, reasonMessage, reasonStatus, requestLength } from "../_shared/http";
 
 export const dynamic = "force-dynamic";
 
-const TGC_BASE = "https://www.thegamecrafter.com/api";
 const COOKIE = { session: "df_tgc_sid", user: "df_tgc_uid", state: "df_tgc_state" };
 const ID_PATTERN = /^[A-Za-z0-9-]{8,80}$/;
-
-type TgcResponse = { result?: unknown; error?: { message?: string; code?: number } };
-
-function secrets() {
-  return {
-    apiKeyId: process.env.TGC_DEVELOPER_ID || "",
-    privateKey: process.env.TGC_DEVELOPER_KEY || "",
-  };
-}
-
-function json(data: unknown, status = 200) {
-  return NextResponse.json(data, { status, headers: { "cache-control": "no-store", "x-content-type-options": "nosniff" } });
-}
-
-function error(message: string, status = 400) {
-  return json({ error: { message } }, status);
-}
 
 function cleanName(value: unknown, label: string) {
   const text = String(value || "").replace(/[\u0000-\u001f\u007f]/g, "").trim();
@@ -35,62 +19,12 @@ function cleanId(value: unknown, label: string) {
   return text;
 }
 
-function resultItems(response: TgcResponse): Array<Record<string, unknown>> {
-  const root = response.result;
-  if (Array.isArray(root)) return root as Array<Record<string, unknown>>;
-  if (root && typeof root === "object") {
-    const object = root as Record<string, unknown>;
-    for (const key of ["items", "games", "decks", "designers", "cards"]) if (Array.isArray(object[key])) return object[key] as Array<Record<string, unknown>>;
-  }
-  return [];
-}
-
-async function tgcRequest(method: string, path: string, fields: Record<string, string | number> = {}): Promise<TgcResponse> {
-  const { apiKeyId, privateKey } = secrets();
-  const params = new URLSearchParams({ api_key_id: apiKeyId, private_key: privateKey });
-  Object.entries(fields).forEach(([key, value]) => params.set(key, String(value)));
-  const isRead = method === "GET" || method === "DELETE";
-  const url = `${TGC_BASE}/${path.replace(/^\/+/, "")}${isRead ? `?${params}` : ""}`;
-  const response = await fetch(url, {
-    method,
-    headers: isRead ? { accept: "application/json" } : { accept: "application/json", "content-type": "application/x-www-form-urlencoded" },
-    body: isRead ? undefined : params,
-    signal: AbortSignal.timeout(45000),
-  });
-  const text = await response.text();
-  let parsed: TgcResponse;
-  try { parsed = JSON.parse(text) as TgcResponse; }
-  catch { throw new Error("The Game Crafter returned an unreadable response."); }
-  if (!response.ok || parsed.error) throw new Error(parsed.error?.message || `The Game Crafter request failed (${response.status}).`);
-  return parsed;
-}
-
-async function tgcUpload(fields: Record<string, string>, file: File): Promise<TgcResponse> {
-  const { apiKeyId, privateKey } = secrets();
-  const form = new FormData();
-  form.set("api_key_id", apiKeyId);
-  form.set("private_key", privateKey);
-  Object.entries(fields).forEach(([key, value]) => form.set(key, value));
-  form.set("file", file, file.name);
-  const response = await fetch(`${TGC_BASE}/file`, { method: "POST", body: form, signal: AbortSignal.timeout(60000) });
-  const text = await response.text();
-  let parsed: TgcResponse;
-  try { parsed = JSON.parse(text) as TgcResponse; }
-  catch { throw new Error("The Game Crafter did not accept the card image."); }
-  if (!response.ok || parsed.error) throw new Error(parsed.error?.message || `Card image upload failed (${response.status}).`);
-  return parsed;
-}
 
 function session(request: NextRequest) {
   const sessionId = request.cookies.get(COOKIE.session)?.value || "";
   const userId = request.cookies.get(COOKIE.user)?.value || "";
   if (!ID_PATTERN.test(sessionId) || !ID_PATTERN.test(userId)) throw new Error("Your The Game Crafter session has expired. Connect again.");
   return { sessionId, userId };
-}
-
-function assertSameOrigin(request: NextRequest) {
-  const origin = request.headers.get("origin");
-  if (!origin || origin !== request.nextUrl.origin) throw new Error("The request origin could not be verified.");
 }
 
 function popupResponse(origin: string, success: boolean, message = "") {
@@ -101,7 +35,7 @@ function popupResponse(origin: string, success: boolean, message = "") {
 
 export async function GET(request: NextRequest) {
   const action = request.nextUrl.searchParams.get("action") || "status";
-  const configured = Boolean(secrets().apiKeyId && secrets().privateKey);
+  const configured = Boolean(tgcSecrets().apiKeyId && tgcSecrets().privateKey);
   if (action === "status") {
     const authenticated = Boolean(request.cookies.get(COOKIE.session)?.value && request.cookies.get(COOKIE.user)?.value);
     return json({ configured, authenticated: configured && authenticated, message: configured ? undefined : "Add TGC_DEVELOPER_ID and TGC_DEVELOPER_KEY as private site environment variables." });
@@ -114,7 +48,7 @@ export async function GET(request: NextRequest) {
     postback.searchParams.set("action", "sso_return");
     postback.searchParams.set("state", state);
     const target = new URL("https://www.thegamecrafter.com/sso");
-    target.searchParams.set("api_key_id", secrets().apiKeyId);
+    target.searchParams.set("api_key_id", tgcSecrets().apiKeyId);
     for (const permission of ["view_my_account", "view_my_games", "edit_my_games", "view_my_files", "edit_my_files"]) target.searchParams.append("permission", permission);
     target.searchParams.set("postback_uri", postback.toString());
     const response = NextResponse.redirect(target);
@@ -148,9 +82,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     assertSameOrigin(request);
-    if (!secrets().apiKeyId || !secrets().privateKey) return error("The Game Crafter connection is not configured.", 503);
-    const length = Number(request.headers.get("content-length") || 0);
-    if (length > 10 * 1024 * 1024) return error("The request is too large.", 413);
+    if (!tgcSecrets().apiKeyId || !tgcSecrets().privateKey) return error("The Game Crafter connection is not configured.", 503);
+    if (requestLength(request) > 10 * 1024 * 1024) return error("The request is too large.", 413);
     const contentType = request.headers.get("content-type") || "";
 
     if (contentType.startsWith("multipart/form-data")) {
@@ -234,7 +167,7 @@ export async function POST(request: NextRequest) {
     }
     return error("Unknown action.", 404);
   } catch (reason) {
-    const message = reason instanceof Error ? reason.message : "The request could not be completed.";
-    return error(message, /expired|session/i.test(message) ? 401 : 400);
+    const message = reasonMessage(reason, "The request could not be completed.");
+    return error(message, /expired|session/i.test(message) ? 401 : reasonStatus(reason));
   }
 }

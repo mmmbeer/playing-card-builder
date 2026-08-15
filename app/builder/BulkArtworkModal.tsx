@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Images, Trash2, X } from "lucide-react";
+import { Images, Trash2 } from "lucide-react";
+import Modal from "@/app/components/ui/Modal";
+import { imageValidationError } from "./deck-assets";
 import type { DeckSettings, SuitId } from "./types";
 import { rankCopyCount, SUITS } from "./types";
 
@@ -19,6 +21,7 @@ type Props = {
   deck: DeckSettings;
   onApply: (assignments: BulkArtworkAssignment[]) => Promise<void>;
   onClose: () => void;
+  onNotice: (message: string) => void;
 };
 
 function inferTarget(file: File, deck: DeckSettings) {
@@ -41,7 +44,7 @@ function targetLabel(item: BulkArtworkAssignment) {
   return `${item.rank} of ${suit}${item.copy > 1 ? `, copy ${item.copy}` : ""}`;
 }
 
-export default function BulkArtworkModal({ deck, onApply, onClose }: Props) {
+export default function BulkArtworkModal({ deck, onApply, onClose, onNotice }: Props) {
   const [items, setItems] = useState<BulkArtworkAssignment[]>([]);
   const [applying, setApplying] = useState(false);
   const previewUrls = useRef<string[]>([]);
@@ -55,7 +58,9 @@ export default function BulkArtworkModal({ deck, onApply, onClose }: Props) {
 
   function chooseFiles(files: File[]) {
     previewUrls.current.forEach((url) => URL.revokeObjectURL(url));
-    const next = files.filter((file) => /^image\/(png|jpeg|webp)$/.test(file.type) && file.size <= 20 * 1024 * 1024).map((file) => {
+    const valid = files.filter((file) => !imageValidationError(file));
+    if (valid.length !== files.length) onNotice(`${files.length - valid.length} unsupported or oversized file${files.length - valid.length === 1 ? " was" : "s were"} skipped.`);
+    const next = valid.map((file) => {
       const inferred = inferTarget(file, deck);
       return {
         id: crypto.randomUUID(),
@@ -75,9 +80,7 @@ export default function BulkArtworkModal({ deck, onApply, onClose }: Props) {
     setItems((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item));
   }
 
-  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !applying) onClose(); }}>
-    <section className="builder-modal bulk-modal" role="dialog" aria-modal="true" aria-labelledby="bulk-title">
-      <header><div><span className="panel-kicker">Batch artwork</span><h2 id="bulk-title">Map artwork to cards</h2><p>Filename matching is automatic. Review or change every destination before applying.</p></div><button className="icon-control" onClick={onClose} disabled={applying} aria-label="Close"><X /></button></header>
+  return <Modal className="bulk-modal" kicker="Batch artwork" title="Map artwork to cards" description="Filename matching is automatic. Review or change every destination before applying." onClose={onClose} closeDisabled={applying} footer={<><p>{validCount} of {items.length} files will be applied. If two rows target the same card, the later row wins.</p><button className="button button-primary" disabled={!validCount || applying} onClick={async () => { setApplying(true); try { await onApply(items.filter((item) => item.enabled)); } catch { onNotice("Artwork could not be applied. The current deck was left intact."); } finally { setApplying(false); } }}>{applying ? "Applying artwork…" : `Apply ${validCount} files`}</button></>}>
       <div className="bulk-body">
         <label className="art-drop"><Images /><strong>Choose artwork files</strong><span>PNG, JPG, or WebP up to 20 MB each</span><input type="file" multiple accept="image/png,image/jpeg,image/webp" onChange={(event) => chooseFiles([...(event.target.files || [])])} /></label>
         {items.length > 0 && <div className="bulk-mapping-table" role="table" aria-label="Artwork destinations">
@@ -97,7 +100,5 @@ export default function BulkArtworkModal({ deck, onApply, onClose }: Props) {
           })}
         </div>}
       </div>
-      <footer><p>{validCount} of {items.length} files will be applied. If two rows target the same card, the later row wins.</p><button className="button button-primary" disabled={!validCount || applying} onClick={async () => { setApplying(true); await onApply(items.filter((item) => item.enabled)); setApplying(false); }}>{applying ? "Applying artwork…" : `Apply ${validCount} files`}</button></footer>
-    </section>
-  </div>;
+  </Modal>;
 }

@@ -2,7 +2,9 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, ExternalLink, LogOut, Plus, Printer, RefreshCw, X } from "lucide-react";
+import { CheckCircle2, ExternalLink, LogOut, Plus, Printer, RefreshCw } from "lucide-react";
+import Modal from "@/app/components/ui/Modal";
+import { errorText, postJson, requestJson } from "@/app/lib/api-client";
 import type { DeckSettings, SuitId } from "./types";
 import { rankCopyCount, SUITS } from "./types";
 
@@ -17,12 +19,7 @@ type Props = {
   renderBlob: (suit: SuitId, rank: string, copy?: number) => Promise<Blob>;
 };
 
-async function postJson<T>(body: Record<string, unknown>): Promise<T> {
-  const response = await fetch("/api/tgc", { method: "POST", headers: { "content-type": "application/json" }, credentials: "same-origin", body: JSON.stringify(body) });
-  const json = await response.json();
-  if (!response.ok || json.error) throw new Error(json.error?.message || json.message || "The Game Crafter request failed.");
-  return json as T;
-}
+const tgcPost = <T,>(body: Record<string, unknown>) => postJson<T>("/api/tgc", body, { timeoutMs: 45_000 });
 
 function tgcName(item: ProofItem) {
   const rank = item.joker ? `JOKER ${item.rank.match(/\d+/)?.[0] || 1}` : `${item.rank}${item.copy > 1 ? ` COPY ${item.copy}` : ""}`.toUpperCase();
@@ -62,16 +59,15 @@ export default function TgcModal({ deck, onClose, renderBlob }: Props) {
 
   const loadStatus = useCallback(async () => {
     try {
-      const response = await fetch("/api/tgc?action=status", { credentials: "same-origin" });
-      const json = await response.json() as Status;
+      const json = await requestJson<Status>("/api/tgc?action=status", {}, { retries: 1 });
       setStatus(json);
       if (json.authenticated) {
         setBusy("Loading your account…");
-        const result = await postJson<{ items: TgcItem[]; defaultId?: string }>({ action: "designers" });
+        const result = await tgcPost<{ items: TgcItem[]; defaultId?: string }>({ action: "designers" });
         setDesigners(result.items);
         setDesignerId(result.defaultId || result.items[0]?.id || "");
       }
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not connect."); }
+    } catch (reason) { setError(errorText(reason, "Could not connect.")); }
     finally { setBusy(""); }
   }, []);
 
@@ -79,8 +75,9 @@ export default function TgcModal({ deck, onClose, renderBlob }: Props) {
   useEffect(() => () => Object.values(previews).forEach((url) => URL.revokeObjectURL(url)), [previews]);
   useEffect(() => {
     const listener = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin || event.data?.type !== "deckforged:tgc-authenticated") return;
-      void loadStatus();
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === "deckforged:tgc-authenticated") void loadStatus();
+      if (event.data?.type === "deckforged:tgc-error") setError(event.data.message || "The Game Crafter connection failed.");
     };
     window.addEventListener("message", listener);
     return () => window.removeEventListener("message", listener);
@@ -89,13 +86,21 @@ export default function TgcModal({ deck, onClose, renderBlob }: Props) {
   useEffect(() => {
     if (!designerId) { setGames([]); return; }
     setBusy("Loading games…"); setError(""); setGameId(""); setDecks([]);
-    void postJson<{ items: TgcItem[] }>({ action: "games", designerId }).then((result) => { setGames(result.items); setGameId(result.items[0]?.id || ""); }).catch((reason) => setError(reason.message)).finally(() => setBusy(""));
+    let active = true;
+    void tgcPost<{ items: TgcItem[] }>({ action: "games", designerId }).then((result) => {
+      if (active) { setGames(result.items); setGameId(result.items[0]?.id || ""); }
+    }).catch((reason) => { if (active) setError(errorText(reason, "Games could not be loaded.")); }).finally(() => { if (active) setBusy(""); });
+    return () => { active = false; };
   }, [designerId]);
 
   useEffect(() => {
     if (!gameId) { setDecks([]); setDeckId(""); return; }
     setBusy("Loading decks…"); setError(""); setDeckId("");
-    void postJson<{ items: TgcItem[] }>({ action: "decks", gameId }).then((result) => { setDecks(result.items); setDeckId(result.items[0]?.id || ""); }).catch((reason) => setError(reason.message)).finally(() => setBusy(""));
+    let active = true;
+    void tgcPost<{ items: TgcItem[] }>({ action: "decks", gameId }).then((result) => {
+      if (active) { setDecks(result.items); setDeckId(result.items[0]?.id || ""); }
+    }).catch((reason) => { if (active) setError(errorText(reason, "Decks could not be loaded.")); }).finally(() => { if (active) setBusy(""); });
+    return () => { active = false; };
   }, [gameId]);
 
   useEffect(() => {
@@ -115,9 +120,9 @@ export default function TgcModal({ deck, onClose, renderBlob }: Props) {
     if (!newGame.trim() || !designerId) return;
     setBusy("Creating game…"); setError("");
     try {
-      const result = await postJson<{ item: TgcItem }>({ action: "create_game", designerId, name: newGame.trim() });
+      const result = await tgcPost<{ item: TgcItem }>({ action: "create_game", designerId, name: newGame.trim() });
       setGames((items) => [...items, result.item]); setGameId(result.item.id); setNewGame("");
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not create the game."); }
+    } catch (reason) { setError(errorText(reason, "Could not create the game.")); }
     finally { setBusy(""); }
   }
 
@@ -125,9 +130,9 @@ export default function TgcModal({ deck, onClose, renderBlob }: Props) {
     if (!newDeck.trim() || !gameId) return;
     setBusy("Creating poker deck…"); setError("");
     try {
-      const result = await postJson<{ item: TgcItem }>({ action: "create_deck", gameId, name: newDeck.trim() });
+      const result = await tgcPost<{ item: TgcItem }>({ action: "create_deck", gameId, name: newDeck.trim() });
       setDecks((items) => [...items, result.item]); setDeckId(result.item.id); setNewDeck("");
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not create the deck."); }
+    } catch (reason) { setError(errorText(reason, "Could not create the deck.")); }
     finally { setBusy(""); }
   }
 
@@ -135,7 +140,7 @@ export default function TgcModal({ deck, onClose, renderBlob }: Props) {
     if (!deckId || proofProgress.total) return;
     setError(""); setDoneUrl(""); setProofProgress({ current: 0, total: proofItems.length });
     try {
-      const existing = await postJson<{ items: TgcItem[] }>({ action: "existing_cards", deckId });
+      const existing = await tgcPost<{ items: TgcItem[] }>({ action: "existing_cards", deckId });
       setExistingNames(new Set(existing.items.map((item) => item.name.toLowerCase())));
       const next: Record<string, string> = {};
       for (let index = 0; index < proofItems.length; index += 1) {
@@ -145,7 +150,7 @@ export default function TgcModal({ deck, onClose, renderBlob }: Props) {
       }
       Object.values(previews).forEach((url) => URL.revokeObjectURL(url));
       setPreviews(next);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Proofs could not be generated."); }
+    } catch (reason) { setError(errorText(reason, "Proofs could not be generated.")); }
     finally { setProofProgress({ current: 0, total: 0 }); }
   }
 
@@ -165,9 +170,7 @@ export default function TgcModal({ deck, onClose, renderBlob }: Props) {
         form.append("suit", item.joker ? "joker" : item.suit);
         form.append("collision", collisionByCard[item.key] || defaultCollision);
         form.append("file", blob, item.filename);
-        const response = await fetch("/api/tgc", { method: "POST", credentials: "same-origin", body: form });
-        const json = await response.json();
-        if (!response.ok || json.error) throw new Error(json.error?.message || "Upload failed");
+        await requestJson("/api/tgc", { method: "POST", body: form }, { timeoutMs: 75_000 });
       } catch { failed += 1; failedLabels.push(item.label); }
       setFailures([...failedLabels]);
       setProgress({ current: index + 1, total: proofItems.length, failed });
@@ -176,9 +179,7 @@ export default function TgcModal({ deck, onClose, renderBlob }: Props) {
     else setError(`${failed} card${failed === 1 ? "" : "s"} could not be uploaded. The other cards were left in the selected deck.`);
   }
 
-  return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !progress.total && !proofProgress.total) onClose(); }}>
-    <section className="builder-modal tgc-modal" role="dialog" aria-modal="true" aria-labelledby="tgc-title">
-      <header><div className="modal-title-row"><img src="/tgc.png" alt="" /><div><span className="panel-kicker">Professional printing</span><h2 id="tgc-title">Send to The Game Crafter</h2></div></div><button className="icon-control" onClick={onClose} aria-label="Close"><X /></button></header>
+  return <Modal className="tgc-modal" kicker="Professional printing" title="Send to The Game Crafter" headerIcon={<img src="/tgc.png" alt="" />} onClose={onClose} closeDisabled={Boolean(progress.total || proofProgress.total)} footer={status?.authenticated ? <><button className="panel-button" onClick={async () => { try { await tgcPost({ action: "logout" }); setStatus({ authenticated: false, configured: true }); } catch (reason) { setError(errorText(reason, "Could not disconnect.")); } }} disabled={Boolean(progress.total)}><LogOut /> Disconnect</button><p>{Object.keys(previews).length ? "Review every proof and choose any per-card conflict actions before upload." : "Generate proofs before uploading so print problems can be caught first."}</p><button className="button button-primary" onClick={upload} disabled={!canUpload}>{progress.total ? progress.current < progress.total ? "Uploading…" : "Upload finished" : `Upload ${proofItems.length} cards`}</button></> : undefined}>
 
       {!status ? <div className="modal-loading"><span className="brand-spinner" aria-hidden="true" /> Checking connection…</div> : !status.configured ? <div className="connection-panel"><Printer /><h3>Connection setup is required</h3><p>{status.message || "Add the Deck Forged API key in the site settings before using direct upload."}</p><a href="https://www.thegamecrafter.com/developer/APIKey.html" target="_blank" rel="noreferrer">The Game Crafter API keys <ExternalLink size={15} /></a></div> : !status.authenticated ? <div className="connection-panel"><Printer /><h3>Connect your printing account</h3><p>The login opens at The Game Crafter. Deck Forged receives a short-lived session and never sees your password.</p><button className="button button-primary" onClick={() => window.open("/api/tgc?action=sso_start", "deckforged-tgc", "width=720,height=760,noopener=no")}>Log in with The Game Crafter <ExternalLink size={16} /></button></div> : <>
         <div className="tgc-scroll-body">
@@ -199,8 +200,6 @@ export default function TgcModal({ deck, onClose, renderBlob }: Props) {
           {doneUrl && <div className="success-banner"><CheckCircle2 /><div><strong>All card faces uploaded</strong><a href={doneUrl} target="_blank" rel="noreferrer">Open the game and review proofs <ExternalLink size={14} /></a></div></div>}
           {error && <p className="modal-error" role="alert">{error}</p>}
         </div>
-        <footer><button className="panel-button" onClick={async () => { await postJson({ action: "logout" }); setStatus({ authenticated: false, configured: true }); }} disabled={Boolean(progress.total)}><LogOut /> Disconnect</button><p>{Object.keys(previews).length ? "Review every proof and choose any per-card conflict actions before upload." : "Generate proofs before uploading so print problems can be caught first."}</p><button className="button button-primary" onClick={upload} disabled={!canUpload}>{progress.total ? progress.current < progress.total ? "Uploading…" : "Upload finished" : `Upload ${proofItems.length} cards`}</button></footer>
       </>}
-    </section>
-  </div>;
+  </Modal>;
 }

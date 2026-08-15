@@ -6,12 +6,13 @@ import Link from "next/link";
 import JSZip from "jszip";
 import {
   ArrowLeft,
+  Bug,
   ChevronLeft,
   ChevronRight,
+  CircleHelp,
   Download,
   FileDown,
   Image as ImageIcon,
-  Images,
   MessageSquareText,
   Palette,
   Layers3,
@@ -30,6 +31,8 @@ import {
   X,
 } from "lucide-react";
 import CardCanvas from "./CardCanvas";
+import BulkArtworkModal, { type BulkArtworkAssignment } from "./BulkArtworkModal";
+import { BugReportModal, HelpModal } from "./SupportModals";
 import ToolPanel, { type PanelId } from "./ToolPanel";
 import TgcModal from "./TgcModal";
 import { sampleCanvasColor } from "./color-sampler";
@@ -78,7 +81,8 @@ export default function BuilderClient() {
   const [tgcOpen, setTgcOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
-  const [bulkFiles, setBulkFiles] = useState<File[]>([]);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [bugOpen, setBugOpen] = useState(false);
   const [canvasZoom, setCanvasZoom] = useState(.5);
   const [canvasZoomMode, setCanvasZoomMode] = useState<"fit" | "custom">("fit");
   const [past, setPast] = useState<DeckSettings[]>([]);
@@ -163,12 +167,12 @@ export default function BuilderClient() {
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        if (bulkOpen) setBulkOpen(false); else if (resetOpen) setResetOpen(false); else if (tgcOpen) setTgcOpen(false); else if (exportOpen) { cancelExport.current = true; setExportProgress({ current: 0, total: 0 }); setExportOpen(false); } else setPanel(null);
+        if (bugOpen) setBugOpen(false); else if (helpOpen) setHelpOpen(false); else if (bulkOpen) setBulkOpen(false); else if (resetOpen) setResetOpen(false); else if (tgcOpen) setTgcOpen(false); else if (exportOpen) { cancelExport.current = true; setExportProgress({ current: 0, total: 0 }); setExportOpen(false); } else setPanel(null);
         return;
       }
       if (event.defaultPrevented) return;
       const target = event.target as HTMLElement;
-      if (target.matches("input, textarea, select") || exportOpen || tgcOpen || resetOpen || bulkOpen) return;
+      if (target.matches("input, textarea, select") || exportOpen || tgcOpen || resetOpen || bulkOpen || helpOpen || bugOpen) return;
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) redo(); else undo(); return; }
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "y") { event.preventDefault(); redo(); return; }
       if (["+", "=", "-", "_"].includes(event.key)) { event.preventDefault(); changeCanvasZoom(canvasZoom * (event.key === "-" || event.key === "_" ? .88 : 1.14)); return; }
@@ -247,8 +251,39 @@ export default function BuilderClient() {
   async function addCustomIcon(file: File) { if (!/^image\/(png|jpeg|webp)$/.test(file.type) || file.size > 20*1024*1024) { window.alert("Choose a PNG, JPG, or WebP file smaller than 20 MB."); return; } const key=crypto.randomUUID(); await putImage(key,file); setImages((current)=>({...current,[key]:URL.createObjectURL(file)})); updateDeck({customIconKey:key,iconPreset:"custom"}); }
   function removeCustomIcon(){updateDeck({customIconKey:undefined,iconPreset:"unicode"})}
 
-  function matchBulkFile(file: File) { const name=file.name.toLowerCase().replace(/\.[^.]+$/,""); const jokerMatch=name.match(/joker[-_ ]?(\d+)?/); if(jokerMatch&&deck.includeJokers){const joker=Math.min(deck.jokerCount,Math.max(1,Number(jokerMatch[1]||1)));return{suit:"spades" as SuitId,rank:`__JOKER_${joker}__`,copy:1};} const suitMatch=SUITS.find(s=>name.includes(s.id)||name.includes(s.id.slice(0,-1))||new RegExp(`(^|[-_ ])${s.id[0]}($|[-_ ])`).test(name)); if(!suitMatch)return null; const rankMatch=[...deck.ranks].sort((a,b)=>b.length-a.length).find(r=>new RegExp(`(^|[-_ ])${r.replace(/[.*+?^${}()|[\]\\]/g,"\\$&").toLowerCase()}($|[-_ ])`).test(name)); if(!rankMatch)return null; const copyMatch=name.match(/(?:copy|c)[-_ ]?(\d+)/); return{suit:suitMatch.id,rank:rankMatch,copy:Math.min(rankCopyCount(deck,rankMatch),Math.max(1,Number(copyMatch?.[1]||1)))}; }
-  async function applyBulk(){let matched=0;for(const file of bulkFiles){const target=matchBulkFile(file);if(!target)continue;const key=crypto.randomUUID();await putImage(key,file);setImages(current=>({...current,[key]:URL.createObjectURL(file)}));commit(current=>({...current,cards:{...current.cards,[cardKey(target.suit,target.rank,target.copy)]:{...(current.cards[cardKey(target.suit,target.rank,target.copy)]||blankCard()),imageKey:key}}}));matched+=1;}setBulkFiles([]);setBulkOpen(false);if(!matched)window.alert("No files matched. Include a rank and suit in each filename, such as A-spades.png, 10-hearts-copy2.jpg, or joker-1.png.");}
+  async function applyBulk(assignments: BulkArtworkAssignment[]) {
+    const prepared = await Promise.all(assignments.map(async (assignment) => {
+      const key = crypto.randomUUID();
+      await putImage(key, assignment.file);
+      return { assignment, key, url: URL.createObjectURL(assignment.file) };
+    }));
+    setImages((current) => ({ ...current, ...Object.fromEntries(prepared.map((item) => [item.key, item.url])) }));
+    commit((current) => {
+      const cards = { ...current.cards };
+      for (const { assignment, key } of prepared) {
+        const target = cardKey(assignment.suit, assignment.rank, assignment.copy);
+        cards[target] = { ...(cards[target] || blankCard()), imageKey: key };
+      }
+      return { ...current, cards };
+    });
+    setBulkOpen(false);
+  }
+
+  function resetPanelSettings(panelId: PanelId) {
+    const defaults = createDefaultDeck();
+    const groups: Partial<Record<PanelId, Array<keyof DeckSettings>>> = {
+      type: ["rankFont", "rankSize", "rankWeight", "rankColorMode", "rankColor", "suitColors", "rankOpacity", "rankEffect", "rankEffectColor", "rankEffectOpacity", "rankEffectBlur", "rankShadowX", "rankShadowY", "rankOutline", "rankOutlineWidth", "rankOutlineColor", "rankOutlinePosition", "blackColor", "redColor", "cornerOrder"],
+      icons: ["iconPreset", "customIconKey", "iconColorMode", "iconColor", "iconOpacity", "iconScale", "iconEffect", "iconEffectColor", "iconEffectOpacity", "iconEffectBlur", "iconShadowX", "iconShadowY", "iconOutline", "iconOutlineWidth", "iconOutlineColor", "iconOutlinePosition"],
+      pips: ["showPips", "pipsOverArtwork", "pipScale", "aceScale", "pipTop", "pipInnerTop", "pipCenter", "pipInnerBottom", "pipBottom", "pipLeft", "pipCenterX", "pipRight"],
+      text: ["textPlacement", "textMirror", "textAlign", "textWidth", "textHeightMode", "textFixedHeight", "textOverflow", "textBackground", "textBackgroundOpacity", "textHeaderFont", "textHeaderWeight", "textHeaderSize", "textBodyFont", "textBodyWeight", "textBodySize", "textColor", "textOpacity"],
+      layout: ["background", "backgroundAccent", "backgroundStyle", "edgeRadius", "edgeStrokeWidth", "edgeStrokeColor", "edgeStrokeInset", "cornerRankOffsetX", "cornerRankOffsetY", "cornerSuitOffsetX", "cornerSuitOffsetY", "mirrorCorners", "showGuides", "showBleedGuide", "showSafeGuide", "showCenterGuide", "showPipGuides", "showCornerGuides", "showImageBounds", "safeZoneInset"],
+    };
+    const keys = groups[panelId];
+    if (!keys) return;
+    const patch: Partial<DeckSettings> = {};
+    for (const key of keys) Object.assign(patch, { [key]: defaults[key] });
+    updateDeck(patch);
+  }
 
   const renderBlob = useCallback(async (renderSuit: SuitId, renderRank: string, renderCopy = 1) => {
     const key = cardKey(renderSuit, renderRank, renderCopy);
@@ -337,12 +372,12 @@ export default function BuilderClient() {
     <main className="builder-shell">
       <header className="builder-topbar">
         <div className="builder-brand-group"><Link href="/" className="builder-back" aria-label="Back to Deck Forged home"><ArrowLeft /></Link><Link href="/" className="builder-brand"><img src="/deckforged-mark.png" alt="" /><span className="brand-wordmark"><strong>Deck</strong><em>Forged</em></span></Link><span className="top-divider" /><input className="deck-title-input" aria-label="Deck name" value={deck.title} maxLength={80} onChange={(e) => updateDeck({ title: e.target.value })} /></div>
-        <div className="builder-top-actions"><span className={`save-indicator ${saveState}`}><span />{saveState === "saving" ? "Saving…" : "Saved on this device"}</span><button className="top-action compact" disabled={!past.length} onClick={undo} aria-label="Undo"><Undo2 /></button><button className="top-action compact" disabled={!future.length} onClick={redo} aria-label="Redo"><Redo2 /></button><button className="top-action" onClick={() => setExportOpen(true)}><FileDown /> Export</button><button className="top-action primary" onClick={() => setTgcOpen(true)}><Printer /> Print deck</button></div>
+        <div className="builder-top-actions"><span className={`save-indicator ${saveState}`}><span />{saveState === "saving" ? "Saving…" : "Saved on this device"}</span><button className="top-action compact" onClick={() => setHelpOpen(true)} aria-label="Editor help"><CircleHelp /></button><button className="top-action compact" disabled={!past.length} onClick={undo} aria-label="Undo"><Undo2 /></button><button className="top-action compact" disabled={!future.length} onClick={redo} aria-label="Redo"><Redo2 /></button><button className="top-action" onClick={() => setExportOpen(true)}><FileDown /> Export</button><button className="top-action primary" onClick={() => setTgcOpen(true)}><Printer /> Print deck</button></div>
       </header>
 
       <div className="builder-workspace">
-        <nav className="tool-rail" aria-label="Builder tools">{tools.map((tool) => <button key={tool.id} className={panel === tool.id ? "active" : ""} onClick={() => setPanel(panel === tool.id ? null : tool.id)} aria-pressed={panel === tool.id}>{tool.icon}<span>{tool.label}</span></button>)}<div className="rail-spacer" /><button onClick={() => setResetOpen(true)}><Trash2 /><span>Reset</span></button></nav>
-        {panel && <ToolPanel panel={panel} deck={deck} suit={suit} rank={rank} copy={copy} card={card} imageUrl={card.imageKey ? images[card.imageKey] : undefined} onClose={() => setPanel(null)} onDeck={updateDeck} onCard={updateCard} onSelect={(nextSuit, nextRank, nextCopy = 1) => { setSuit(nextSuit); setRank(nextRank); setCopy(nextCopy); }} onImage={(file) => void addImage(file)} onRemoveImage={() => void removeImage()} onRanks={updateRanks} onBulk={() => setBulkOpen(true)} onCustomIcon={(file) => void addCustomIcon(file)} onRemoveCustomIcon={removeCustomIcon} onSampleColor={() => sampleCanvasColor(canvasRef.current)} />}
+        <nav className="tool-rail" aria-label="Builder tools">{tools.map((tool) => <button key={tool.id} className={panel === tool.id ? "active" : ""} onClick={() => setPanel(panel === tool.id ? null : tool.id)} aria-pressed={panel === tool.id}>{tool.icon}<span>{tool.label}</span></button>)}<div className="rail-spacer" /><button onClick={() => setBugOpen(true)}><Bug /><span>Report</span></button><button onClick={() => setResetOpen(true)}><Trash2 /><span>Reset</span></button></nav>
+        {panel && <ToolPanel panel={panel} deck={deck} suit={suit} rank={rank} copy={copy} card={card} imageUrl={card.imageKey ? images[card.imageKey] : undefined} onClose={() => setPanel(null)} onDeck={updateDeck} onCard={updateCard} onSelect={(nextSuit, nextRank, nextCopy = 1) => { setSuit(nextSuit); setRank(nextRank); setCopy(nextCopy); }} onImage={(file) => void addImage(file)} onRemoveImage={() => void removeImage()} onRanks={updateRanks} onBulk={() => setBulkOpen(true)} onCustomIcon={(file) => void addCustomIcon(file)} onRemoveCustomIcon={removeCustomIcon} onSampleColor={() => sampleCanvasColor(canvasRef.current)} onResetPanel={resetPanelSettings} />}
 
         <section className="canvas-stage" aria-label="Card design canvas">
           <div className="stage-toolbar-row">
@@ -370,8 +405,10 @@ export default function BuilderClient() {
       </div>
 
       {exportOpen && <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) { cancelExport.current = true; setExportProgress({ current: 0, total: 0 }); setExportOpen(false); } }}><section className="builder-modal export-modal" role="dialog" aria-modal="true" aria-labelledby="export-title"><header><div><span className="panel-kicker">Files and backups</span><h2 id="export-title">Export {deck.title || "your deck"}</h2></div><button className="icon-control" onClick={() => { cancelExport.current = true; setExportProgress({ current: 0, total: 0 }); setExportOpen(false); }} aria-label="Close"><X /></button></header><div className="export-options"><button onClick={() => void downloadCurrent()}><div className="export-icon"><Download /></div><div><strong>Current card PNG</strong><span>{rank.startsWith("__JOKER_") ? `Joker ${rank.match(/\d+/)?.[0] || 1}` : `${rank} of ${suitMeta.name}${copy > 1 ? ` · copy ${copy}` : ""}`} · 825 × 1125 px</span></div><ChevronRight /></button><button onClick={() => void exportZip()} disabled={Boolean(exportProgress.total)}><div className="export-icon"><FileDown /></div><div><strong>Complete print ZIP</strong><span>{deckCardCount(deck)} named PNG files with bleed</span></div><ChevronRight /></button><button onClick={() => void exportBackup()}><div className="export-icon"><Save /></div><div><strong>Complete project backup</strong><span>ZIP with settings, card artwork, and custom suit sheets</span></div><ChevronRight /></button><button onClick={() => importRef.current?.click()}><div className="export-icon"><Upload /></div><div><strong>Import project backup</strong><span>Restore a Deck Forged project ZIP or legacy JSON file</span></div><ChevronRight /></button><input ref={importRef} type="file" hidden accept="application/zip,.zip,application/json,.json" onChange={(e) => { const file = e.target.files?.[0]; if (file) void importBackup(file); e.currentTarget.value = ""; }} /></div>{exportProgress.total > 0 && <div className="export-progress"><div><span style={{ width: `${Math.round((exportProgress.current / exportProgress.total) * 100)}%` }} /></div><p>Rendering card {Math.min(exportProgress.current + 1, exportProgress.total)} of {exportProgress.total}…</p><button className="panel-button" onClick={() => { cancelExport.current = true; setExportProgress({ current: 0, total: 0 }); }}>Cancel export</button></div>}<footer><p>Print guides are visible in the builder but are excluded from exported files.</p><button className="button button-primary" onClick={() => { setExportOpen(false); setTgcOpen(true); }}><Printer /> Send to The Game Crafter</button></footer></section></div>}
-      {bulkOpen && <div className="modal-backdrop" onMouseDown={(e)=>{if(e.target===e.currentTarget)setBulkOpen(false)}}><section className="builder-modal bulk-modal" role="dialog" aria-modal="true" aria-labelledby="bulk-title"><header><div><span className="panel-kicker">Batch artwork</span><h2 id="bulk-title">Add artwork to multiple cards</h2></div><button className="icon-control" onClick={()=>setBulkOpen(false)} aria-label="Close"><X/></button></header><div className="bulk-body"><label className="art-drop"><Images/><strong>Choose artwork files</strong><span>Use names such as A-spades.png, 10_hearts.jpg, or Q-clubs.webp</span><input type="file" multiple accept="image/png,image/jpeg,image/webp" onChange={e=>setBulkFiles([...e.target.files||[]])}/></label>{bulkFiles.length>0&&<div className="bulk-match-list">{bulkFiles.slice(0,40).map(file=>{const match=matchBulkFile(file);return <div key={`${file.name}-${file.size}`}><span>{file.name}</span><strong className={match?"matched":"unmatched"}>{match?`${match.rank} of ${match.suit}`:"No match"}</strong></div>})}</div>}</div><footer><p>{bulkFiles.filter(file=>matchBulkFile(file)).length} of {bulkFiles.length} files match current cards.</p><button className="button button-primary" disabled={!bulkFiles.some(file=>matchBulkFile(file))} onClick={()=>void applyBulk()}>Add matched artwork</button></footer></section></div>}
+      {bulkOpen && <BulkArtworkModal deck={deck} onApply={applyBulk} onClose={() => setBulkOpen(false)} />}
       {tgcOpen && <TgcModal deck={deck} renderBlob={renderBlob} onClose={() => setTgcOpen(false)} />}
+      {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} onReportBug={() => { setHelpOpen(false); setBugOpen(true); }} />}
+      {bugOpen && <BugReportModal deck={deck} onClose={() => setBugOpen(false)} />}
       {resetOpen && <div className="modal-backdrop"><section className="builder-modal confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="reset-title"><header><div><span className="panel-kicker">Permanent on this device</span><h2 id="reset-title">Start a new deck?</h2></div><button className="icon-control" onClick={() => setResetOpen(false)} aria-label="Close"><X /></button></header><p>This clears the saved deck, artwork, and settings from this browser. Export a backup first if you may need them again.</p><footer><button className="button button-quiet" onClick={() => setResetOpen(false)}>Keep this deck</button><button className="button danger-button" onClick={() => void resetDeck()}>Clear and start over</button></footer></section></div>}
     </main>
   );

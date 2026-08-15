@@ -22,9 +22,23 @@ hosting="${SITES_PROJECT_ROOT}/dist/.openai/hosting.json"
 node --input-type=module - "${worker}" "${hosting}" <<'NODE'
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import { spawnSync } from "node:child_process";
 
 const [workerPath, hostingPath] = process.argv.slice(2);
 JSON.parse(await readFile(hostingPath, "utf8"));
+const source = await readFile(workerPath, "utf8");
+
+// D1 and other native bindings intentionally leave cloudflare:workers external
+// for workerd. Node cannot resolve that protocol during artifact inspection, so
+// validate those bundles statically after a full syntax check.
+if (source.includes('from "cloudflare:workers"') || source.includes("from 'cloudflare:workers'")) {
+  const syntax = spawnSync(process.execPath, ["--check", workerPath], { encoding: "utf8" });
+  if (syntax.status !== 0) throw new Error(syntax.stderr || "Worker bundle syntax validation failed.");
+  const hasDefaultExport = /export\s*\{[^}]+\bas\s+default\b[^}]*\}/s.test(source) || /export\s+default\b/.test(source);
+  const hasFetch = /\basync\s+fetch\s*\(\s*request\s*,\s*env\s*,\s*ctx\s*\)/.test(source);
+  if (!hasDefaultExport || !hasFetch) throw new Error("dist/server/index.js must have an ESM default Worker export with fetch(request, env, ctx)");
+  process.exit(0);
+}
 
 const workerUrl = pathToFileURL(workerPath);
 workerUrl.searchParams.set("sites-validation", `${process.pid}-${Date.now()}`);

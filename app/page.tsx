@@ -36,7 +36,7 @@ export default function Home() {
       <header className="landing-nav">
         <Brand />
         <nav aria-label="Main navigation">
-          <a href="#features">Features</a><a href="#printing">Printing</a><a href="#faq">FAQ</a>
+          <a href="#examples">Examples</a><a href="#features">Features</a><a href="#printing">Printing</a><a href="#faq">FAQ</a>
           <Link className="button button-small" href="/builder">Open builder <ArrowRight size={16} aria-hidden="true" /></Link>
         </nav>
       </header>
@@ -67,6 +67,58 @@ export default function Home() {
       </section>
 
       <section className="trust-strip" aria-label="Deck Forged capabilities"><span>52-card and custom decks</span><span>Artwork for every card</span><span>PNG and ZIP export</span><span>The Game Crafter upload</span></section>
+
+      <section className="examples-section" id="examples">
+        <div className="section-heading">
+          <span className="eyebrow">Made for more than game night</span>
+          <h2>Turn favorite photos into a deck worth keeping.</h2>
+          <p>Build a playable gift around a person, a memory, or a milestone. Every card can use its own photo, message, rank, and suit treatment.</p>
+        </div>
+
+        <div className="occasion-grid">
+          <article className="occasion-panel occasion-birthday">
+            <div className="occasion-card-stage" aria-label="Examples of birthday gift cards">
+              <div className="photo-playing-card photo-card-back">
+                <span className="photo-card-image photo-birthday-balloons" role="img" aria-label="Birthday cake and colorful balloons" />
+                <span className="photo-card-wash" />
+                <span className="photo-card-index photo-card-index-top">H<small>♥</small></span>
+                <span className="photo-card-index photo-card-index-bottom">H<small>♥</small></span>
+                <span className="photo-card-caption"><small>Birthday edition</small><strong>Best year yet</strong></span>
+              </div>
+              <div className="photo-playing-card photo-card-front">
+                <span className="photo-card-image photo-birthday-cake" role="img" aria-label="Strawberry birthday cake with party balloons" />
+                <span className="photo-card-wash" />
+                <span className="photo-card-index photo-card-index-top">B<small>★</small></span>
+                <span className="photo-card-index photo-card-index-bottom">B<small>★</small></span>
+                <span className="photo-card-caption"><small>A deck for Alex</small><strong>Make a wish</strong><em>52 moments worth celebrating</em></span>
+              </div>
+            </div>
+            <div className="occasion-copy"><span>Birthday gifts</span><h3>A different memory on every card.</h3><p>Make a keepsake deck from family photos, party snapshots, inside jokes, and wishes for the year ahead.</p><Link className="text-link" href="/builder">Make a birthday deck <ArrowRight size={17} /></Link></div>
+          </article>
+
+          <article className="occasion-panel occasion-mothers-day">
+            <div className="occasion-card-stage" aria-label="Examples of Mother's Day gift cards">
+              <div className="photo-playing-card photo-card-back">
+                <span className="photo-card-image photo-mothers-day-floral" role="img" aria-label="Floral gift box arranged for Mother's Day" />
+                <span className="photo-card-wash" />
+                <span className="photo-card-index photo-card-index-top">Q<small>♥</small></span>
+                <span className="photo-card-index photo-card-index-bottom">Q<small>♥</small></span>
+                <span className="photo-card-caption"><small>For Mom</small><strong>Always in bloom</strong></span>
+              </div>
+              <div className="photo-playing-card photo-card-front">
+                <span className="photo-card-image photo-mothers-day-gifts" role="img" aria-label="Colorful floral gift boxes and a Mother's Day card" />
+                <span className="photo-card-wash" />
+                <span className="photo-card-index photo-card-index-top">M<small>♥</small></span>
+                <span className="photo-card-index photo-card-index-bottom">M<small>♥</small></span>
+                <span className="photo-card-caption"><small>Made with love</small><strong>For everything you are</strong><em>One thank-you at a time</em></span>
+              </div>
+            </div>
+            <div className="occasion-copy"><span>Mother&apos;s Day gifts</span><h3>Deal out the reasons she matters.</h3><p>Pair photographs with short notes, family stories, and thank-yous to create a personal gift she can revisit.</p><Link className="text-link" href="/builder">Make a Mother&apos;s Day deck <ArrowRight size={17} /></Link></div>
+          </article>
+        </div>
+
+        <p className="photo-credits">Example photography from <a href="https://www.pexels.com/photo/whimsical-strawberry-birthday-cake-with-balloons-30307704/" target="_blank" rel="noreferrer">Nur Tok</a>, <a href="https://www.pexels.com/photo/a-birthday-cake-near-balloons-7600382/" target="_blank" rel="noreferrer">Thirdman</a>, <a href="https://www.pexels.com/photo/elegant-mother-s-day-floral-gift-box-29483068/" target="_blank" rel="noreferrer">Alina Matveycheva</a>, and <a href="https://www.pexels.com/photo/gift-boxes-with-floral-design-and-a-greeting-card-7764415/" target="_blank" rel="noreferrer">RDNE Stock project</a>.</p>
+      </section>
 
       <section className="content-section" id="features">
         <div className="section-heading"><span className="eyebrow">Deck-building controls</span><h2>Everything needed to design every card.</h2><p>Work with individual card artwork and shared deck styles in one editor. The preview stays visible while each control panel opens beside it.</p></div>

@@ -73,6 +73,35 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 .trust-strip { min-height: 78px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; padding: 0 max(20px, calc((100vw - 1180px)/2)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(255,255,255,.34); color: #5d6a7b; font-size: 13px; font-weight: 650; text-align: center; }
 .trust-strip span + span { border-left: 1px solid var(--line); }
+.examples-section { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 122px 0 34px; }
+.occasion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.occasion-panel { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 28px; background: rgba(255,255,255,.42); }
+.occasion-card-stage { height: 430px; position: relative; overflow: hidden; background-color: var(--rich-cerulean); background-image: linear-gradient(rgba(247,245,239,.09) 1px, transparent 1px), linear-gradient(90deg, rgba(247,245,239,.09) 1px, transparent 1px), linear-gradient(145deg, rgba(9,12,2,.12), rgba(9,12,2,.58)); background-size: 32px 32px, 32px 32px, auto; }
+.occasion-mothers-day .occasion-card-stage { background-color: var(--oxidized-iron); }
+.photo-playing-card { width: 218px; aspect-ratio: 2.5/3.5; position: absolute; top: 52px; left: 50%; overflow: hidden; border: 8px solid var(--frozen-water); border-radius: 15px; color: var(--frozen-water); background: var(--pitch-black); box-shadow: 0 28px 52px rgba(9,12,2,.42); isolation: isolate; }
+.photo-card-image { position: absolute; inset: 0; display: block; background-position: center; background-size: cover; }
+.photo-birthday-balloons { background-image: url("https://images.pexels.com/photos/7600382/pexels-photo-7600382.jpeg?auto=compress&cs=tinysrgb&w=900"); background-position: 58% center; }
+.photo-birthday-cake { background-image: url("https://images.pexels.com/photos/30307704/pexels-photo-30307704.jpeg?auto=compress&cs=tinysrgb&w=900"); }
+.photo-mothers-day-floral { background-image: url("https://images.pexels.com/photos/29483068/pexels-photo-29483068.jpeg?auto=compress&cs=tinysrgb&w=900"); background-position: 55% center; }
+.photo-mothers-day-gifts { background-image: url("https://images.pexels.com/photos/7764415/pexels-photo-7764415.jpeg?auto=compress&cs=tinysrgb&w=900"); }
+.photo-card-wash { position: absolute; z-index: 1; inset: 0; background: linear-gradient(to bottom, rgba(9,12,2,.12) 22%, rgba(9,12,2,.06) 44%, rgba(9,12,2,.82) 100%); }
+.photo-card-back { margin-left: -168px; transform: rotate(-8deg); }
+.photo-card-front { z-index: 2; margin-left: -40px; transform: rotate(7deg); }
+.occasion-mothers-day .photo-card-back { transform: rotate(-6deg); }
+.occasion-mothers-day .photo-card-front { transform: rotate(5deg); }
+.photo-card-index { position: absolute; z-index: 2; left: 12px; top: 12px; display: flex; flex-direction: column; align-items: center; color: white; font: 800 25px/.82 Georgia, serif; text-shadow: 0 2px 12px rgba(9,12,2,.9); }
+.photo-card-index small { font-size: 19px; line-height: 1; }
+.photo-card-index-bottom { inset: auto 12px 12px auto; transform: rotate(180deg); }
+.photo-card-caption { position: absolute; z-index: 2; left: 18px; right: 18px; bottom: 23px; display: flex; flex-direction: column; align-items: center; text-align: center; text-shadow: 0 2px 14px rgba(9,12,2,.9); }
+.photo-card-caption small { font-size: 8px; font-weight: 850; letter-spacing: .16em; text-transform: uppercase; }
+.photo-card-caption strong { margin-top: 7px; font: 700 27px/1.02 Georgia, serif; }
+.photo-card-caption em { margin-top: 7px; font-size: 9px; font-style: normal; letter-spacing: .04em; }
+.occasion-copy { min-height: 260px; padding: 34px 36px 38px; }
+.occasion-copy > span { color: var(--oxidized-iron); font-size: 11px; font-weight: 820; letter-spacing: .11em; text-transform: uppercase; }
+.occasion-copy h3 { max-width: 440px; margin: 10px 0 12px; font-size: 29px; line-height: 1.08; letter-spacing: -.04em; }
+.occasion-copy p { max-width: 470px; margin: 0 0 20px; color: var(--muted); font-size: 14px; line-height: 1.65; }
+.photo-credits { margin: 18px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; text-align: center; }
+.photo-credits a { text-decoration: underline; text-underline-offset: 2px; }
 .content-section, .faq-section { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 122px 0; }
 .section-heading { max-width: 720px; margin: 0 auto 54px; text-align: center; }
 .section-heading h2, .workflow-copy h2, .printing-section h2, .final-cta h2 { margin: 14px 0 18px; font-size: clamp(38px, 4.5vw, 58px); line-height: 1.04; letter-spacing: -.052em; }
@@ -139,6 +168,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .hero-copy h1, .hero-copy > p { margin-left: auto; margin-right: auto; }
   .hero-actions, .proof-list { justify-content: center; }
   .hero-workbench { min-height: 520px; }
+  .occasion-grid { grid-template-columns: 1fr; }
+  .occasion-card-stage { height: 450px; }
   .feature-grid { grid-template-columns: repeat(2, 1fr); }
   .workflow-section, .printing-section { grid-template-columns: 1fr; gap: 60px; }
   .printing-section { padding-top: 90px; }
@@ -169,6 +200,20 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .portrait-frame span { font-size: 9px; }
   .trust-strip { grid-template-columns: 1fr 1fr; padding: 18px 12px; gap: 18px 0; }
   .trust-strip span:nth-child(3) { border-left: none; }
+  .examples-section { width: calc(100% - 28px); padding: 82px 0 18px; }
+  .occasion-panel { border-radius: 20px; }
+  .occasion-card-stage { height: 350px; }
+  .photo-playing-card { width: 164px; top: 42px; border-width: 6px; border-radius: 11px; }
+  .photo-card-back { margin-left: -126px; }
+  .photo-card-front { margin-left: -30px; }
+  .photo-card-index { left: 8px; top: 8px; font-size: 19px; }
+  .photo-card-index small { font-size: 14px; }
+  .photo-card-index-bottom { inset: auto 8px 8px auto; }
+  .photo-card-caption { left: 12px; right: 12px; bottom: 16px; }
+  .photo-card-caption strong { font-size: 20px; }
+  .photo-card-caption em { font-size: 7px; }
+  .occasion-copy { min-height: 0; padding: 28px 24px 31px; }
+  .occasion-copy h3 { font-size: 25px; }
   .content-section, .faq-section { padding: 82px 0; }
   .feature-grid { grid-template-columns: 1fr; }
   .feature-grid article { min-height: 210px; }

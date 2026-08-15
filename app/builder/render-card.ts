@@ -223,12 +223,23 @@ async function drawSuit(
 async function drawCorner(ctx: CanvasRenderingContext2D, deck: DeckSettings, suit: SuitId, rank: string, mirrored: boolean, iconUrl?: string) {
   ctx.save();
   if (mirrored) { ctx.translate(CARD_WIDTH, CARD_HEIGHT); ctx.rotate(Math.PI); }
-  const x = 89;
-  const rankY = deck.cornerOrder === "suit-first" ? 132 : 66;
-  const suitY = deck.cornerOrder === "suit-first" ? 90 : 76 + deck.rankSize * 1.08;
+  const padding = 10;
+  const gap = 8;
+  const suitRadius = 30 * deck.iconScale + (deck.iconOutline ? deck.iconOutlineWidth * 1.5 : 0);
+  ctx.font = `${deck.rankWeight} ${deck.rankSize}px "${deck.rankFont}"`;
+  const rankRadius = ctx.measureText(rank).width / 2 + (deck.rankOutline ? deck.rankOutlineWidth * 1.5 : 0);
+  const x = deck.safeZoneInset + padding + Math.max(rankRadius, suitRadius);
+  const rankY = deck.cornerOrder === "suit-first"
+    ? deck.safeZoneInset + padding + suitRadius * 2 + gap
+    : deck.safeZoneInset + padding;
+  const suitY = deck.cornerOrder === "suit-first"
+    ? deck.safeZoneInset + padding + suitRadius
+    : rankY + deck.rankSize * 1.08 + gap + suitRadius;
   if (deck.cornerOrder === "inline") {
-    drawRank(ctx, deck, suit, rank, x - 20 + deck.cornerRankOffsetX, 72 + deck.cornerRankOffsetY);
-    await drawSuit(ctx, deck, suit, x + 45 + deck.cornerSuitOffsetX, 72 + deck.rankSize * .48 + deck.cornerSuitOffsetY, 54, 0, iconUrl);
+    const inlineRankX = deck.safeZoneInset + padding + rankRadius;
+    const inlineSuitX = inlineRankX + rankRadius + gap + suitRadius;
+    drawRank(ctx, deck, suit, rank, inlineRankX + deck.cornerRankOffsetX, rankY + deck.cornerRankOffsetY);
+    await drawSuit(ctx, deck, suit, inlineSuitX + deck.cornerSuitOffsetX, rankY + deck.rankSize * .5 + deck.cornerSuitOffsetY, 60, 0, iconUrl);
   } else {
     drawRank(ctx, deck, suit, rank, x + deck.cornerRankOffsetX, rankY + deck.cornerRankOffsetY);
     await drawSuit(ctx, deck, suit, x + deck.cornerSuitOffsetX, suitY + deck.cornerSuitOffsetY, 60, 0, iconUrl);
@@ -351,18 +362,19 @@ function drawGuides(ctx: CanvasRenderingContext2D, deck: DeckSettings) {
   ctx.setLineDash([14, 11]);
   ctx.lineWidth = 3;
   ctx.font = "600 18px Arial";
+  ctx.textAlign = "center";
   ctx.textBaseline = "top";
   if (deck.showBleedGuide) {
     ctx.strokeStyle = "rgba(167,38,8,.82)";
     ctx.fillStyle = "rgba(167,38,8,.82)";
     ctx.strokeRect(BLEED, BLEED, CARD_WIDTH - BLEED * 2, CARD_HEIGHT - BLEED * 2);
-    ctx.fillText("TRIM", BLEED + 8, BLEED + 8);
+    ctx.fillText("TRIM", CARD_WIDTH / 2, BLEED + 8);
   }
   if (deck.showSafeGuide) {
     ctx.strokeStyle = "rgba(70,117,153,.9)";
     ctx.fillStyle = "rgba(70,117,153,.9)";
     ctx.strokeRect(safe, safe, CARD_WIDTH - safe * 2, CARD_HEIGHT - safe * 2);
-    ctx.fillText("SAFE", safe + 8, safe + 8);
+    ctx.fillText("SAFE", CARD_WIDTH / 2, safe + 8);
   }
   if (deck.showCenterGuide) {
     ctx.strokeStyle = "rgba(9,12,2,.42)";

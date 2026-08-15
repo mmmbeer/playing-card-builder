@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Images, Pipette, RotateCcw, Trash2, Upload, X } from "lucide-react";
 import type { CardDesign, ColorMode, DeckSettings, EffectMode, OutlinePosition, SuitId } from "./types";
 import { deckCardCount, FONT_OPTIONS, ICON_PRESETS, rankCopyCount, SUITS } from "./types";
@@ -82,6 +83,38 @@ function OutlineFields({ enabled, width, color, position, onChange, onSample }: 
   </>;
 }
 
+function RankEditor({ value, onCommit }: { value: string; onCommit: (value: string) => void }) {
+  const [draft, setDraft] = useState(value);
+  const [dirty, setDirty] = useState(false);
+
+  function commitDraft() {
+    if (!dirty || !draft.split(",").some((item) => item.trim())) return;
+    onCommit(draft);
+    setDirty(false);
+  }
+
+  return <>
+    <Field label="Ranks and copies" hint="Repeat a rank to add distinct card copies. Changes apply when you leave the field or press Ctrl/⌘ + Enter.">
+      <textarea
+        rows={6}
+        value={draft}
+        onChange={(event) => { setDraft(event.target.value); setDirty(true); }}
+        onBlur={commitDraft}
+        onKeyDown={(event) => {
+          if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+            event.preventDefault();
+            commitDraft();
+          }
+        }}
+      />
+    </Field>
+    <div className="rank-draft-status" aria-live="polite">
+      <span>{dirty ? "Unapplied rank changes" : "Ranks are up to date"}</span>
+      <button type="button" disabled={!dirty} onMouseDown={(event) => event.preventDefault()} onClick={commitDraft}>Apply ranks</button>
+    </div>
+  </>;
+}
+
 const titles: Record<PanelId, { title: string; copy: string }> = {
   cards: { title: "Cards", copy: "Select every suit, rank, and copy in the deck." },
   art: { title: "Artwork", copy: "Fit and position this card’s face artwork." },
@@ -113,7 +146,7 @@ export default function ToolPanel(props: Props) {
 
     {panel === "art" && <div className="panel-body">
       <label className="art-drop"><Upload /><strong>{imageUrl ? "Replace artwork" : "Add artwork"}</strong><span>PNG, JPG, or WebP up to 20 MB</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { const file = event.target.files?.[0]; if (file) onImage(file); event.currentTarget.value = ""; }} /></label>
-      <p className="interaction-hint">Drag to move · wheel or pinch to zoom · two-finger rotate · [ ] to rotate · arrows to nudge · Delete to remove</p>
+      <p className="interaction-hint">Drag artwork to move · wheel or pinch to zoom the canvas · Alt +/− scales artwork · [ ] rotates · arrows nudge · Delete removes</p>
       {imageUrl && <>
         <Field label="Fit mode"><div className="segmented"><button className={card.imageFit === "cover" ? "active" : ""} onClick={() => onCard({ imageFit: "cover", imageScale: 1, imageX: 0, imageY: 0 })}>Cover</button><button className={card.imageFit === "contain" ? "active" : ""} onClick={() => onCard({ imageFit: "contain", imageScale: 1, imageX: 0, imageY: 0 })}>Contain</button><button className={card.imageFit === "stretch" ? "active" : ""} onClick={() => onCard({ imageFit: "stretch", imageScale: 1, imageX: 0, imageY: 0 })}>Stretch</button></div></Field>
         <Slider label="Zoom" suffix="×" value={card.imageScale} min={.2} max={4} step={.02} onChange={(value) => onCard({ imageScale: value })} />
@@ -187,7 +220,7 @@ export default function ToolPanel(props: Props) {
 
     {panel === "deck" && <div className="panel-body">
       <Field label="Deck name"><input type="text" maxLength={80} value={deck.title} onChange={(event) => onDeck({ title: event.target.value })} /></Field>
-      <Field label="Ranks and copies" hint="Repeat a rank to add distinct card copies. Example: 9, 9, 10, 10, J, J for a double-rank deck."><textarea rows={6} value={rankList} onChange={(event) => onRanks(event.target.value)} /></Field>
+      <RankEditor key={rankList} value={rankList} onCommit={onRanks} />
       <button className="panel-button" onClick={() => onRanks("A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K")}><RotateCcw />Restore standard ranks</button>
       <Switch title="Include jokers / wild cards" checked={deck.includeJokers} onChange={(value) => onDeck({ includeJokers: value })} />
       {deck.includeJokers && <>

@@ -24,7 +24,7 @@ const faqSchema = {
 };
 
 function Brand() {
-  return <Link className="brand" href="/" aria-label="Deck Forged home"><img src="/deckforged-mark.png" alt="" width={48} height={48} /><span>Deck Forged</span></Link>;
+  return <Link className="brand" href="/" aria-label="Deck Forged home"><img src="/deckforged-mark.png" alt="" width={48} height={48} /><span className="brand-wordmark"><strong>Deck</strong><em>Forged</em></span></Link>;
 }
 
 export default function Home() {

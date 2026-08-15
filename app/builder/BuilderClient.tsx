@@ -16,7 +16,10 @@ import {
   Palette,
   Layers3,
   LayoutTemplate,
+  Maximize2,
+  Minus,
   Printer,
+  Plus,
   Redo2,
   Save,
   Shapes,
@@ -58,6 +61,10 @@ function download(blob: Blob, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function clampCanvasZoom(value: number) {
+  return Math.min(2.5, Math.max(.1, value));
+}
+
 export default function BuilderClient() {
   const [deck, setDeck] = useState<DeckSettings>(() => createDefaultDeck());
   const [suit, setSuit] = useState<SuitId>("spades");
@@ -72,15 +79,54 @@ export default function BuilderClient() {
   const [resetOpen, setResetOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkFiles, setBulkFiles] = useState<File[]>([]);
+  const [canvasZoom, setCanvasZoom] = useState(.5);
+  const [canvasZoomMode, setCanvasZoomMode] = useState<"fit" | "custom">("fit");
   const [past, setPast] = useState<DeckSettings[]>([]);
   const [future, setFuture] = useState<DeckSettings[]>([]);
   const [exportProgress, setExportProgress] = useState({ current: 0, total: 0 });
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasViewportRef = useRef<HTMLDivElement | null>(null);
   const importRef = useRef<HTMLInputElement | null>(null);
   const continuousEdit = useRef(false);
   const cancelExport = useRef(false);
   const currentKey = cardKey(suit, rank, copy);
   const card = deck.cards[currentKey] || blankCard();
+
+  function calculateFitZoom() {
+    const viewport = canvasViewportRef.current;
+    if (!viewport) return .5;
+    return clampCanvasZoom(Math.min((viewport.clientWidth - 56) / CARD_WIDTH, (viewport.clientHeight - 56) / CARD_HEIGHT));
+  }
+
+  function fitCanvas() {
+    setCanvasZoomMode("fit");
+    setCanvasZoom(calculateFitZoom());
+  }
+
+  function showPrintSize() {
+    setCanvasZoomMode("custom");
+    setCanvasZoom(1);
+  }
+
+  function changeCanvasZoom(value: number, anchor?: { clientX: number; clientY: number }) {
+    const next = clampCanvasZoom(value);
+    const viewport = canvasViewportRef.current;
+    const previous = canvasZoom;
+    const rect = viewport?.getBoundingClientRect();
+    const localX = rect && anchor ? anchor.clientX - rect.left : 0;
+    const localY = rect && anchor ? anchor.clientY - rect.top : 0;
+    const contentX = viewport ? viewport.scrollLeft + localX : 0;
+    const contentY = viewport ? viewport.scrollTop + localY : 0;
+    setCanvasZoomMode("custom");
+    setCanvasZoom(next);
+    if (viewport && anchor && previous > 0) {
+      window.requestAnimationFrame(() => {
+        const ratio = next / previous;
+        viewport.scrollLeft = contentX * ratio - localX;
+        viewport.scrollTop = contentY * ratio - localY;
+      });
+    }
+  }
 
   useEffect(() => {
     const stored = loadDraft();
@@ -94,6 +140,18 @@ export default function BuilderClient() {
     // The initial draft is intentionally read only after the browser mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const viewport = canvasViewportRef.current;
+    if (!viewport) return;
+    const updateFit = () => {
+      if (canvasZoomMode === "fit") setCanvasZoom(calculateFitZoom());
+    };
+    updateFit();
+    const observer = new ResizeObserver(updateFit);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, [canvasZoomMode]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -113,6 +171,9 @@ export default function BuilderClient() {
       if (target.matches("input, textarea, select") || exportOpen || tgcOpen || resetOpen || bulkOpen) return;
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) redo(); else undo(); return; }
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "y") { event.preventDefault(); redo(); return; }
+      if (["+", "=", "-", "_"].includes(event.key)) { event.preventDefault(); changeCanvasZoom(canvasZoom * (event.key === "-" || event.key === "_" ? .88 : 1.14)); return; }
+      if (event.key === "0") { event.preventDefault(); fitCanvas(); return; }
+      if (event.key === "1") { event.preventDefault(); showPrintSize(); return; }
       if (event.key === "ArrowLeft") { event.preventDefault(); navigate(-1); }
       if (event.key === "ArrowRight") { event.preventDefault(); navigate(1); }
     };
@@ -275,7 +336,7 @@ export default function BuilderClient() {
   return (
     <main className="builder-shell">
       <header className="builder-topbar">
-        <div className="builder-brand-group"><Link href="/" className="builder-back" aria-label="Back to Deck Forged home"><ArrowLeft /></Link><Link href="/" className="builder-brand"><img src="/deckforged-mark.png" alt="" /><span>Deck Forged</span></Link><span className="top-divider" /><input className="deck-title-input" aria-label="Deck name" value={deck.title} maxLength={80} onChange={(e) => updateDeck({ title: e.target.value })} /></div>
+        <div className="builder-brand-group"><Link href="/" className="builder-back" aria-label="Back to Deck Forged home"><ArrowLeft /></Link><Link href="/" className="builder-brand"><img src="/deckforged-mark.png" alt="" /><span className="brand-wordmark"><strong>Deck</strong><em>Forged</em></span></Link><span className="top-divider" /><input className="deck-title-input" aria-label="Deck name" value={deck.title} maxLength={80} onChange={(e) => updateDeck({ title: e.target.value })} /></div>
         <div className="builder-top-actions"><span className={`save-indicator ${saveState}`}><span />{saveState === "saving" ? "Saving…" : "Saved on this device"}</span><button className="top-action compact" disabled={!past.length} onClick={undo} aria-label="Undo"><Undo2 /></button><button className="top-action compact" disabled={!future.length} onClick={redo} aria-label="Redo"><Redo2 /></button><button className="top-action" onClick={() => setExportOpen(true)}><FileDown /> Export</button><button className="top-action primary" onClick={() => setTgcOpen(true)}><Printer /> Print deck</button></div>
       </header>
 
@@ -284,8 +345,26 @@ export default function BuilderClient() {
         {panel && <ToolPanel panel={panel} deck={deck} suit={suit} rank={rank} copy={copy} card={card} imageUrl={card.imageKey ? images[card.imageKey] : undefined} onClose={() => setPanel(null)} onDeck={updateDeck} onCard={updateCard} onSelect={(nextSuit, nextRank, nextCopy = 1) => { setSuit(nextSuit); setRank(nextRank); setCopy(nextCopy); }} onImage={(file) => void addImage(file)} onRemoveImage={() => void removeImage()} onRanks={updateRanks} onBulk={() => setBulkOpen(true)} onCustomIcon={(file) => void addCustomIcon(file)} onRemoveCustomIcon={removeCustomIcon} onSampleColor={() => sampleCanvasColor(canvasRef.current)} />}
 
         <section className="canvas-stage" aria-label="Card design canvas">
-          <div className="stage-meta"><span className="card-position">Card {index + 1} of {sequence.length}</span><span>{CARD_WIDTH} × {CARD_HEIGHT} px · poker card with bleed</span></div>
-          <div className="canvas-frame"><CardCanvas deck={deck} suit={suit} rank={rank} card={card} imageUrl={card.imageKey ? images[card.imageKey] : undefined} iconUrl={deck.customIconKey ? images[deck.customIconKey] : undefined} onTransform={updateCardLive} onTransformStart={beginContinuousEdit} onTransformEnd={endContinuousEdit} onDelete={() => void removeImage()} canvasRef={canvasRef} /></div>
+          <div className="stage-toolbar-row">
+            <div className="stage-meta"><span className="card-position">Card {index + 1} of {sequence.length}</span><span>{CARD_WIDTH} × {CARD_HEIGHT} px · poker card with bleed</span></div>
+            <div className="canvas-zoom-toolbar" role="toolbar" aria-label="Canvas zoom">
+              <button type="button" onClick={() => changeCanvasZoom(canvasZoom * .88)} aria-label="Zoom out" title="Zoom out (-)"><Minus /></button>
+              <output aria-live="polite">{Math.round(canvasZoom * 100)}%</output>
+              <button type="button" onClick={() => changeCanvasZoom(canvasZoom * 1.14)} aria-label="Zoom in" title="Zoom in (+)"><Plus /></button>
+              <button type="button" className={canvasZoomMode === "fit" ? "active" : ""} onClick={fitCanvas} aria-label="Fit card to workspace" title="Fit the whole card in the workspace (0)"><Maximize2 /><span className="fit-label">Fit</span></button>
+              <button type="button" className={canvasZoom === 1 ? "active" : ""} onClick={showPrintSize} aria-label="Show card at 300 dpi print size" title="One screen pixel per 300 dpi output pixel (1)"><span>300 DPI</span></button>
+            </div>
+          </div>
+          <div
+            className="canvas-viewport"
+            ref={canvasViewportRef}
+            onWheel={(event) => {
+              event.preventDefault();
+              changeCanvasZoom(canvasZoom * Math.exp(-event.deltaY * .0014), { clientX: event.clientX, clientY: event.clientY });
+            }}
+          >
+            <div className="canvas-frame"><CardCanvas deck={deck} suit={suit} rank={rank} card={card} imageUrl={card.imageKey ? images[card.imageKey] : undefined} iconUrl={deck.customIconKey ? images[deck.customIconKey] : undefined} onTransform={updateCardLive} onTransformStart={beginContinuousEdit} onTransformEnd={endContinuousEdit} onDelete={() => void removeImage()} viewZoom={canvasZoom} onViewZoom={changeCanvasZoom} onFitView={fitCanvas} onPrintView={showPrintSize} canvasRef={canvasRef} /></div>
+          </div>
           <div className="card-navigator"><button onClick={() => navigate(-1)} aria-label="Previous card"><ChevronLeft /></button><div><span className={suitMeta.red && !rank.startsWith("__JOKER_") ? "red-suit" : ""}>{rank.startsWith("__JOKER_") ? "★" : suitMeta.symbol}</span><strong>{rank.startsWith("__JOKER_") ? `Joker ${rank.match(/\d+/)?.[0] || 1}` : `${rank} of ${suitMeta.name}${rankCopyCount(deck, rank) > 1 ? ` · copy ${copy}` : ""}`}</strong><small>{card.imageKey ? "Artwork placed" : "Uses deck style"}</small></div><button onClick={() => navigate(1)} aria-label="Next card"><ChevronRight /></button></div>
         </section>
       </div>

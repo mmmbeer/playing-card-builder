@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, ExternalLink, LoaderCircle, LogOut, Plus, Printer, X } from "lucide-react";
+import { CheckCircle2, ExternalLink, LogOut, Plus, Printer, X } from "lucide-react";
 import type { DeckSettings, SuitId } from "./types";
 import { deckCardCount, rankCopyCount, SUITS } from "./types";
 
@@ -144,7 +144,7 @@ export default function TgcModal({ deck, onClose, renderBlob }: Props) {
       <section className="builder-modal tgc-modal" role="dialog" aria-modal="true" aria-labelledby="tgc-title">
         <header><div className="modal-title-row"><img src="/tgc.png" alt="" /><div><span className="panel-kicker">Professional printing</span><h2 id="tgc-title">Send to The Game Crafter</h2></div></div><button className="icon-control" onClick={onClose} aria-label="Close"><X /></button></header>
 
-        {!status ? <div className="modal-loading"><LoaderCircle className="spin" /> Checking connection…</div> : !status.configured ? <div className="connection-panel"><Printer /><h3>Connection setup is required</h3><p>{status.message || "Add the Deck Forged API key in the site settings before using direct upload."}</p><a href="https://www.thegamecrafter.com/developer/APIKey.html" target="_blank" rel="noreferrer">The Game Crafter API keys <ExternalLink size={15} /></a></div> : !status.authenticated ? <div className="connection-panel"><Printer /><h3>Connect your printing account</h3><p>The login opens at The Game Crafter. Deck Forged receives a short-lived session and never sees your password.</p><button className="button button-primary" onClick={() => window.open("/api/tgc?action=sso_start", "deckforged-tgc", "width=720,height=760,noopener=no")}>Log in with The Game Crafter <ExternalLink size={16} /></button></div> : <>
+        {!status ? <div className="modal-loading"><span className="brand-spinner" aria-hidden="true" /> Checking connection…</div> : !status.configured ? <div className="connection-panel"><Printer /><h3>Connection setup is required</h3><p>{status.message || "Add the Deck Forged API key in the site settings before using direct upload."}</p><a href="https://www.thegamecrafter.com/developer/APIKey.html" target="_blank" rel="noreferrer">The Game Crafter API keys <ExternalLink size={15} /></a></div> : !status.authenticated ? <div className="connection-panel"><Printer /><h3>Connect your printing account</h3><p>The login opens at The Game Crafter. Deck Forged receives a short-lived session and never sees your password.</p><button className="button button-primary" onClick={() => window.open("/api/tgc?action=sso_start", "deckforged-tgc", "width=720,height=760,noopener=no")}>Log in with The Game Crafter <ExternalLink size={16} /></button></div> : <>
           <div className="tgc-grid">
             <div className="tgc-column"><span className="step-chip">1</span><h3>Designer</h3><select value={designerId} onChange={(e) => setDesignerId(e.target.value)} disabled={Boolean(progress.total)}>{designers.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
             <div className="tgc-column"><span className="step-chip">2</span><h3>Game</h3><select value={gameId} onChange={(e) => setGameId(e.target.value)} disabled={Boolean(progress.total)}><option value="">Select a game</option>{games.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><div className="create-inline"><input value={newGame} onChange={(e) => setNewGame(e.target.value)} placeholder="New game name" maxLength={100} /><button onClick={createGame} disabled={!newGame.trim() || Boolean(busy)} aria-label="Create game"><Plus /></button></div></div>
@@ -152,7 +152,7 @@ export default function TgcModal({ deck, onClose, renderBlob }: Props) {
           </div>
 
           <div className="upload-summary"><div><strong>{totalCards} card faces</strong><span>{selectedGame ? `${selectedGame.name} · ` : ""}${decks.find((item) => item.id === deckId)?.name || "Choose a destination"}</span></div><label>Existing cards<select value={collision} onChange={(e) => setCollision(e.target.value as typeof collision)} disabled={Boolean(progress.total)}><option value="replace">Replace matching</option><option value="skip">Skip matching</option><option value="copy">Create copies</option></select></label></div>
-          {busy && <div className="inline-status"><LoaderCircle className="spin" /> {busy}</div>}
+          {busy && <div className="inline-status"><span className="brand-spinner" aria-hidden="true" /> {busy}</div>}
           {progress.total > 0 && <div className="upload-progress"><div><span style={{ width: `${Math.round((progress.current / progress.total) * 100)}%` }} /></div><p>{progress.current < progress.total ? `Uploading ${progress.current + 1} of ${progress.total}…` : progress.failed ? "Upload finished with errors." : "Deck upload complete."}</p></div>}
           {doneUrl && <div className="success-banner"><CheckCircle2 /><div><strong>All card faces uploaded</strong><a href={doneUrl} target="_blank" rel="noreferrer">Open the game and review proofs <ExternalLink size={14} /></a></div></div>}
           {error && <p className="modal-error" role="alert">{error}</p>}

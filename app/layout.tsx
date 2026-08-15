@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
   },
-  icons: { icon: "/deckforged-mark.png", shortcut: "/deckforged-mark.png", apple: "/deckforged-mark.png" },
+  icons: { icon: [{ url: "/favicon.png", type: "image/png", sizes: "192x192" }], shortcut: "/favicon.png", apple: "/deckforged-mark.png" },
   other: { "codex-preview": "development" },
 };
 

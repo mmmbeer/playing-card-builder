@@ -15,18 +15,21 @@ type Props = {
   onTransformStart: () => void;
   onTransformEnd: () => void;
   onDelete: () => void;
+  viewZoom: number;
+  onViewZoom: (zoom: number) => void;
+  onFitView: () => void;
+  onPrintView: () => void;
   canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
 };
 
 type Point = { x: number; y: number };
-type Gesture = { center: Point; distance: number; angle: number; x: number; y: number; scale: number; rotation: number };
+type Gesture = { center: Point; distance: number; x: number; y: number; scale: number; viewZoom: number };
 
-export default function CardCanvas({ deck, suit, rank, card, imageUrl, iconUrl, onTransform, onTransformStart, onTransformEnd, onDelete, canvasRef }: Props) {
+export default function CardCanvas({ deck, suit, rank, card, imageUrl, iconUrl, onTransform, onTransformStart, onTransformEnd, onDelete, viewZoom, onViewZoom, onFitView, onPrintView, canvasRef }: Props) {
   const pointers = useRef(new Map<number, Point>());
   const gesture = useRef<Gesture | null>(null);
   const cardRef = useRef(card);
-  const wheelTimer = useRef<number | null>(null);
-  const wheelActive = useRef(false);
+  const transforming = useRef(false);
 
   useEffect(() => { cardRef.current = card; }, [card]);
 
@@ -36,78 +39,75 @@ export default function CardCanvas({ deck, suit, rank, card, imageUrl, iconUrl, 
     if (canvas && ctx) void renderCard(ctx, deck, suit, rank, card, imageUrl, deck.showGuides, iconUrl);
   }, [deck, suit, rank, card, imageUrl, iconUrl, canvasRef]);
 
-  useEffect(() => () => {
-    if (wheelTimer.current) window.clearTimeout(wheelTimer.current);
-  }, []);
-
   function values() { return [...pointers.current.values()]; }
 
   function beginGesture() {
     const points = values();
     const current = cardRef.current;
     if (points.length === 1) {
-      gesture.current = { center: points[0], distance: 0, angle: 0, x: current.imageX, y: current.imageY, scale: current.imageScale, rotation: current.imageRotation };
+      gesture.current = { center: points[0], distance: 0, x: current.imageX, y: current.imageY, scale: current.imageScale, viewZoom };
     } else if (points.length >= 2) {
       const [first, second] = points;
       const dx = second.x - first.x;
       const dy = second.y - first.y;
-      gesture.current = { center: { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 }, distance: Math.hypot(dx, dy), angle: Math.atan2(dy, dx), x: current.imageX, y: current.imageY, scale: current.imageScale, rotation: current.imageRotation };
+      gesture.current = { center: { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 }, distance: Math.hypot(dx, dy), x: current.imageX, y: current.imageY, scale: current.imageScale, viewZoom };
     } else gesture.current = null;
   }
 
   function finishPointer(pointerId: number) {
     pointers.current.delete(pointerId);
-    if (!pointers.current.size) { gesture.current = null; onTransformEnd(); }
-    else beginGesture();
+    if (!pointers.current.size) {
+      gesture.current = null;
+      if (transforming.current) onTransformEnd();
+      transforming.current = false;
+    } else {
+      if (imageUrl && pointers.current.size === 1 && !transforming.current) {
+        onTransformStart();
+        transforming.current = true;
+      }
+      beginGesture();
+    }
   }
 
   return <canvas
     ref={canvasRef}
-    className={imageUrl ? "card-canvas is-draggable" : "card-canvas"}
+    className={imageUrl ? "card-canvas zoom-controlled is-draggable" : "card-canvas zoom-controlled"}
     width={CARD_WIDTH}
     height={CARD_HEIGHT}
-    aria-label={`Preview of ${rank.startsWith("__JOKER_") ? "joker" : `${rank} of ${suit}`}. ${imageUrl ? "Drag artwork to move. Use wheel or pinch to zoom." : "No face artwork is placed."}`}
+    style={{ width: CARD_WIDTH * viewZoom, height: CARD_HEIGHT * viewZoom }}
+    aria-label={`Preview of ${rank.startsWith("__JOKER_") ? "joker" : `${rank} of ${suit}`}. ${imageUrl ? "Drag artwork with one pointer." : "No face artwork is placed."} Use the wheel, plus and minus keys, or a two-finger pinch to zoom the canvas.`}
     tabIndex={0}
     onPointerDown={(event) => {
-      if (!imageUrl) return;
       event.preventDefault();
-      if (!pointers.current.size) onTransformStart();
       event.currentTarget.setPointerCapture(event.pointerId);
       pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (pointers.current.size === 1 && imageUrl) {
+        onTransformStart();
+        transforming.current = true;
+      } else if (pointers.current.size >= 2 && transforming.current) {
+        onTransformEnd();
+        transforming.current = false;
+      }
       beginGesture();
     }}
     onPointerMove={(event) => {
-      if (!imageUrl || !pointers.current.has(event.pointerId) || !gesture.current) return;
+      if (!pointers.current.has(event.pointerId) || !gesture.current) return;
       pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
       const points = values();
       const rect = event.currentTarget.getBoundingClientRect();
       const ratio = CARD_WIDTH / rect.width;
       const start = gesture.current;
-      if (points.length === 1) {
+      if (points.length === 1 && imageUrl && transforming.current) {
         onTransform({ imageX: start.x + (points[0].x - start.center.x) * ratio, imageY: start.y + (points[0].y - start.center.y) * ratio });
-      } else {
+      } else if (points.length >= 2) {
         const [first, second] = points;
         const dx = second.x - first.x;
         const dy = second.y - first.y;
-        const center = { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 };
-        onTransform({
-          imageX: start.x + (center.x - start.center.x) * ratio,
-          imageY: start.y + (center.y - start.center.y) * ratio,
-          imageScale: Math.min(4, Math.max(.2, start.scale * Math.hypot(dx, dy) / Math.max(1, start.distance))),
-          imageRotation: start.rotation + (Math.atan2(dy, dx) - start.angle) * 180 / Math.PI,
-        });
+        onViewZoom(Math.min(2.5, Math.max(.1, start.viewZoom * Math.hypot(dx, dy) / Math.max(1, start.distance))));
       }
     }}
     onPointerUp={(event) => finishPointer(event.pointerId)}
     onPointerCancel={(event) => finishPointer(event.pointerId)}
-    onWheel={(event) => {
-      if (!imageUrl) return;
-      event.preventDefault();
-      if (!wheelActive.current) { wheelActive.current = true; onTransformStart(); }
-      if (wheelTimer.current) window.clearTimeout(wheelTimer.current);
-      onTransform({ imageScale: Math.min(4, Math.max(.2, card.imageScale * (1 - event.deltaY * .0015))) });
-      wheelTimer.current = window.setTimeout(() => { wheelActive.current = false; onTransformEnd(); }, 180);
-    }}
     onDoubleClick={() => {
       if (!imageUrl) return;
       onTransformStart();
@@ -122,11 +122,14 @@ export default function CardCanvas({ deck, suit, rank, card, imageUrl, iconUrl, 
         onTransformStart();
         onTransform({ imageX: card.imageX + (event.key === "ArrowLeft" ? -step : event.key === "ArrowRight" ? step : 0), imageY: card.imageY + (event.key === "ArrowUp" ? -step : event.key === "ArrowDown" ? step : 0) });
         onTransformEnd();
-      } else if (["+", "=", "-", "_"].includes(event.key)) {
+      } else if (["+", "=", "-", "_"].includes(event.key) && event.altKey) {
         event.preventDefault();
         onTransformStart();
         onTransform({ imageScale: Math.min(4, Math.max(.2, card.imageScale + (event.key === "-" || event.key === "_" ? -.05 : .05))) });
         onTransformEnd();
+      } else if (["+", "=", "-", "_"].includes(event.key)) {
+        event.preventDefault();
+        onViewZoom(viewZoom * (event.key === "-" || event.key === "_" ? .88 : 1.14));
       } else if (event.key === "[" || event.key === "]") {
         event.preventDefault();
         onTransformStart();
@@ -137,9 +140,10 @@ export default function CardCanvas({ deck, suit, rank, card, imageUrl, iconUrl, 
         onDelete();
       } else if (event.key === "0") {
         event.preventDefault();
-        onTransformStart();
-        onTransform({ imageScale: 1, imageRotation: 0, imageX: 0, imageY: 0 });
-        onTransformEnd();
+        onFitView();
+      } else if (event.key === "1") {
+        event.preventDefault();
+        onPrintView();
       }
     }}
   />;

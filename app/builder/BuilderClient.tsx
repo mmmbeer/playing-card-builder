@@ -40,6 +40,7 @@ import { clearDraft, clearImages, loadDraft, saveDraft } from "./storage";
 import { blankCard, cardKey, createDefaultDeck, rankCopyCount, SUITS, type CardDesign, type DeckSettings, type ImageUrls, type SuitId } from "./types";
 import { imageValidationError, loadImageUrls, revokeImageUrls, storeImage } from "./deck-assets";
 import { createPrintArchive, createProjectBackup, downloadBlob, importProjectBackup, safeFilename } from "./deck-files";
+import { createPresetDeck } from "./deck-presets";
 import { useCanvasZoom } from "./use-canvas-zoom";
 import { useDeckHistory } from "./use-deck-history";
 
@@ -82,9 +83,18 @@ export default function BuilderClient() {
   const card = deck.cards[currentKey] || blankCard();
 
   useEffect(() => {
-    const stored = loadDraft();
+    const requestedPreset = new URLSearchParams(window.location.search).get("preset");
+    const presetDeck = requestedPreset ? createPresetDeck(requestedPreset) : null;
+    const stored = presetDeck || loadDraft();
     replaceDeck(stored);
     if (!stored.ranks.includes(rank)) setRank(stored.ranks[0] || "A");
+    if (presetDeck) {
+      setRank(presetDeck.ranks[0] || "A");
+      setSuit("spades");
+      setCopy(1);
+      window.history.replaceState(null, "", "/builder");
+      notify(`${presetDeck.title} created with ${presetDeck.ranks.length} ranks and ${presetDeck.includeJokers ? `${presetDeck.jokerCount} jokers` : "no jokers"}.`, "success");
+    }
     void loadImageUrls(stored).then(({ failed, images: storedImages }) => {
       setImages(storedImages);
       if (failed.length) notify("Some saved artwork could not be restored. The rest of the deck is still available.", "error");

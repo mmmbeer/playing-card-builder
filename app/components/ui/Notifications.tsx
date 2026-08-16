@@ -12,7 +12,7 @@ export function useNotifications() {
     setNotices((current) => current.filter((notice) => notice.id !== id));
   }, []);
   const notify = useCallback((message: string, tone: NoticeTone = "info") => {
-    const id = crypto.randomUUID();
+    const id = globalThis.crypto?.randomUUID?.() || `notice-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     setNotices((current) => [...current.slice(-2), { id, message, tone }]);
     window.setTimeout(() => dismiss(id), tone === "error" ? 8000 : 5000);
   }, [dismiss]);

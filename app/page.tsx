@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Check, Download, ImagePlus, Layers3, LockKeyhole, Printer, SlidersHorizontal, Shapes } from "lucide-react";
+import { SiteBrand } from "@/app/components/SiteChrome";
 
 const softwareSchema = {
   "@context": "https://schema.org",
@@ -23,10 +24,6 @@ const faqSchema = {
   ],
 };
 
-function Brand() {
-  return <Link className="brand" href="/" aria-label="Deck Forged home"><img src="/deckforged-mark.png" alt="" width={48} height={48} /><span className="brand-wordmark"><strong>Deck</strong><em>Forged</em></span></Link>;
-}
-
 export default function Home() {
   return (
     <main className="landing-shell">
@@ -34,9 +31,9 @@ export default function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
 
       <header className="landing-nav">
-        <Brand />
+        <SiteBrand />
         <nav aria-label="Main navigation">
-          <a href="#examples">Examples</a><a href="#features">Features</a><a href="#printing">Printing</a><a href="#faq">FAQ</a>
+          <Link href="/card-games">Rules</Link><Link href="/specialty-decks">Decks</Link><Link href="/playing-card-history">History</Link>
           <Link className="button button-small" href="/builder">Open builder <ArrowRight size={16} aria-hidden="true" /></Link>
         </nav>
       </header>
@@ -121,9 +118,18 @@ export default function Home() {
         <div className="faq-grid"><details open><summary>Can I make a full deck online?</summary><p>Yes. You can edit every rank and suit, add individual artwork, and export the complete deck.</p></details><details><summary>Do I need an account?</summary><p>No. Drafts are saved to your browser on this device. The Game Crafter asks you to sign in only when you choose its print upload.</p></details><details><summary>Can I use custom card ranks?</summary><p>Yes. Replace the standard ranks with any comma-separated set. This works for prototypes, teaching tools, and original games.</p></details><details><summary>Are exports ready for printing?</summary><p>Exports are 825 × 1125 pixel PNG files with an 80-pixel bleed. Always review the printer&apos;s current proof before ordering.</p></details></div>
       </section>
 
+      <section className="landing-resources">
+        <div className="section-heading"><span className="eyebrow">Playing card library</span><h2>Learn the games. Study the cards. Build the right deck.</h2><p>Use the Deck Forged reference library before opening the editor, or jump directly into a game-specific deck preset.</p></div>
+        <div className="landing-resource-grid">
+          <Link href="/card-games"><span>30 guides</span><h3>Card game rules</h3><p>Setup, play, scoring, and important variations for popular games that use standard playing cards.</p><strong>Browse the rules <ArrowRight size={16} /></strong></Link>
+          <Link href="/specialty-decks"><span>10 presets</span><h3>Specialty decks</h3><p>Create short, doubled, and joker-heavy packs for Pinochle, Sheepshead, Euchre, Canasta, and more.</p><strong>Choose a deck <ArrowRight size={16} /></strong></Link>
+          <Link href="/playing-card-history"><span>Public domain</span><h3>Face cards through history</h3><p>Explore museum scans with provenance and notes on how court-card design changed over five centuries.</p><strong>View the archive <ArrowRight size={16} /></strong></Link>
+        </div>
+      </section>
+
       <section className="final-cta"><div><span className="eyebrow">Custom deck builder</span><h2>Design, export, and print your deck.</h2></div><Link className="button button-primary" href="/builder">Open the builder <ArrowRight size={18} /></Link></section>
 
-      <footer className="landing-footer"><Brand /><p>Free browser-based tools for making custom playing cards.</p><nav aria-label="Footer navigation"><Link href="/builder">Builder</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><a href="https://github.com/mmmbeer/playing-card-builder" target="_blank" rel="noreferrer">GitHub</a></nav></footer>
+      <footer className="landing-footer"><SiteBrand /><p>Free browser-based tools for making custom playing cards.</p><nav aria-label="Footer navigation"><Link href="/builder">Builder</Link><Link href="/card-games">Rules</Link><Link href="/specialty-decks">Decks</Link><Link href="/playing-card-history">History</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav></footer>
     </main>
   );
 }
